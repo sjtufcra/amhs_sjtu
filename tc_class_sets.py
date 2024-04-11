@@ -17,6 +17,13 @@ class Dataset:
         self.orders = dict()
         self.vehicles = dict()
         self.tracks = dict()
+        self.oracle_user = 'wf2prodmoc'
+        self.oracle_password = 'wf2moc_22FAB2'
+        self.oracle_dsn = '10.34.58.15:1521/f2wdb'
+        # from redis
+        self.rds_connection = '10.34.58.42'
+        self.rds_port = 6379
+        self.rds_search_pattern = "Car:monitor:*"
         # database cursor
         self.db_connection = None
         self.db_cursor = None
@@ -35,7 +42,6 @@ class Dataset:
             self.build_map = False
             # self.build_map = True
             self.out_path = 1  # 1:to_excel; 0:to_db
-
 
     class Task:
         def __init__(self):

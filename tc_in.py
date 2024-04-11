@@ -3,10 +3,12 @@ import oracledb
 import rediscluster as rds
 import networkx as nx
 import json
+import parameter_sets as ps
 
 
 def generating(p):
-    p.db_connection = oracledb.connect(user='wf2prodmoc', password='wf2moc_22FAB2', dsn='10.34.58.15:1521/f2wdb')
+    p = linking_to_alg(p, ps.httpServer)
+    p.db_connection = oracledb.connect(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
     p.db_cursor = p.db_connection.cursor()
 
     # extracting local json documentation
@@ -50,9 +52,9 @@ def erect_map(p):
 
 def vehicle_load(p):
     # load from 'redis'
-    pool = rds.ClusterConnectionPool(host='10.34.58.42', port=6379)
+    pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
     connection = rds.RedisCluster(connection_pool=pool)
-    v = connection.mget(keys=connection.keys(pattern="Car:monitor:*"))
+    v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
     vehicles = dict()
     for i in v:
         if not i:
@@ -163,4 +165,16 @@ def read_instructions(p):
         if n >= p.Control().task_num:
             break
     return p
+
+
+def linking_to_alg(p, p0):
+    p.pattern = p0['circulating_on']
+    p.oracle_user = p0['oracle_user']
+    p.oracle_password = p0['oracle_password']
+    p.oracle_dsn = p0['oracle_dsn']
+    p.rds_connection = p0['rds_connection']
+    p.rds_port = p0['rds_port']
+    p.rds_search_pattern = p0['rds_search_pattern']
+    return p
+
 
