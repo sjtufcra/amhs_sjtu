@@ -105,7 +105,7 @@ class DiGraph(nx.DiGraph):
         self.goal_node = goal_node
 
 
-class AStar:
+class AStart:
     def __init__(self):
         pass
     def manhattan_distance(self,node, goal_node):
