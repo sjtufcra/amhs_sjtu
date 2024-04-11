@@ -12,7 +12,7 @@ def generating(p):
 
     # extracting local json documentation
     p = erect_map(p)
-    p.all_stations = json.loads((open('all_station.json', 'r')).read())
+    # p.all_stations = json.loads((open('all_station.json', 'r')).read())
     if p.pattern == 0:
         # vehicles info from Redis
         p = vehicle_load(p)
@@ -26,7 +26,7 @@ def erect_map(p):
         # read form db
         p.db_cursor.execute('SELECT * FROM OHTC_MAP')
         df = pd.DataFrame(p.db_cursor.fetchall())
-        df.to_json('./origin_map_info.json')
+        # df.to_json('./origin_map_info.json')
         p.original_map_info = df
         p = track_generate_station(p, df)
         # building path map
@@ -36,10 +36,10 @@ def erect_map(p):
             ep = df[2][i]  # end point
             length = df[8][i]
             p.map_info.add_weighted_edges_from([(sp, ep, length)])
-        data = nx.readwrite.node_link_data(p.map_info)
-        f0 = open('weighted_adjacent_matrix.json', 'w')
-        f0.write(json.dumps(data))
-        f0.close()
+        # data = nx.readwrite.node_link_data(p.map_info)
+        # f0 = open('weighted_adjacent_matrix.json', 'w')
+        # f0.write(json.dumps(data))
+        # f0.close()
     else:
         # load local map info
         p.stations_name = json.loads((open('stations_name.json', 'r')).read())
@@ -131,12 +131,12 @@ def track_generate_station(p, df):
         dft = df[(df[3] <= loc) & (df[4] >= loc)]
         station_location[num] = dft[1].values[0]
         station_name[num] = str(dft[3].values[0])
-    f1 = open('all_station.json', 'w')
-    f1.write(json.dumps(station_location))
-    f1.close()
-    f2 = open('stations_name.json', 'w')
-    f2.write(json.dumps(station_name))
-    f2.close()
+    # f1 = open('all_station.json', 'w')
+    # f1.write(json.dumps(station_location))
+    # f1.close()
+    # f2 = open('stations_name.json', 'w')
+    # f2.write(json.dumps(station_name))
+    # f2.close()
     p.all_stations = station_location
     p.stations_name = station_name
     return p

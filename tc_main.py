@@ -14,7 +14,7 @@ class Amhs():
         d = Dataset(self.config)
         self.Node = d
         if d.pattern == 1:
-            d = generating(d,self.config)
+            d = generating(d)
             d = task_assign_new(d)
         elif d.pattern == 0:
             d = generating(d)
