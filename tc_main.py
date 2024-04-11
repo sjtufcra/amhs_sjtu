@@ -8,7 +8,7 @@ class Amhs():
         self.runBool = True
         pass
     
-    # 开启数据
+    # 开启数据服务
     def start(self):
         d = Dataset()
         self.Node = d
@@ -23,7 +23,7 @@ class Amhs():
     def over(self):
         output_close_connection(self.d)
         
-    # 暂停数据库读取
+    # 起停数据库读取
     def setRunBool(self,bool=True):
         self.Node.runBool = bool
 

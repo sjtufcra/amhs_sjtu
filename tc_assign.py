@@ -4,7 +4,7 @@ import math
 
 from .tc_out import *
 from .tc_in import *
-
+from .algorithm.A_start.graph.srccode import *
 
 def task_assign(p):
     p.map_info = p.map_info_unchanged
@@ -93,14 +93,26 @@ def terminus_select(j, v0, p, v):
 def shortest_path(start, end, p, v, typ=0):
     if typ == 0:
         # only return the path
-        path = nx.shortest_path(p.map_info, source=start, target=end)
+        if p.algorithm_on is not None:
+            if p.algorithm_on == 2:
+                # A*算法
+                path = nx.shortest_path(p.map_info, source=start, target=end)
+                pass
+            else:
+                path = nx.shortest_path(p.map_info, source=start, target=end)
         # path_check(path, p, v.id)
         # path = nx.dijkstra_path(p.map_info, source=start, target=end)
         # add station ID at the end of path list
         path.append(p.stations_name[v.end_location])
     else:
         # return the length
-        path0 = nx.shortest_path(p.map_info, source=start, target=end)
+        if p.algorithm_on is not None:
+            if p.algorithm_on == 2:
+                # A*算法
+                path0 = nx.shortest_path(p.map_info, source=start, target=end)
+                pass
+            else:
+                path0 = nx.shortest_path(p.map_info, source=start, target=end)
         # path = nx.dijkstra_path_length(p.map_info, source=start, target=end)
         path = 0
         for i in range(len(path0)-1):

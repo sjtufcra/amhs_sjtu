@@ -34,6 +34,11 @@ class Dataset:
         # control on-off
         self.pattern = 1  # 1:circulating; 0:just one time
 
+        # loop-bool
+        self.runBool = True
+        self.algorithm_on = 1
+
+
     class Control:
         def __init__(self):
             self.num_vehicle = 0

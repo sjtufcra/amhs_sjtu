@@ -11,7 +11,10 @@ httpServer = dict(
     # controlling_on-off
     # if it is equal to 1, this programme will run constantly until being forced to stop
     # or 0, just run once
-    circulating_on=1
+    circulating_on=1,
+    
+    # slecet-path 1 or 2
+    algorithm_on=1 
 )
 
 
