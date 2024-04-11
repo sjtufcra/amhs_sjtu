@@ -32,7 +32,7 @@ class Dataset:
         self.machine_location = None
 
         # control on-off
-        self.pattern = out_config.pattern  # 1:circulating; 0:just one time
+        self.pattern = out_config.circulating_on  # 1:circulating; 0:just one time
 
         # loop-bool
         self.runBool = True
