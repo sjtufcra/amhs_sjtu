@@ -1,6 +1,7 @@
 import heapq 
 import networkx as nx
 from typing import Dict, List, Tuple
+import json
 class Node:
     def __init__(self, id: int,h_scores: int, coordinates: Tuple[float, float]):
         self.id = id
@@ -16,7 +17,7 @@ class Edge:
         self.start = start
         self.end = end
         self.weight = weight
-import json
+
 
 class NodeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -129,7 +130,7 @@ class AStart:
                 return path
 
             for neighbor, edge_weight in graph.get_neighbors(current_node.id):
-                tentative_g_score = g_scores[current_node.id] + edge_weight
+                tentative_g_score = g_scores[current_node.id] + edge_weight 
 
                 if tentative_g_score < g_scores.get(neighbor.id, float('inf')):
                     came_from[neighbor.id] = current_node

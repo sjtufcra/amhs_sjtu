@@ -1,5 +1,5 @@
 class Dataset:
-    def __init__(self):
+    def __init__(self,out_config):
         self.vehicle_jam = dict()
         self.stations = dict()
         self.used_vehicle = set()  # refresh before assigning
@@ -17,13 +17,13 @@ class Dataset:
         self.orders = dict()
         self.vehicles = dict()
         self.tracks = dict()
-        self.oracle_user = 'wf2prodmoc'
-        self.oracle_password = 'wf2moc_22FAB2'
-        self.oracle_dsn = '10.34.58.15:1521/f2wdb'
+        self.oracle_user = out_config.oracle_user
+        self.oracle_password = out_config.oracle_password
+        self.oracle_dsn = out_config.oracle_dsn
         # from redis
-        self.rds_connection = '10.34.58.42'
-        self.rds_port = 6379
-        self.rds_search_pattern = "Car:monitor:*"
+        self.rds_connection = out_config.rds_connection
+        self.rds_port = out_config.rds_port
+        self.rds_search_pattern = out_config.rds_search_pattern
         # database cursor
         self.db_connection = None
         self.db_cursor = None
@@ -32,7 +32,7 @@ class Dataset:
         self.machine_location = None
 
         # control on-off
-        self.pattern = 1  # 1:circulating; 0:just one time
+        self.pattern = out_config.pattern  # 1:circulating; 0:just one time
 
         # loop-bool
         self.runBool = True

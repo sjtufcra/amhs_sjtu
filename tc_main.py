@@ -4,16 +4,17 @@ from .tc_assign import *
 from .tc_out import *
 
 class Amhs():
-    def __init__(self) -> None:
+    def __init__(self,config) -> None:
         self.runBool = True
+        self.config = config
         pass
     
     # 开启数据服务
     def start(self):
-        d = Dataset()
+        d = Dataset(self.config)
         self.Node = d
         if d.pattern == 1:
-            d = generating(d)
+            d = generating(d,self.config)
             d = task_assign_new(d)
         elif d.pattern == 0:
             d = generating(d)

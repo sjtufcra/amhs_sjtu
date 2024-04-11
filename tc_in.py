@@ -7,7 +7,6 @@ import parameter_sets as ps
 
 
 def generating(p):
-    p = linking_to_alg(p, ps.httpServer)
     p.db_connection = oracledb.connect(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
     p.db_cursor = p.db_connection.cursor()
 
