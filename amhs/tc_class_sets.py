@@ -17,13 +17,13 @@ class Dataset:
         self.orders = dict()
         self.vehicles = dict()
         self.tracks = dict()
-        self.oracle_user = out_config.oracle_user
-        self.oracle_password = out_config.oracle_password
-        self.oracle_dsn = out_config.oracle_dsn
+        self.oracle_user = out_config['oracle_user']
+        self.oracle_password = out_config['oracle_password']
+        self.oracle_dsn = out_config['oracle_dsn']
         # from redis
-        self.rds_connection = out_config.rds_connection
-        self.rds_port = out_config.rds_port
-        self.rds_search_pattern = out_config.rds_search_pattern
+        self.rds_connection = out_config['rds_connection']
+        self.rds_port = out_config['rds_port']
+        self.rds_search_pattern = out_config['rds_search_pattern']
         # database cursor
         self.db_connection = None
         self.db_cursor = None
@@ -32,7 +32,7 @@ class Dataset:
         self.machine_location = None
 
         # control on-off
-        self.pattern = out_config.circulating_on  # 1:circulating; 0:just one time
+        self.pattern = out_config['circulating_on']  # 1:circulating; 0:just one time
 
         # loop-bool
         self.runBool = True
