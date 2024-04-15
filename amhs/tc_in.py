@@ -3,7 +3,6 @@ import oracledb
 import rediscluster as rds
 import networkx as nx
 import json
-import parameter_sets as ps
 
 
 def generating(p):

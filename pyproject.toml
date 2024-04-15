@@ -1,0 +1,24 @@
+[project]
+name = "amhs-sjtu"
+version = "1.0.0"
+description = "A simple python package for AMHS"
+authors = [
+    { name = "cflab", email = "" },
+]
+dependencies = [
+    'fastapi',
+    'uvicorn',
+    'pandas',
+    'networkx',
+    'oracledb',
+    "redis",  
+    "redis-py-cluster",
+    "pyyaml"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["amhs"]
