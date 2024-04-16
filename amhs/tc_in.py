@@ -143,7 +143,7 @@ def track_generate_station(p, df):
 
 def read_instructions(p):
     # oracle
-    p.db_cursor.execute('SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE="0"')
+    p.db_cursor.execute('SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE=0')
     df = pd.DataFrame(p.db_cursor.fetchall())
     # debuger
     # if len(df) == 0:
