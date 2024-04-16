@@ -93,6 +93,7 @@ def terminus_select(j, v0, p, v):
 
 
 def shortest_path(start, end, p, v, typ=0):
+    log.info(f'typ: {typ}')
     if typ == 0:
         # only return the path
         if p.algorithm_on is not None:
@@ -107,7 +108,8 @@ def shortest_path(start, end, p, v, typ=0):
                     path.append(p.stations_name[v.end_location])
                     return path
                 except Exception as e:
-                    print(e, start, end)
+                    log.error(f'error{e}')
+                    # print(e, start, end)
         # path_check(path, p, v.id)
         # path = nx.dijkstra_path(p.map_info, source=start, target=end)
         # add station ID at the end of path list
@@ -120,6 +122,7 @@ def shortest_path(start, end, p, v, typ=0):
                 path0 = nx.shortest_path(p.map_info, source=start, target=end)
                 pass
             else:
+                log.info(f'Graph: {p.map_info}')
                 path0 = nx.shortest_path(p.map_info, source=start, target=end)
         # path = nx.dijkstra_path_length(p.map_info, source=start, target=end)
         path = 0
