@@ -1,5 +1,6 @@
 import pandas as pd
 import oracledb
+from loguru import logger as log
 import rediscluster as rds
 import networkx as nx
 import json
@@ -11,6 +12,7 @@ def generating(p):
 
     # extracting local json documentation
     p = erect_map(p)
+    log.info(f'查看map是否生成{p}')
     # p.all_stations = json.loads((open('all_station.json', 'r')).read())
     if p.pattern == 0:
         # vehicles info from Redis
@@ -29,12 +31,12 @@ def erect_map(p):
         p.original_map_info = df
         p = track_generate_station(p, df)
         # building path map
-        p.map_info = nx.DiGraph()
+        p.map_info_unchanged = nx.DiGraph()
         for i in df.index:
             sp = df[1][i]  # start point
             ep = df[2][i]  # end point
             length = df[8][i]
-            p.map_info.add_weighted_edges_from([(sp, ep, length)])
+            p.map_info_unchanged.add_weighted_edges_from([(sp, ep, length)])
         # data = nx.readwrite.node_link_data(p.map_info)
         # f0 = open('weighted_adjacent_matrix.json', 'w')
         # f0.write(json.dumps(data))

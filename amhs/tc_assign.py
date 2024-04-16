@@ -40,7 +40,7 @@ def task_assign_new(p):
         # revise map info
         
         p.map_info = revise_map_info(p)
-        log.info(f'graph: {p}')
+        log.info(f'graph: {p.map_info}')
         # refresh before assigning
         p.used_vehicle = set()
         j, n = 0, 0
