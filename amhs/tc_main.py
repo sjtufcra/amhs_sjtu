@@ -21,7 +21,12 @@ class Amhs():
     
     def over(self):
         output_close_connection(self.d)
+        del self.Node
         
     def setRunBool(self,bool=True):
         self.Node.runBool = bool
+        if self.Node.runBool == True:
+            self.Node.task_assign_new(self.Node)
+        else:
+            pass
 
