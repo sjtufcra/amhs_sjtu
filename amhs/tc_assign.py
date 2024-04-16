@@ -33,11 +33,14 @@ def task_assign_new(p):
     # t = time.process_time()
     while p.runBool:
         # refresh vehicles
+        log.info(f"进入循环状态")
         p = vehicle_load(p)
         # refresh tasks
         p = read_instructions(p)
         # revise map info
+        
         p.map_info = revise_map_info(p)
+        log.info(f'graph: {p}')
         # refresh before assigning
         p.used_vehicle = set()
         j, n = 0, 0
