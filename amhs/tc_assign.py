@@ -30,7 +30,7 @@ def task_assign(p):
 
 def task_assign_new(p):
     g, max_g = 1, 6
-    t = time.process_time()
+    # t = time.process_time()
     while p.runBool:
         # refresh vehicles
         p = vehicle_load(p)
