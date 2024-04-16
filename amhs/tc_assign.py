@@ -1,5 +1,5 @@
 import networkx as nx
-import time
+from loguru import logger as log
 import math
 
 from .tc_out import *
@@ -71,6 +71,7 @@ def vehicle_select(task, p):
     veh_len = math.inf
     for k, v in vs0.items():
         start, end = terminus_select(0, v, p, task)
+        log.info('start:{start},end:{end}')
         length = shortest_path(start, end, p, task, typ=1)
         if length < veh_len:
             veh_len = length

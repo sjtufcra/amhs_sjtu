@@ -13,7 +13,8 @@ dependencies = [
     'oracledb',
     "redis",  
     "redis-py-cluster",
-    "pyyaml"
+    "pyyaml",
+    "loguru"
 ]
 
 [build-system]
