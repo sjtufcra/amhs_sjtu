@@ -71,7 +71,7 @@ def vehicle_select(task, p):
     veh_len = math.inf
     for k, v in vs0.items():
         start, end = terminus_select(0, v, p, task)
-        log.info('start:{start},end:{end}')
+        log.info(f'start:{start},end:{end}')
         length = shortest_path(start, end, p, task, typ=1)
         if length < veh_len:
             veh_len = length
@@ -102,6 +102,7 @@ def shortest_path(start, end, p, v, typ=0):
                 pass
             else:
                 try:
+                    log.info(f'Graph: {p.map_info}')
                     path = nx.shortest_path(p.map_info, source=start, target=end)
                     path.append(p.stations_name[v.end_location])
                     return path
