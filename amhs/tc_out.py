@@ -31,8 +31,7 @@ def output_new(p, k, v):
     s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
     s1 = "' WHERE COMMANDID = '" + k + "'"
     sql = "UPDATE TRANSFER_TABLE " + s0 + s1
-    updainf = p.db_cursor.execute(sql)
-    log.info(f'数据更新状态{updainf}')
+    p.db_cursor.execute(sql)
     p.db_connection.commit()
     return 0
 
