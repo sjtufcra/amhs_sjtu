@@ -6,6 +6,7 @@ from .tc_out import *
 from .tc_in import *
 from .algorithm.A_start.graph.srccode import *
 
+
 def task_assign(p):
     p.map_info = p.map_info_unchanged
     # revise map info
@@ -99,11 +100,16 @@ def shortest_path(start, end, p, v, typ=0):
                 path = nx.shortest_path(p.map_info, source=start, target=end)
                 pass
             else:
-                path = nx.shortest_path(p.map_info, source=start, target=end)
+                try:
+                    path = nx.shortest_path(p.map_info, source=start, target=end)
+                    path.append(p.stations_name[v.end_location])
+                    return path
+                except Exception as e:
+                    print(e, start, end)
         # path_check(path, p, v.id)
         # path = nx.dijkstra_path(p.map_info, source=start, target=end)
         # add station ID at the end of path list
-        path.append(p.stations_name[v.end_location])
+        # path.append(p.stations_name[v.end_location])
     else:
         # return the length
         if p.algorithm_on is not None:
@@ -119,7 +125,7 @@ def shortest_path(start, end, p, v, typ=0):
             idx = path0[i:i + 2]
             path += p.map_info.edges[idx]['weight']
         # path = sum(p.map_info.edges[path0[i:i + 2]]['weight'] for i in range(len(path0)-1))
-    return path
+        return path
 
 
 def path_check(path, p, task_id):
