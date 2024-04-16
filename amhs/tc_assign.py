@@ -32,14 +32,15 @@ def task_assign_new(p):
     g, max_g = 1, 6
     # t = time.process_time()
     while p.runBool:
+        log.info(f'run status: {p.runBool}')
         # refresh vehicles
-        log.info(f"进入循环状态")
         p = vehicle_load(p)
         # refresh tasks
         p = read_instructions(p)
         # revise map info
         
         p.map_info = revise_map_info(p)
+        log.info(f'graph: {p.map_info}')
         log.info(f'graph: {p.map_info}')
         # refresh before assigning
         p.used_vehicle = set()
@@ -74,7 +75,6 @@ def vehicle_select(task, p):
     veh_len = math.inf
     for k, v in vs0.items():
         start, end = terminus_select(0, v, p, task)
-        log.info(f'start:{start},end:{end}')
         length = shortest_path(start, end, p, task, typ=1)
         if length < veh_len:
             veh_len = length
@@ -96,7 +96,6 @@ def terminus_select(j, v0, p, v):
 
 
 def shortest_path(start, end, p, v, typ=0):
-    log.info(f'typ: {typ}')
     if typ == 0:
         # only return the path
         if p.algorithm_on is not None:
@@ -106,7 +105,6 @@ def shortest_path(start, end, p, v, typ=0):
                 pass
             else:
                 try:
-                    log.info(f'Graph: {p.map_info}')
                     path = nx.shortest_path(p.map_info, source=start, target=end)
                     path.append(p.stations_name[v.end_location])
                     return path
@@ -125,7 +123,6 @@ def shortest_path(start, end, p, v, typ=0):
                 path0 = nx.shortest_path(p.map_info, source=start, target=end)
                 pass
             else:
-                log.info(f'Graph: {p.map_info}')
                 path0 = nx.shortest_path(p.map_info, source=start, target=end)
         # path = nx.dijkstra_path_length(p.map_info, source=start, target=end)
         path = 0

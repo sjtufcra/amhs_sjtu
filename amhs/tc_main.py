@@ -28,5 +28,6 @@ class Amhs():
         if self.Node.runBool == True:
             self.Node.task_assign_new(self.Node)
         else:
+            log.info(f'modify run status {self.Node.runBool}')
             pass
 

@@ -1,5 +1,6 @@
 import pandas as pd
 
+from loguru import logger as log
 
 def output(p):
     if p.Control().out_path == 0:
@@ -30,7 +31,8 @@ def output_new(p, k, v):
     s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
     s1 = "' WHERE COMMANDID = '" + k + "'"
     sql = "UPDATE TRANSFER_TABLE " + s0 + s1
-    p.db_cursor.execute(sql)
+    updainf = p.db_cursor.execute(sql)
+    log.info(f'数据更新状态{updainf}')
     p.db_connection.commit()
     return 0
 

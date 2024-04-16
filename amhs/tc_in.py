@@ -12,7 +12,6 @@ def generating(p):
 
     # extracting local json documentation
     p = erect_map(p)
-    log.info(f'查看map是否生成{p}')
     # p.all_stations = json.loads((open('all_station.json', 'r')).read())
     if p.pattern == 0:
         # vehicles info from Redis
