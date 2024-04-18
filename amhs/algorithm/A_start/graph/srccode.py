@@ -30,7 +30,6 @@ class NodeEncoder(json.JSONEncoder):
                 'g_cost': str(obj.g) if obj.g == float("inf") else obj.g,
                 'position': obj.coordinates
             }
-        # 如果遇到其他未知类型，调用基类方法
         return super().default(obj)
 class EdgeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -41,7 +40,6 @@ class EdgeEncoder(json.JSONEncoder):
                 'end': obj.end.coordinates,
                 'weight': obj.weight
             }
-        # 如果遇到其他未知类型，调用基类方法
         return super().default(obj)
 
 class Graph():
@@ -56,9 +54,9 @@ class Graph():
     def add_edge(self, edge: Edge):
         self.edges.append(edge)
         self.adjacency_matrix[(edge.start.id, edge.end.id)] = edge.weight
-        # self.adjacency_matrix[(edge.end.id, edge.start.id)] = edge.weight  # 对于无向图，双向添加权重
+        # self.adjacency_matrix[(edge.end.id, edge.start.id)] = edge.weight  # 对于无向图，双向添加权重
 
-    def get_neighbors(self, node_id: int) -> List[Tuple[Node, float]]:
+    def get_neighbors(self, node_id: str):
         neighbors = []
         for other_id, weight in self.adjacency_matrix.items():
             if other_id[0] == node_id:
@@ -71,17 +69,25 @@ class Graph():
     def set_start_and_goal(self, start_node: Node, goal_node: Node):
         self.start_node = start_node
         self.goal_node = goal_node
+    def update_edge_weight(self, edge: Edge, new_weight: float):
+        edge.weight = new_weight
+    def update_adjacent_matrix(self, adjacent_matrix: dict):
+        self.adjacent_matrix = adjacent_matrix
+
+    def modify_adjacent_matrix_edge(self, edge: Edge, new_weight: float):
+        self.adjacent_matrix[edge.start_node.id][edge.end_node.id] = new_weight
 
 class NetworkXCompatibleGraph(Graph):
     def __init__(self):
         super().__init__()
+    
     def to_networkx_graph(self):
         """将当前图转换为networkx.Graph对象"""
         G = nx.DiGraph() #有向图
 
         # 添加节点
         for node in self.nodes:
-            G.add_node(node.id, coordinates=node.coordinates)
+             G.add_node(node.id, coordinates=node.coordinates)
 
         # 添加边
         for edge in self.edges:
@@ -92,18 +98,52 @@ class NetworkXCompatibleGraph(Graph):
 class DiGraph(nx.DiGraph):
     def __init__(self):
         super().__init__()
-    def get_neighbors(self, node_id: int) -> List[Tuple[Node, float]]:
+        self.nodels: List[Node] = []
+        self.edgels: List[Edge] = []
+        self.adjacency_matrix: Dict[Tuple[str, str], float] = {}
+   
+    def add_nodes(self, node: Node):
+        self.nodels.append(node)
+
+
+    def add_node_from(self, start,end,length,cordinate=(0,0)):
+        Start = Node(id=start,h_scores=1,coordinates=cordinate)
+        End = Node(id=end,h_scores=1,coordinates=cordinate)
+        if not self.has_node(start):
+            self.add_nodes(Start)
+        if not self.has_node(end):
+            self.add_nodes(End)
+        edg = Edge(start=Start,end=End,weight=length)
+        self.add_edges(edg)
+
+    def add_edges(self, edge: Edge):
+        self.edgels.append(edge)
+        self.adjacency_matrix[(edge.start.id, edge.end.id)] = edge.weight
+        # self.adjacency_matrix[(edge.end.id, edge.start.id)] = edge.weight  # 对于无向图，双向添加权重
+
+    def get_node_by_id(self, node_id: int):
+        return next((n for n in self.nodels if n.id == node_id), None)
+
+    def get_neighbors(self, node_id: str):
         neighbors = []
         for other_id, weight in self.adjacency_matrix.items():
             if other_id[0] == node_id:
                 neighbor_id = other_id[1]
-                neighbor = next((n for n in self.nodes if n.id == neighbor_id), None)
+                neighbor = next((n for n in self.nodels if n.id == neighbor_id), None)
                 if neighbor is not None:
                     neighbors.append((neighbor, weight))
         return neighbors
+
     def set_start_and_goal(self, start_node: Node, goal_node: Node):
         self.start_node = start_node
         self.goal_node = goal_node
+    def update_edge_weight(self, edge: Edge, new_weight: float):
+        edge.weight = new_weight
+    def update_adjacent_matrix(self, adjacent_matrix: dict):
+        self.adjacent_matrix = adjacent_matrix
+
+    def modify_adjacent_matrix_edge(self, edge: Edge, new_weight: float):
+        self.adjacent_matrix[edge.start_node.id][edge.end_node.id] = new_weight
 
 
 class AStart:
@@ -123,9 +163,11 @@ class AStart:
             if current_node == graph.goal_node:
                 path = []
                 while current_node != graph.start_node:
-                    path.append(current_node)
+                    # path.append(current_node)
+                    path.append(current_node.id)
                     current_node = came_from[current_node.id]
-                path.append(graph.start_node)
+                # path.append(graph.start_node)
+                path.append(graph.start_node.id)
                 path.reverse()
                 return path
 
@@ -137,5 +179,5 @@ class AStart:
                     g_scores[neighbor.id] = tentative_g_score
                     f_scores[neighbor.id] = tentative_g_score + neighbor.h
                     heapq.heappush(open_set, (f_scores[neighbor.id], neighbor))
-
+        
         raise ValueError("No path found from start to goal.")

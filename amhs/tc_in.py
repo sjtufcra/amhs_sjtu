@@ -4,7 +4,7 @@ from loguru import logger as log
 import rediscluster as rds
 import networkx as nx
 import json
-
+from .algorithm.A_start.graph.srccode import AStar, Node, Edge,Graph
 
 def generating(p):
     p.db_connection = oracledb.connect(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
@@ -28,14 +28,20 @@ def erect_map(p):
         df = pd.DataFrame(p.db_cursor.fetchall())
         # df.to_json('./origin_map_info.json')
         p.original_map_info = df
-        p = track_generate_station(p, df)
+        p = track_generate_station(p, df) #台位信息10w+
         # building path map
         p.map_info_unchanged = nx.DiGraph()
+        # A*算法
+        p.map_info_unchanged = Graph()
         for i in df.index:
             sp = df[1][i]  # start point
             ep = df[2][i]  # end point
             length = df[8][i]
+            #A* 算法
+            p.map_info_unchanged.add_node_from(sp,ep,length)
+            # old算法（兼容模式）
             p.map_info_unchanged.add_weighted_edges_from([(sp, ep, length)])
+
         # data = nx.readwrite.node_link_data(p.map_info)
         # f0 = open('weighted_adjacent_matrix.json', 'w')
         # f0.write(json.dumps(data))
@@ -53,7 +59,7 @@ def vehicle_load(p):
     # load from 'redis'
     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
     connection = rds.RedisCluster(connection_pool=pool)
-    v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+    v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))#1000car
     vehicles = dict()
     for i in v:
         if not i:
@@ -71,7 +77,7 @@ def vehicle_load(p):
                 p.vehicle_jam[sp, ep] = 1
             else:
                 p.vehicle_jam[sp, ep] += 1
-    # print('Available vehicles number is', len(vehicles))
+    log('Available vehicles number is', len(vehicles))
     p.vehicles = vehicles
     return p
 
@@ -144,7 +150,8 @@ def track_generate_station(p, df):
 
 def read_instructions(p):
     # oracle
-    p.db_cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'")
+    # p.db_cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS IN (0,1) and VEHICLE='0'") #筛选任务状态(0，1，2)
+    p.db_cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'") #不筛选任务状态
     df = pd.DataFrame(p.db_cursor.fetchall())
     # debuger
     # if len(df) == 0:
@@ -161,8 +168,9 @@ def read_instructions(p):
         tmp.end_location = df[5][i]
         p.orders[tmp.id] = tmp
         n += 1
-        if n >= p.Control().task_num:
-            break
+        # if n >= p.Control().task_num:
+        #     break
+    log.info(f'this is the task count:{n}')
     return p
 
 

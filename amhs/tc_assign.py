@@ -7,25 +7,25 @@ from .tc_in import *
 from .algorithm.A_start.graph.srccode import *
 
 
-def task_assign(p):
-    p.map_info = p.map_info_unchanged
-    # revise map info
-    # for k, v in p.vehicle_jam.items():
-    #     w0 = p.map_info.edges[k[0], k[1]]['weight'] * (1 + v)
-    #     p.map_info.add_weighted_edges_from([(k[0], k[1], w0)])
-    j, n = 0, 0
-    for k, v in p.orders.items():
-        # specific position of task
-        if v.finished == 0:
-            veh, v0 = vehicle_select(v, p)
-            start, end = terminus_select(j, v0, p, v)
-            v.vehicle_assigned = veh
-            v.delivery_route = shortest_path(start, end, p, v)
-            output_new(p, k, v)
-            v.finished = 1
-        if v.finished == 1:
-            n += 1
-    return p
+# def task_assign(p):
+#     p.map_info = p.map_info_unchanged
+#     # revise map info
+#     # for k, v in p.vehicle_jam.items():
+#     #     w0 = p.map_info.edges[k[0], k[1]]['weight'] * (1 + v)
+#     #     p.map_info.add_weighted_edges_from([(k[0], k[1], w0)])
+#     j, n = 0, 0
+#     for k, v in p.orders.items():
+#         # specific position of task
+#         if v.finished == 0:
+#             veh, v0 = vehicle_select(v, p)
+#             start, end = terminus_select(j, v0, p, v)
+#             v.vehicle_assigned = veh
+#             v.delivery_route = shortest_path(start, end, p, v)
+#             output_new(p, k, v)
+#             v.finished = 1
+#         if v.finished == 1:
+#             n += 1
+#     return p
 
 
 def task_assign_new(p):
@@ -39,21 +39,26 @@ def task_assign_new(p):
         p = read_instructions(p)
         # revise map info
         
-        p.map_info = revise_map_info(p)
+        p.map_info = revise_map_info(p) #更新边的权重值，方便后续路径规划
         # refresh before assigning
         p.used_vehicle = set()
         j, n = 0, 0
+        # this is the car count
+        car = 0
+        # refresh orders
         for k, v in p.orders.items():
             if v.finished == 0:
                 veh, v0 = vehicle_select(v, p)
                 start, end = terminus_select(j, v0, p, v)
                 v.vehicle_assigned = veh
                 v.delivery_route = shortest_path(start, end, p, v)
-                output_new(p, k, v)
+                output_new(p, k, v)#正常作业流程
                 v.finished = 1
+                car +=1
             if v.finished == 1:
                 n += 1
         g += 1
+        log.info(f'this is the car count in the mission batch and the task count: car[{car}],batch[{g}],task_sum[{n}]')
     return p
 
 
