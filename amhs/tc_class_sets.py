@@ -16,6 +16,8 @@ class Dataset:
         # from db
         self.orders = dict()
         self.vehicles = dict()
+        self.vehicles_get = dict()
+        self.vehicles_send = dict()
         self.tracks = dict()
         self.oracle_user = out_config['oracle_user']
         self.oracle_password = out_config['oracle_password']
@@ -27,6 +29,7 @@ class Dataset:
         # database cursor
         self.db_connection = None
         self.db_cursor = None
+        self.db_pool = None
         # not used
         self.task_data = None
         self.machine_location = None
@@ -36,7 +39,7 @@ class Dataset:
 
         # loop-bool
         self.runBool = True
-        self.algorithm_on = 1
+        self.algorithm_on = out_config['algorithm_on'] #算法调整：1、原始算法，2、A*算法
 
 
     class Control:
@@ -58,6 +61,7 @@ class Dataset:
             self.pick_route = []
             self.delivery_route = None
             self.vehicle_assigned = None
+            self.task_bay = None
             self.finished = 0
             self.handling_time = 10
 

@@ -20,7 +20,7 @@ def output(p):
                 sql = "UPDATE TRANSFER_TABLE " + s0 + s1
                 p.db_cursor.execute(sql)
                 n += 1
-        print('Loaded tasks to db number is', n)
+        log.info('Loaded tasks to db number is', n)
         p.db_connection.commit()
         p.db_cursor.close()
         p.db_connection.close()
@@ -31,8 +31,15 @@ def output_new(p, k, v):
     s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
     s1 = "' WHERE COMMANDID = '" + k + "'"
     sql = "UPDATE TRANSFER_TABLE " + s0 + s1
-    p.db_cursor.execute(sql)
-    p.db_connection.commit()
+    with p.db_pool.get_connection() as db_conn:
+            cursor = db_conn.cursor()
+            cursor.execute(sql)
+            db_conn.commit()
+            cursor.close()
+
+    # old
+    # p.db_cursor.execute(sql)
+    # p.db_connection.commit()
     return 0
 
 
