@@ -111,7 +111,7 @@ def vehicle_select(task, p):
     vs0 = get_vehicles_from_bay(task.task_bay, p)
     veh = None
     veh_len = math.inf
-    for k, v in vs0.items()[0:5]:
+    for k, v in vs0.items():
         start, end = terminus_select(0, v, p, task)
         length = shortest_path(start, end, p, task, typ=1)
         if length < veh_len:
