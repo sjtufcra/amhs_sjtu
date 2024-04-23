@@ -5,6 +5,7 @@ import networkx as nx
 import threading
 import json
 
+from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
 from algorithm.A_start.graph.srccode import *
@@ -32,12 +33,37 @@ class OracleConnectionPool:
             with self.lock:
                 self.connections.append(conn)
 
-    
+class MysqlConnectionPool:
+    def __init__(self, dsn, user, password, max_connections=5):
+        self.host = dsn
+        self.user = user
+        self.password = password
+        self.max_connections = max_connections
+        self.connections = []
+        self.lock = threading.Lock()
+
+    @contextmanager
+    def get_connection(self):
+        with self.lock:
+            while len(self.connections) < self.max_connections:
+                conn = connector.connect(user=self.user, password=self.password, host=self.host)
+                self.connections.append(conn)
+            conn = self.connections.pop(0)
+        try:
+            yield conn
+        finally:
+            with self.lock:
+                self.connections.append(conn)
+
+
 
 
 
 def generating(p):
-    p.db_pool = OracleConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn) 
+    if p.mode == 1:
+        p.db_pool = OracleConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn) 
+    else:
+        p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
     # old
     # p.db_connection = oracledb.connect(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
     # p.db_cursor = p.db_connection.cursor()

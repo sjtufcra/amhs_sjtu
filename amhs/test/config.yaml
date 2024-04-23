@@ -23,7 +23,8 @@ httpServer:
 
     # load data
     order_on: 1 # 1: load local order data, 0: don't load local order data
- 
+    # online
+    mode: 1
 
 # local server's parameter
 localServer:
@@ -54,3 +55,5 @@ localServer:
     order_on: 1 # 1: load local order data, 0: don't load local order data
     # reload map data
     build_map: 1
+    # local
+    mode: 0
