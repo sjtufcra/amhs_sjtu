@@ -1,7 +1,11 @@
-from .tc_class_sets import *
-from .tc_in import *
-from .tc_assign import *
-from .tc_out import *
+from tc_class_sets import *
+from tc_in import *
+from tc_assign import *
+from tc_out import *
+# from .tc_class_sets import *
+# from .tc_in import *
+# from .tc_assign import *
+# from .tc_out import *
 
 class Amhs():
     def __init__(self,config) -> None:
@@ -9,7 +13,7 @@ class Amhs():
         self.config = config
         pass
     
-    async def start(self):
+    def start(self):
         # if not self.loadBool():
         #     return 
         d = Dataset(self.config)

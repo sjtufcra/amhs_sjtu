@@ -1,0 +1,56 @@
+# mode's parameter
+runing_mode: 0 # 0: local mode, 1: server mode
+
+# server's parameter
+httpServer:
+    # oracle database linking
+    oracle_user: 'wf2prodmoc'
+    oracle_password: 'wf2moc_22FAB2'
+    oracle_dsn: '10.34.58.15:1521/f2wdb'
+
+    # redis linking
+    rds_connection: '10.34.58.42'
+    rds_port: 6379
+    rds_search_pattern: "Car:monitor:*"
+
+    # controlling_on-off
+    # if it is equal to 1, this programme will run constantly until being forced to stop
+    # or 0, just run once
+    circulating_on: 1
+
+    # slecet-path 1 or 2
+    algorithm_on: 1
+
+    # load data
+    order_on: 1 # 1: load local order data, 0: don't load local order data
+ 
+
+# local server's parameter
+localServer:
+    # MySQL linking
+    oracle_dsn: '127.0.0.1'
+    port: 3306
+    oracle_user: 'root'
+    oracle_password: 'Zhang123.'
+
+    mysql_database:
+        database: 'amhs'
+        table_names: ['ohtc_map','ohtc_position','transfer_table']
+
+    # redis linking
+    rds_connection: '10.34.58.42'
+    rds_port: 6379
+    rds_search_pattern: "Car:monitor:*"
+
+    # controlling_on-off
+    # if it is equal to 1, this programme will run constantly until being forced to stop
+    # or 0, just run once
+    circulating_on: 1
+
+    # slecet-path 1 or 2
+    algorithm_on: 1
+
+    # load data
+    order_on: 1 # 1: load local order data, 0: don't load local order data
+    # reload map data
+    build_map: 1
