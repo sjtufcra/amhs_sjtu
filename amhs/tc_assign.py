@@ -5,12 +5,15 @@ import concurrent.futures
 import multiprocessing
 from loguru import logger as log
 
-# from tc_out import *
-# from tc_in import *
-# from algorithm.A_start.graph.srccode import *
-from .tc_out import *
-from .tc_in import *
-from .algorithm.A_start.graph.srccode import *
+# local
+from tc_out import *
+from tc_in import *
+from algorithm.A_start.graph.srccode import *
+
+## online
+# from .tc_out import *
+# from .tc_in import *
+# from .algorithm.A_start.graph.srccode import *
 
 
 def task_assign(p):
@@ -74,7 +77,10 @@ def task_assign_new(p):
                 start, end = terminus_select(j, v0, p, v)
                 v.vehicle_assigned = veh
                 v.delivery_route = shortest_path(start, end, p, v)
-                output_new(p, k, v)
+                if p.mode == 1:
+                    log.info(f'success:{k},{v}')
+                else:
+                    output_new(p, k, v)
                 v.finished = 1
                 car +=1
             if v.finished == 1:
@@ -127,7 +133,11 @@ def vehicle_select(task, p):
 def terminus_select(j, v0, p, v):
     if j == 0:
         # routh: position -> start
-        start = vehicle_node_search(v0['position'], p)
+        if p.mode==1:
+            postion = v0['position']
+        else:
+            postion = v0[43]
+        start = vehicle_node_search(postion, p)
         end = p.all_stations[v.start_location]
     else:
         # routh: start -> end
@@ -224,13 +234,19 @@ def get_vehicles_from_bay(bay, p):
     #
     # searching all veh
     for k0, v0 in p.vehicles_get.items():
-        if not v0.get('bay'):
-            continue
-        # if int(v0.get('ohtStatus_Idle'))==1:
-        #     p.vehicles_get.pop(v0)
-        #     continue
-        if v0['bay'] in [bay] and (k0 not in p.used_vehicle):
-            vs0[k0] = v0
+        if p.mode == 1:
+            if not v0.get('bay'):
+                continue
+            # if int(v0.get('ohtStatus_Idle'))==1:
+            #     p.vehicles_get.pop(v0)
+            #     continue
+            if v0['bay'] in [bay] and (k0 not in p.used_vehicle):
+                vs0[k0] = v0
+        else:
+            if not v0[1]:
+                continue
+            if v0[1] in [bay] and (k0 not in p.used_vehicle):
+                vs0[k0] = v0
     if len(vs0) <= 0:
         vs0 = p.vehicles_get
     return vs0

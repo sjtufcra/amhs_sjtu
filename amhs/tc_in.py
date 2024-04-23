@@ -8,8 +8,9 @@ import json
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-# from algorithm.A_start.graph.srccode import *
-from .algorithm.A_start.graph.srccode import *
+# from .algorithm.A_start.graph.srccode import *
+
+from algorithm.A_start.graph.srccode import *
 
 # server config
 class OracleConnectionPool:
@@ -142,25 +143,39 @@ def vehicle_load(p):
         v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         # vehicles = dict()
         log.info('start a car search')
+        for i in v:
+            if not i:
+                continue
+            ii = json.loads(i)
+            if ii.get('ohtID'):
+                if ii['ohtStatus_OnlineControl'] != '1' or ii['ohtStatus_ErrSet'] != '0':
+                    continue
+                if(( ii['ohtStatus_Roaming'] =='1' or (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Idle']=='1'))or(ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Oncalling']=='1')) or (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Oncall']=='1'):
+                    p.vehicles_get[ii['ohtID']] = ii
+                else:
+                    if  ii['ohtStatus_IsHaveFoup'] =='1' and (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Idle']=='1'):
+                        p.vehicles_send[ii['ohtID']] = ii
+                    else:
+                        continue
     else:
         with p.db_pool.get_connection() as db_conn:
             cursor = db_conn.cursor()
             cursor.execute('SELECT * FROM OHTC_CAR')
         v = cursor.fetchall()
-    for i in v:
-        if not i:
-            continue
-        ii = json.loads(i)
-        if ii.get('ohtID'):
-            if ii['ohtStatus_OnlineControl'] != '1' or ii['ohtStatus_ErrSet'] != '0':
+        for i in v:
+            if not i:
                 continue
-            if(( ii['ohtStatus_Roaming'] =='1' or (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Idle']=='1'))or(ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Oncalling']=='1')) or (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Oncall']=='1'):
-                p.vehicles_get[ii['ohtID']] = ii
-            else:
-                if  ii['ohtStatus_IsHaveFoup'] =='1' and (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Idle']=='1'):
-                    p.vehicles_send[ii['ohtID']] = ii
-                else:
+            value = i[11]
+            if value:
+                if i[28] != '1' or i[14] != '0':
                     continue
+                if(( i[35] =='1' or (i[24]=='1' and i[17]=='1'))or(i[24]=='1' and i[27]=='1')) or (i[24]=='1' and i[26]=='1'):
+                    p.vehicles_get[value] = i
+                else:
+                    if  i[18] =='1' and (i[24]=='1' and i[17]=='1'):
+                        p.vehicles_send[value] = i
+                    else:
+                        continue
             # vehicles[ii['ohtID']] = ii
             # existing vehicles in one path
             # if not ii.get('mapId'):
