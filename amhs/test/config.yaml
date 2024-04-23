@@ -33,6 +33,7 @@ localServer:
     port: 3306
     oracle_user: 'root'
     oracle_password: 'Zhang123.'
+    database: 'amhs'
 
     mysql_database:
         database: 'amhs'

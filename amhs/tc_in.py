@@ -11,6 +11,7 @@ from contextlib import contextmanager
 from algorithm.A_start.graph.srccode import *
 # from .algorithm.A_start.graph.srccode import *
 
+# server config
 class OracleConnectionPool:
     def __init__(self, dsn, user, password, max_connections=5):
         self.dsn = dsn
@@ -33,10 +34,12 @@ class OracleConnectionPool:
             with self.lock:
                 self.connections.append(conn)
 
+# local config
 class MysqlConnectionPool:
-    def __init__(self, dsn, user, password, max_connections=5):
+    def __init__(self, dsn, user, password, database, max_connections=5):
         self.host = dsn
         self.user = user
+        self.database = database
         self.password = password
         self.max_connections = max_connections
         self.connections = []
@@ -46,7 +49,7 @@ class MysqlConnectionPool:
     def get_connection(self):
         with self.lock:
             while len(self.connections) < self.max_connections:
-                conn = connector.connect(user=self.user, password=self.password, host=self.host)
+                conn = connector.connect(user=self.user, password=self.password, host=self.host,database=self.database)
                 self.connections.append(conn)
             conn = self.connections.pop(0)
         try:
@@ -63,7 +66,7 @@ def generating(p):
     if p.mode == 1:
         p.db_pool = OracleConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn) 
     else:
-        p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
+        p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,database=p.database)
     # old
     # p.db_connection = oracledb.connect(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
     # p.db_cursor = p.db_connection.cursor()
