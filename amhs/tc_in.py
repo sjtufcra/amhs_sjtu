@@ -136,11 +136,17 @@ def erect_map(p):
 
 def vehicle_load(p):
     # load from 'redis'
-    pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-    connection = rds.RedisCluster(connection_pool=pool)
-    v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-    # vehicles = dict()
-    log.info('start a car search')
+    if p.mode == 1:
+        pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        connection = rds.RedisCluster(connection_pool=pool)
+        v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+        # vehicles = dict()
+        log.info('start a car search')
+    else:
+        with p.db_pool.get_connection() as db_conn:
+            cursor = db_conn.cursor()
+            cursor.execute('SELECT * FROM OHTC_CAR')
+        v = cursor.fetchall()
     for i in v:
         if not i:
             continue
