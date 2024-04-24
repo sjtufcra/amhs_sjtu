@@ -1,8 +1,9 @@
 # local
 from tc_class_sets import *
 from tc_in import *
-from tc_assign import *
+# from tc_assign import *
 from tc_out import *
+from tc_optimize import *
 
 # # online
 # from .tc_class_sets import *
@@ -23,7 +24,8 @@ class Amhs():
         self.Node = d
         d = generating(d)
         # await track_generate_station(d, d.original_map_info)
-        d = task_assign_new(d)
+        # d = task_assign_new(d)
+        d = task_assign(d)
     
     def over(self):
         output_close_connection(self.d)
