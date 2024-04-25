@@ -74,6 +74,10 @@ def generating(p):
 
     # extracting local json documentation
     p = erect_map(p)
+    
+    #create static map 
+    paths_static = p.Astart.sum_node_path(p.map_info_unchanged)
+
     # p.all_stations = json.loads((open('all_station.json', 'r')).read())
     if p.pattern == 0:
         # vehicles info from Redis

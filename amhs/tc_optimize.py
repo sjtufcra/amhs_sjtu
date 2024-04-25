@@ -115,6 +115,7 @@ def shortest_path(start, end, p, v, typ=0):
                 p.map_info.set_start_and_goal(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
                 path = p.Astart.a_star_search(p.map_info)
                 path.append(p.stations_name[v.end_location])
+                #m5d hash
                 return path
             else:
                 path = nx.shortest_path(p.map_info, source=start, target=end)

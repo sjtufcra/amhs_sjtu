@@ -2,6 +2,7 @@ import heapq
 import networkx as nx
 from typing import Dict, List, Tuple
 import json
+import hashlib
 class Node:
     def __init__(self, id: int,h_scores: int, coordinates: Tuple[float, float]):
         self.id = id
@@ -76,7 +77,24 @@ class Graph():
 
     def modify_adjacent_matrix_edge(self, edge: Edge, new_weight: float):
         self.adjacent_matrix[edge.start_node.id][edge.end_node.id] = new_weight
+    
+    def dfs_visit_nodes(self, start_node: Node) -> List[Node]:
+        visited = set()
+        stack = [start_node]
 
+        nodes_list = []
+        while stack:
+            current_node = stack.pop()
+
+            if current_node not in visited:
+                visited.add(current_node)
+                nodes_list.append(current_node)  # 添加当前节点到节点列表
+
+                for neighbor, _ in self.get_neighbors(current_node.id):  # 修正：调用get_neighbors方法并解包邻居节点和权重
+                    if neighbor not in visited:
+                        stack.append(neighbor)  # 将邻居节点加入栈
+
+        return nodes_list
 class NetworkXCompatibleGraph(Graph):
     def __init__(self):
         super().__init__()
@@ -181,3 +199,42 @@ class AStart:
                     heapq.heappush(open_set, (f_scores[neighbor.id], neighbor))
         
         raise ValueError("No path found from start to goal.")
+
+    def sum_node_path(self,graph):
+        indexset = set()
+        pathset = set()
+        jsondata = dict(OHTC_PATH=[])
+        startls = graph.nodels.copy()
+        for k,node in enumerate(startls):
+            if node.id[0]!='W':
+                kin = startls.index(node)
+                startls.pop(kin)
+                continue
+            start = node
+            endnodes = startls.copy()
+            sin = endnodes.index(start)
+            endnodes.pop(sin)
+            for end in endnodes:
+                if end.id[0]!='W':
+                    ein = endnodes.index(end)
+                    endnodes.pop(ein)
+                    continue
+                if start != end:
+                    graph.set_start_and_goal(start,end)
+                    path = self.a_star_search(graph)
+                    pathdata = ','.join(path)
+                    pathindex = ','.join([start.id,end.id])
+                    index = self.hash_index(pathindex)
+                    indexset.add(index)
+                    pathset.add(pathdata)
+                    jsondata['OHTC_PATH'].append({f'{index}': pathdata})
+        
+        with open(f'./outpath.json', 'w') as f:
+            json.dump(jsondata, f)
+        return indexset,pathset
+    
+    def hash_index(self,input_string):
+        hash_object = hashlib.sha256()
+        hash_object.update(input_string.encode('utf-8'))
+        hex_digest = hash_object.hexdigest()
+        return hex_digest
