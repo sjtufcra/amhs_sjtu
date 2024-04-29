@@ -3,6 +3,9 @@ import networkx as nx
 from typing import Dict, List, Tuple
 import json
 import hashlib
+import concurrent.futures
+import itertools
+from loguru import logger as log
 class Node:
     def __init__(self, id: int,h_scores: int, coordinates: Tuple[float, float]):
         self.id = id
@@ -233,8 +236,36 @@ class AStart:
             json.dump(jsondata, f)
         return indexset,pathset
     
+    def more_path(self,graph):
+        newpathNode = []
+        for x in graph.nodels:
+            if x.id[0]=='W':
+                newpathNode.append(x)
+        startls = newpathNode.copy()
+
+         # 创建线程池
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # 使用itertools.combinations生成所有可能的元素对
+            element_pairs = itertools.combinations(startls, 2)
+            
+            # 将计算任务提交给线程池
+            executor.map(lambda pair: self.computePath(pair,graph), element_pairs)
+        # 打印结果或根据需要处理结果
+        log.info("All tasks completed.")
+
     def hash_index(self,input_string):
         hash_object = hashlib.sha256()
         hash_object.update(input_string.encode('utf-8'))
         hex_digest = hash_object.hexdigest()
         return hex_digest
+    
+    def computePath(self,data,graph):
+        start,end = data
+        if start != end:
+            graph.set_start_and_goal(start,end)
+            path = self.a_star_search(graph)
+            pathdata = ','.join(path)
+            pathindex = ','.join([start.id,end.id])
+            index = self.hash_index(pathindex)
+            with open(f'./outpath.txt', 'a') as f:
+                f.write("{"+f'{index}: {pathdata}'+'}'+'\n')
