@@ -18,13 +18,16 @@ httpServer:
     # or 0, just run once
     circulating_on: 1
 
-    # slecet-path 1 or 2
+    # algorithm mode : 1, 2, 3, 4 ;deaulft is 1,A* algorithm is 2, A*+Dijkstra algorithm is 3, Dynamic Programming, DP is 4
     algorithm_on: 1
 
     # load data
     order_on: 1 # 1: load local order data, 0: don't load local order data
     # online
     mode: 1
+
+    # server's parameter
+    use_multiprocessing: True
 
 # local server's parameter
 localServer:
@@ -49,8 +52,8 @@ localServer:
     # or 0, just run once
     circulating_on: 1
 
-    # slecet-path 1 or 2
-    algorithm_on: 1
+    # algorithm mode : 1, 2, 3, 4 ;deaulft is 1,A* algorithm is 2, A*+Dijkstra algorithm is 3, Dynamic Programming, DP is 4
+    algorithm_on: 3
 
     # load data
     order_on: 1 # 1: load local order data, 0: don't load local order data
@@ -58,3 +61,6 @@ localServer:
     build_map: 1
     # local
     mode: 0
+
+    # local server's parameter
+    use_multiprocessing: False

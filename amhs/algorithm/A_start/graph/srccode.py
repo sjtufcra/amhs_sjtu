@@ -98,6 +98,8 @@ class Graph():
                         stack.append(neighbor)  # 将邻居节点加入栈
 
         return nodes_list
+
+# 
 class NetworkXCompatibleGraph(Graph):
     def __init__(self):
         super().__init__()
@@ -165,7 +167,77 @@ class DiGraph(nx.DiGraph):
 
     def modify_adjacent_matrix_edge(self, edge: Edge, new_weight: float):
         self.adjacent_matrix[edge.start_node.id][edge.end_node.id] = new_weight
+    # dijkstra算法
+    def dijkstra(self, start_node: Node, end_node: Node):
+        # 初始化距离字典，源点到自身的距离为0，其余为无穷大
+        distances = {node.id: float('infinity') for node in self.nodels}
+        distances[start_node.id] = 0
+        came_from = {}
+        # 初始化优先队列和已访问集合
+        pq = [(0, start_node)]
+        visited = set()
 
+        while pq:
+            # 获取当前最短距离的节点
+            current_distance, current_node = heapq.heappop(pq)
+
+            # 如果节点已经被访问过，跳过
+            if current_node in visited:
+                continue
+
+            # 将当前节点标记为已访问
+            visited.add(current_node)
+
+            # 更新与当前节点相邻节点的距离
+            for neighbor, weight in self.get_neighbors(current_node.id):
+                distance = current_distance + weight
+                # 如果找到了更短的路径，则更新距离并将其加入优先队列
+                if distance < distances[neighbor.id]:
+                    distances[neighbor.id] = distance
+                    heapq.heappush(pq, (distance, neighbor))
+                    # 记录路径来源
+                    came_from[neighbor.id] = current_node
+
+        # 回溯路径
+        path = []
+        current = end_node.id
+        while current != start_node.id:
+            path.append(current)
+            current = came_from[current]
+
+        path.append(start_node)
+        path.reverse()
+
+        return path
+    
+    # Floyd-Warshall算法
+    def floyd_warshall(self):
+        # 初始化邻接矩阵
+        adjacency_matrix = self.adjacency_matrix.copy()
+
+        # 获取图中的节点数量
+        num_nodes = len(adjacency_matrix)
+
+        # 动态规划循环
+        for k in range(num_nodes):
+            for i in range(num_nodes):
+                for j in range(num_nodes):
+                    # 如果通过中间节点k的路径更短，则更新最短路径
+                    adjacency_matrix[i][j] = min(
+                        adjacency_matrix[i][j],
+                        adjacency_matrix[i][k] + adjacency_matrix[k][j]
+                    )
+
+        return adjacency_matrix
+
+    # DP 寻找最短路径
+    def get_shortest_path_between(self, start_id, end_id):
+        adjacency_matrix = self.floyd_warshall()
+
+        # 从邻接矩阵中获取最短路径
+        shortest_path = adjacency_matrix[start_id][end_id]
+
+        return shortest_path
 
 class AStart:
     def __init__(self):

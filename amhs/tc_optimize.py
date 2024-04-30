@@ -110,26 +110,13 @@ def shortest_path(start, end, p, v, typ=0):
     if typ == 0:
         # only return the path
         if p.algorithm_on is not None:
-            if p.algorithm_on == 2:
-                # A* algorithm
-                p.map_info.set_start_and_goal(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
-                path = p.Astart.a_star_search(p.map_info)
-                path.append(p.stations_name[v.end_location])
-                #m5d hash
-                return path
-            else:
-                path = nx.shortest_path(p.map_info, source=start, target=end)
-                path.append(p.stations_name[v.end_location])
-                return path
+            path = algorithm_on(p,start,end)
+            path.append(p.stations_name[v.end_location])
+            return path
     else:
         # return the length
         if p.algorithm_on is not None:
-            if p.algorithm_on == 2:
-                # A*算法
-                p.map_info.set_start_and_goal(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
-                path0 = p.Astart.a_star_search(p.map_info)
-            else:
-                path0 = nx.shortest_path(p.map_info, source=start, target=end)
+            path0 = algorithm_on(p,start,end)
         path = 0
         for i in range(len(path0) - 1):
             idx = path0[i:i + 2]
@@ -172,3 +159,18 @@ def get_vehicles_from_bay(bay, p):
     if len(vs0) <= 0:
         vs0 = p.vehicles_get
     return vs0
+
+def algorithm_on(p,start,end):
+    if p.algorithm_on == 2:
+        # A*算法
+        p.map_info.set_start_and_goal(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
+        path = p.Astart.a_star_search(p.map_info)
+    elif p.algorithm_on == 3:
+        # dijkstra算法
+        path = p.map_info.dijkstra(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
+    elif p.algorithm_on == 4:
+        # DP 算法
+        path = p.map_info.get_shortest_path_between(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
+    else:
+        path = nx.shortest_path(p.map_info, source=start, target=end)
+    return path
