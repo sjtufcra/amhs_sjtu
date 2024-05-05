@@ -203,9 +203,9 @@ class DiGraph(nx.DiGraph):
         current = end_node.id
         while current != start_node.id:
             path.append(current)
-            current = came_from[current]
+            current = came_from[current].id
 
-        path.append(start_node)
+        path.append(start_node.id)
         path.reverse()
 
         return path
