@@ -76,7 +76,7 @@ def generating(p):
     p = erect_map(p)
     
     #create static map 
-    # paths_static = p.Astart.more_path(p.map_info_unchanged)
+    paths_static = p.Astart.more_path(p.map_info_unchanged)
 
     # p.all_stations = json.loads((open('all_station.json', 'r')).read())
     if p.pattern == 0:
