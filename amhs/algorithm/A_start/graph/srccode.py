@@ -212,32 +212,37 @@ class DiGraph(nx.DiGraph):
     
     # Floyd-Warshall算法
     def floyd_warshall(self):
-        # 初始化邻接矩阵
-        adjacency_matrix = self.adjacency_matrix.copy()
-
-        # 获取图中的节点数量
-        num_nodes = len(adjacency_matrix)
+        distances = {node: {other: float('infinity') for other in self.nodes} for node in self.nodes}
+        for node in self.nodes:
+            distances[node][node] = 0
 
         # 动态规划循环
-        for k in range(num_nodes):
-            for i in range(num_nodes):
-                for j in range(num_nodes):
+        for k in self.nodes:
+            for i in self.nodes:
+                for j in self.nodes:
                     # 如果通过中间节点k的路径更短，则更新最短路径
-                    adjacency_matrix[i][j] = min(
-                        adjacency_matrix[i][j],
-                        adjacency_matrix[i][k] + adjacency_matrix[k][j]
+                    distances[i][j] = min(
+                        distances[i][j],
+                        distances[i][k] + distances[k][j]
                     )
 
-        return adjacency_matrix
+        return distances
 
     # DP 寻找最短路径
     def get_shortest_path_between(self, start_id, end_id):
-        adjacency_matrix = self.floyd_warshall()
+        all_distances = self.floyd_warshall()
+        path = [end_id]
+        current_node = end_id
 
-        # 从邻接矩阵中获取最短路径
-        shortest_path = adjacency_matrix[start_id][end_id]
+        while current_node != start_id:
+            for neighbor, distance in all_distances[start_id].items():
+                if distance == all_distances[start_id][current_node] - all_distances[current_node][end_id]:
+                    path.append(neighbor)
+                    current_node = neighbor
+                    break
 
-        return shortest_path
+        path.reverse()  # 使路径从源到目标
+        return path
 
 class AStart:
     def __init__(self):
