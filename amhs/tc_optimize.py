@@ -10,9 +10,10 @@ from tc_in import *
 from algorithm.A_start.graph.srccode import *
 
 def task_assign(p, use_multiprocessing=True):
-        start_time = time.time()
+        
         g = 0
         while p.runBool:
+            start_time = time.time()
             p.map_info = p.map_info_unchanged
             p = vehicle_load(p)
             # refresh tasks
@@ -22,6 +23,7 @@ def task_assign(p, use_multiprocessing=True):
             # revise map info
             j, n = 0, 0
             car = 0
+            log.info(f"algorithm:{p.algorithm_on},task:{len(p.orders)}")
         # 
             if use_multiprocessing:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
@@ -30,22 +32,22 @@ def task_assign(p, use_multiprocessing=True):
                         for order_id, v in p.orders.items() if v.finished == 0
                     }
 
-                    results = []
-                    for future in concurrent.futures.as_completed(future_to_order_id):
-                        order_id = future_to_order_id[future]
-                        try:
-                            finished = future.result()
-                            if finished:
-                                n += 1
-                            results.append((order_id, finished))
-                        except Exception as exc:
-                            log.error(f"Order {order_id} processing generated an exception: {exc}")
+                    # results = []
+                    # for future in concurrent.futures.as_completed(future_to_order_id):
+                    #     order_id = future_to_order_id[future]
+                    #     try:
+                    #         finished = future.result()
+                    #         if finished:
+                    #             n += 1
+                    #         results.append((order_id, finished))
+                    #     except Exception as exc:
+                    #         log.error(f"Order {order_id} processing generated an exception: {exc}")
 
-                    for order_id, finished in results:
-                        if finished:
-                            v = p.orders[order_id]
-                            v.finished = 1
-                            car += 1
+                    # for order_id, finished in results:
+                    #     if finished:
+                    #         v = p.orders[order_id]
+                    #         v.finished = 1
+                    #         car += 1
             else:
                 for k, v in p.orders.items():
                     if v.finished == 0:
@@ -56,9 +58,11 @@ def task_assign(p, use_multiprocessing=True):
                         if p.mode == 1:
                             log.info(f'success:{k},{v}')
                         else:
-                            output_new(p, k, v)
+                            # output_new(p, k, v)
+                            pass
                         v.finished = 1
                         car += 1
+            log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
             g+=n
             if g == 20000:
                 log.info(f'endtime:{time.time()-start_time},task_sum:{g}')
@@ -78,7 +82,8 @@ def process_order(order_id, p, car):
         if p.mode == 1:
             log.info(f'success:{order_id},{v}')
         else:
-            output_new(p, order_id, v)
+            # output_new(p, order_id, v)
+            pass
         v.finished = 1
         car += 1
 
@@ -218,5 +223,6 @@ def algorithm_on(p,start,end):
         # DP 算法
         path = p.map_info.get_shortest_path_between(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
     else:
+        p.algorithm_on == 1
         path = nx.shortest_path(p.map_info, source=start, target=end)
     return path
