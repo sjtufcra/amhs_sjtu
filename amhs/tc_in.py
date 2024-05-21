@@ -1,3 +1,4 @@
+from collections import defaultdict
 import pandas as pd
 import oracledb
 import rediscluster as rds
@@ -141,6 +142,9 @@ def erect_map(p):
 
 def vehicle_load(p):
     # load from 'redis'
+    # 初始化
+    p.vehicles_bay_get = clear_data()
+    p.vehicles_bay_send = clear_data()
     if p.mode == 1:
         pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         connection = rds.RedisCluster(connection_pool=pool)
@@ -156,9 +160,11 @@ def vehicle_load(p):
                     continue
                 if(( ii['ohtStatus_Roaming'] =='1' or (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Idle']=='1'))or(ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Oncalling']=='1')) or (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Oncall']=='1'):
                     p.vehicles_get[ii['ohtID']] = ii
+                    set_data(p.vehicles_bay_get,ii["bay"],ii)
                 else:
                     if  ii['ohtStatus_IsHaveFoup'] =='1' and (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Idle']=='1'):
                         p.vehicles_send[ii['ohtID']] = ii
+                        set_data(p.vehicles_bay_send,ii["bay"],ii)
                     else:
                         continue
     else:
@@ -175,9 +181,11 @@ def vehicle_load(p):
                     continue
                 if(( i[35] =='1' or (i[24]=='1' and i[17]=='1'))or(i[24]=='1' and i[27]=='1')) or (i[24]=='1' and i[26]=='1'):
                     p.vehicles_get[value] = i
+                    set_data(p.vehicles_bay_get,i[1],i)
                 else:
                     if  i[18] =='1' and (i[24]=='1' and i[17]=='1'):
                         p.vehicles_send[value] = i
+                        set_data(p.vehicles_bay_send,i[1],i)
                     else:
                         continue
             # vehicles[ii['ohtID']] = ii
@@ -193,8 +201,20 @@ def vehicle_load(p):
     # p.vehicles = vehicles
     return p
 
+# set data in element
+def set_data(dictionary, key, data):
+    # 增加输入校验
+    if not isinstance(dictionary, dict):
+        log.error("dictionary must be a dictionary")
+    if key is not None and not isinstance(key, str):
+        log.error("key must be a string or None")
+    
+    # 简化代码逻辑，同时处理 key 为 None 和非 None 的情况
+    dictionary[key if key is not None else 'default'] += [data]
 
-
+# clear data in element
+def clear_data():
+    return defaultdict(list, dict())
 
 def track_generate(p):
     p.db_cursor.execute('SELECT * FROM OHTC_MAP')

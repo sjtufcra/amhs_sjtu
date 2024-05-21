@@ -18,6 +18,8 @@ class Dataset:
         self.vehicles = dict()
         self.vehicles_get = dict()
         self.vehicles_send = dict()
+        self.vehicles_bay_get = None
+        self.vehicles_bay_send = None
         self.tracks = dict()
         self.oracle_user = out_config['oracle_user']
         self.oracle_password = out_config['oracle_password']

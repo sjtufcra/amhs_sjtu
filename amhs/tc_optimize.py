@@ -68,10 +68,17 @@ def process_order(order_id, p, car):
     v = p.orders[order_id]
 
     if v.finished == 0:
-        veh, v0 = vehicle_select(v, p)  # getpath
+        # old
+        # veh, v0 = vehicle_select(v, p)  # getpath
+        # new_fast
+        veh, v0 = vehicle_select_fast(v, p)  # getpath
         start, end = terminus_select(0, v0, p, v)
         v.vehicle_assigned = veh
         v.delivery_route = shortest_path(start, end, p, v, typ=0)
+        if p.mode == 1:
+            log.info(f'success:{order_id},{v}')
+        else:
+            output_new(p, order_id, v)
         v.finished = 1
         car += 1
 
@@ -79,6 +86,7 @@ def process_order(order_id, p, car):
 
 def vehicle_select(task, p):
     # task_bay = task.start_location.split('_')[1]
+    # old function
     vs0 = get_vehicles_from_bay(task.task_bay, p)
     veh = None
     veh_len = math.inf
@@ -88,6 +96,34 @@ def vehicle_select(task, p):
         if length < veh_len:
             veh_len = length
             veh = k
+    p.used_vehicle.add(veh)
+    return veh, p.vehicles_get[veh]
+# fast seclect
+def vehicle_select_fast(task, p):
+    # task_bay = task.start_location.split('_')[1]
+    # old function
+    # vs0 = get_vehicles_from_bay(task.task_bay, p)
+    # fix: new function
+    vs0 = get_vehicles_from_bay_fast(task.task_bay, p)
+    veh = None
+    veh_len = math.inf
+    if isinstance(vs0,list):
+        for value in vs0:
+            start, end = terminus_select(0, value, p, task)
+            length = shortest_path(start, end, p, task, typ=1)
+            if length < veh_len:
+                veh_len = length
+                if isinstance(value,list):
+                    veh = value[11]
+                else:
+                    veh = value["ohtID"]
+    else:
+        for k, v in vs0.items():
+            start, end = terminus_select(0, v, p, task)
+            length = shortest_path(start, end, p, task, typ=1)
+            if length < veh_len:
+                veh_len = length
+                veh = k
     p.used_vehicle.add(veh)
     return veh, p.vehicles_get[veh]
 
@@ -160,6 +196,16 @@ def get_vehicles_from_bay(bay, p):
         vs0 = p.vehicles_get
     return vs0
 
+# fast get vehicles
+def get_vehicles_from_bay_fast(bay, p):
+    if bay is None:
+        return p.vehicles_get
+    else:
+        vehicle_list = p.vehicles_bay_get.get(bay);
+        if vehicle_list is None:
+            return p.vehicles_get
+        return vehicle_list
+    
 def algorithm_on(p,start,end):
     if p.algorithm_on == 2:
         # A*算法

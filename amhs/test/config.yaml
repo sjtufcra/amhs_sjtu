@@ -63,4 +63,4 @@ localServer:
     mode: 0
 
     # local server's parameter
-    use_multiprocessing: False
+    use_multiprocessing: True
