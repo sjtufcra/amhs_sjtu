@@ -2,6 +2,10 @@ import heapq
 import networkx as nx
 from typing import Dict, List, Tuple
 import json
+import hashlib
+import concurrent.futures
+import itertools
+from loguru import logger as log
 class Node:
     def __init__(self, id: int,h_scores: int, coordinates: Tuple[float, float]):
         self.id = id
@@ -76,7 +80,26 @@ class Graph():
 
     def modify_adjacent_matrix_edge(self, edge: Edge, new_weight: float):
         self.adjacent_matrix[edge.start_node.id][edge.end_node.id] = new_weight
+    
+    def dfs_visit_nodes(self, start_node: Node) -> List[Node]:
+        visited = set()
+        stack = [start_node]
 
+        nodes_list = []
+        while stack:
+            current_node = stack.pop()
+
+            if current_node not in visited:
+                visited.add(current_node)
+                nodes_list.append(current_node)  # 添加当前节点到节点列表
+
+                for neighbor, _ in self.get_neighbors(current_node.id):  # 修正：调用get_neighbors方法并解包邻居节点和权重
+                    if neighbor not in visited:
+                        stack.append(neighbor)  # 将邻居节点加入栈
+
+        return nodes_list
+
+# 
 class NetworkXCompatibleGraph(Graph):
     def __init__(self):
         super().__init__()
@@ -144,7 +167,82 @@ class DiGraph(nx.DiGraph):
 
     def modify_adjacent_matrix_edge(self, edge: Edge, new_weight: float):
         self.adjacent_matrix[edge.start_node.id][edge.end_node.id] = new_weight
+    # dijkstra算法
+    def dijkstra(self, start_node: Node, end_node: Node):
+        # 初始化距离字典，源点到自身的距离为0，其余为无穷大
+        distances = {node.id: float('infinity') for node in self.nodels}
+        distances[start_node.id] = 0
+        came_from = {}
+        # 初始化优先队列和已访问集合
+        pq = [(0, start_node)]
+        visited = set()
 
+        while pq:
+            # 获取当前最短距离的节点
+            current_distance, current_node = heapq.heappop(pq)
+
+            # 如果节点已经被访问过，跳过
+            if current_node in visited:
+                continue
+
+            # 将当前节点标记为已访问
+            visited.add(current_node)
+
+            # 更新与当前节点相邻节点的距离
+            for neighbor, weight in self.get_neighbors(current_node.id):
+                distance = current_distance + weight
+                # 如果找到了更短的路径，则更新距离并将其加入优先队列
+                if distance < distances[neighbor.id]:
+                    distances[neighbor.id] = distance
+                    heapq.heappush(pq, (distance, neighbor))
+                    # 记录路径来源
+                    came_from[neighbor.id] = current_node
+
+        # 回溯路径
+        path = []
+        current = end_node.id
+        while current != start_node.id:
+            path.append(current)
+            current = came_from[current].id
+
+        path.append(start_node.id)
+        path.reverse()
+
+        return path
+    
+    # Floyd-Warshall算法
+    def floyd_warshall(self):
+        distances = {node: {other: float('infinity') for other in self.nodes} for node in self.nodes}
+        for node in self.nodes:
+            distances[node][node] = 0
+
+        # 动态规划循环
+        for k in self.nodes:
+            for i in self.nodes:
+                for j in self.nodes:
+                    # 如果通过中间节点k的路径更短，则更新最短路径
+                    distances[i][j] = min(
+                        distances[i][j],
+                        distances[i][k] + distances[k][j]
+                    )
+
+        return distances
+
+    # DP 寻找最短路径
+    def get_shortest_path_between(self, start_id, end_id):
+        all_distances = self.floyd_warshall()
+        path = [end_id]
+        current_node = end_id
+
+        while current_node != start_id:
+            for neighbor, distance in all_distances[start_id].items():
+                if distance == all_distances[start_id][current_node] - all_distances[current_node][end_id]:
+                    path.append(neighbor)
+                    current_node = neighbor
+                    break
+
+        path.reverse()  # 使路径从源到目标
+        return path
 
 class AStart:
     def __init__(self):
@@ -181,3 +279,70 @@ class AStart:
                     heapq.heappush(open_set, (f_scores[neighbor.id], neighbor))
         
         raise ValueError("No path found from start to goal.")
+
+    def sum_node_path(self,graph):
+        indexset = set()
+        pathset = set()
+        jsondata = dict(OHTC_PATH=[])
+        startls = graph.nodels.copy()
+        for k,node in enumerate(startls):
+            if node.id[0]!='W':
+                kin = startls.index(node)
+                startls.pop(kin)
+                continue
+            start = node
+            endnodes = startls.copy()
+            sin = endnodes.index(start)
+            endnodes.pop(sin)
+            for end in endnodes:
+                if end.id[0]!='W':
+                    ein = endnodes.index(end)
+                    endnodes.pop(ein)
+                    continue
+                if start != end:
+                    graph.set_start_and_goal(start,end)
+                    path = self.a_star_search(graph)
+                    pathdata = ','.join(path)
+                    pathindex = ','.join([start.id,end.id])
+                    index = self.hash_index(pathindex)
+                    indexset.add(index)
+                    pathset.add(pathdata)
+                    jsondata['OHTC_PATH'].append({f'{index}': pathdata})
+        
+        with open(f'./outpath.json', 'w') as f:
+            json.dump(jsondata, f)
+        return indexset,pathset
+    
+    def more_path(self,graph):
+        newpathNode = []
+        for x in graph.nodels:
+            if x.id[0]=='W':
+                newpathNode.append(x)
+        startls = newpathNode.copy()
+
+         # 创建线程池
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # 使用itertools.combinations生成所有可能的元素对
+            element_pairs = itertools.combinations(startls, 2)
+            
+            # 将计算任务提交给线程池
+            executor.map(lambda pair: self.computePath(pair,graph), element_pairs)
+        # 打印结果或根据需要处理结果
+        log.info("All tasks completed.")
+
+    def hash_index(self,input_string):
+        hash_object = hashlib.sha256()
+        hash_object.update(input_string.encode('utf-8'))
+        hex_digest = hash_object.hexdigest()
+        return hex_digest
+    
+    def computePath(self,data,graph):
+        start,end = data
+        if start != end:
+            graph.set_start_and_goal(start,end)
+            path = self.a_star_search(graph)
+            pathdata = ','.join(path)
+            pathindex = ','.join([start.id,end.id])
+            index = self.hash_index(pathindex)
+            with open(f'./outpath.txt', 'a') as f:
+                f.write("{"+f'{index}: {pathdata}'+'}'+'\n')

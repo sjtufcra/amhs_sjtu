@@ -18,6 +18,8 @@ class Dataset:
         self.vehicles = dict()
         self.vehicles_get = dict()
         self.vehicles_send = dict()
+        self.vehicles_bay_get = None
+        self.vehicles_bay_send = None
         self.tracks = dict()
         self.oracle_user = out_config['oracle_user']
         self.oracle_password = out_config['oracle_password']
@@ -27,6 +29,7 @@ class Dataset:
         self.rds_connection = out_config['rds_connection']
         self.rds_port = out_config['rds_port']
         self.rds_search_pattern = out_config['rds_search_pattern']
+        self.use_multiprocessing = out_config['use_multiprocessing']
         # database cursor
         self.db_connection = None
         self.db_cursor = None

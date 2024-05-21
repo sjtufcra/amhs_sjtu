@@ -17,7 +17,8 @@ class Amhs():
         self.Node = d
         d = generating(d)
         # await track_generate_station(d, d.original_map_info)
-        d = task_assign_new(d)
+        # d = task_assign_new(d)
+        d = task_assign(d,d.use_multiprocessing)
     
     def over(self):
         output_close_connection(self.d)
