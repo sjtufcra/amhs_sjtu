@@ -246,40 +246,130 @@ class DiGraph(nx.DiGraph):
 
 class AStart:
     def __init__(self):
+        self.cache = {}
         pass
     def manhattan_distance(self,node, goal_node):
         return abs(node.coordinates[0] - goal_node.coordinates[0]) + abs(node.coordinates[1] - goal_node.coordinates[1])
-    def a_star_search(self,graph):
+# no-cache
+    def a_star_search(self,graph,bidirectional=True):
+        if bidirectional:
+            return self.a_star_search_cache(graph)
+        else:
+            return self.a_star_search_nocache(graph)
+# no-cache
+    def a_star_search_nocache(self,graph):
         open_set = []
         heapq.heappush(open_set,(0, graph.start_node))
         came_from = {graph.start_node.id: None}
         g_scores = {graph.start_node.id: 0}
         f_scores = {graph.start_node.id: (g_scores[graph.start_node.id]+graph.start_node.h)}
-
+        visited = set()
+        
         while open_set:
             current_f_score, current_node = heapq.heappop(open_set)
             if current_node == graph.goal_node:
-                path = []
-                while current_node != graph.start_node:
-                    # path.append(current_node)
-                    path.append(current_node.id)
-                    current_node = came_from[current_node.id]
-                # path.append(graph.start_node)
-                path.append(graph.start_node.id)
-                path.reverse()
+                path = self._reconstruct_path(came_from,graph.start_node, graph.goal_node)
                 return path
 
-            for neighbor, edge_weight in graph.get_neighbors(current_node.id):
-                tentative_g_score = g_scores[current_node.id] + edge_weight 
+            # for neighbor, edge_weight in graph.get_neighbors(current_node.id):
+            #     tentative_g_score = g_scores[current_node.id] + edge_weight 
 
-                if tentative_g_score < g_scores.get(neighbor.id, float('inf')):
-                    came_from[neighbor.id] = current_node
-                    g_scores[neighbor.id] = tentative_g_score
-                    f_scores[neighbor.id] = tentative_g_score + neighbor.h
-                    heapq.heappush(open_set, (f_scores[neighbor.id], neighbor))
-        
-        raise ValueError("No path found from start to goal.")
+            #     if tentative_g_score < g_scores.get(neighbor.id, float('inf')):
+            #         came_from[neighbor.id] = current_node
+            #         g_scores[neighbor.id] = tentative_g_score
+            #         f_scores[neighbor.id] = tentative_g_score + neighbor.h
+            #         heapq.heappush(open_set, (f_scores[neighbor.id], neighbor))
+            if current_node.id not in visited:
+                visited.add(current_node.id)
+                futures = []
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    for neighbor, edge_weight in graph.get_neighbors(current_node.id):
+                        futures.append(executor.submit(self.update_scores, current_node, neighbor, edge_weight, g_scores, f_scores, came_from))
 
+                for future in concurrent.futures.as_completed(futures):
+                    neighbor_id, _, _ = future.result()
+                    heapq.heappush(open_set, (f_scores[neighbor_id], graph.get_node_by_id(neighbor_id)))
+        log.error("No path found from start to goal.")
+# cache
+    def a_star_search_cache(self, graph):
+            open_set_start = [(0, graph.start_node)]
+            open_set_goal = [(0, graph.goal_node)]
+            came_from_start = {graph.start_node.id: None}
+            came_from_goal = {graph.goal_node.id: None}
+            g_scores_start = {graph.start_node.id: 0}
+            g_scores_goal = {graph.goal_node.id: 0}
+            f_scores_start = {graph.start_node.id: (g_scores_start[graph.start_node.id] + graph.start_node.h)}
+            f_scores_goal = {graph.goal_node.id: (g_scores_goal[graph.goal_node.id] + graph.goal_node.h)}
+            visited_start = set()
+            visited_goal = set()
+
+            while open_set_start and open_set_goal:
+                # Search from start node
+                current_f_score, current_node = heapq.heappop(open_set_start)
+                if current_node.id not in visited_start:
+                    visited_start.add(current_node.id)
+                    if current_node == graph.goal_node:
+                        path = [graph.start_node.id]
+                        while current_node != graph.start_node:
+                            path.append(current_node.id)
+                            current_node = came_from_start[current_node.id]
+                        path.reverse()
+                        return path
+
+                    for neighbor, edge_weight in graph.get_neighbors(current_node.id):
+                        self.update_scores_cache(current_node, neighbor, edge_weight, g_scores_start, f_scores_start, came_from_start)
+
+                # Search from goal node
+                current_f_score, current_node = heapq.heappop(open_set_goal)
+                if current_node.id not in visited_goal:
+                    visited_goal.add(current_node.id)
+                    if current_node == graph.start_node:
+                        path = [graph.goal_node.id]
+                        while current_node != graph.goal_node:
+                            path.append(current_node.id)
+                            current_node = came_from_goal[current_node.id]
+                        path.reverse()
+                        return path
+
+                    for neighbor, edge_weight in graph.get_neighbors(current_node.id):
+                        self.update_scores_cache(current_node, neighbor, edge_weight, g_scores_goal, f_scores_goal, came_from_goal)
+
+            log.error("No path found from start to goal.")
+# cache_scores
+    def update_scores_cache(self, current_node, neighbor, edge_weight, g_scores, f_scores, came_from):
+        neighbor_id = neighbor.id
+        cache_key = hashlib.md5(json.dumps((current_node.id, neighbor_id), sort_keys=True).encode()).hexdigest()
+        if cache_key in self.cache:
+            tentative_g_score, _ = self.cache[cache_key]
+        else:
+            tentative_g_score = g_scores[current_node.id] + edge_weight
+            self.cache[cache_key] = (tentative_g_score, neighbor.h)
+
+        if tentative_g_score < g_scores.get(neighbor_id, float('inf')):
+            came_from[neighbor_id] = current_node
+            g_scores[neighbor_id] = tentative_g_score
+            f_scores[neighbor_id] = tentative_g_score + self.cache[cache_key][1]
+
+        return neighbor_id, g_scores[neighbor_id], f_scores[neighbor_id]
+# 溯源Path
+    def _reconstruct_path(self, came_from, start_node, goal_node):
+        """重构路径函数，优化可读性和代码复用"""
+        current_node = goal_node
+        path = [current_node.id]
+        while current_node != start_node:
+            current_node = came_from[current_node.id]
+            path.append(current_node.id)
+        path.reverse()
+        return path
+    # 更新数据
+    def update_scores(self, current_node, neighbor, edge_weight, g_scores, f_scores, came_from):
+        tentative_g_score = g_scores[current_node.id] + edge_weight
+        neighbor_id = neighbor.id
+        if tentative_g_score < g_scores.get(neighbor_id, float('inf')):
+            came_from[neighbor_id] = current_node
+            g_scores[neighbor_id] = tentative_g_score
+            f_scores[neighbor_id] = tentative_g_score + neighbor.h
+        return neighbor_id, g_scores[neighbor_id], f_scores[neighbor_id]
     def sum_node_path(self,graph):
         indexset = set()
         pathset = set()
