@@ -1,6 +1,7 @@
 from tc_main import *
 import os 
 import yaml
+from loguru import logger as log
 
 
 runmode = 'runing_mode'
@@ -38,5 +39,7 @@ mode = check_config(config)
 
 Tc = Amhs(mode)
 
+# logpath
+log.add(mode['log'])
 
 Tc.start()

@@ -53,7 +53,7 @@ localServer:
     circulating_on: 1
 
     # algorithm mode : 1, 2, 3, 4 ;deaulft is 1,A* algorithm is 2, A*+Dijkstra algorithm is 3, Dynamic Programming, DP is 4
-    algorithm_on: 4
+    algorithm_on: 2
 
     # load data
     order_on: 1 # 1: load local order data, 0: don't load local order data
@@ -64,3 +64,5 @@ localServer:
 
     # local server's parameter
     use_multiprocessing: True
+
+    log: "./unit.log"
