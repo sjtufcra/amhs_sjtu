@@ -335,23 +335,39 @@ class AStart:
                         self.update_scores_cache(current_node, neighbor, edge_weight, g_scores_goal, f_scores_goal, came_from_goal)
 
             log.error("No path found from start to goal.")
+    def _generate_cache_key(self, current_node_id, neighbor_id):
+        """生成缓存键的辅助函数，使用SHA-256提高安全性"""
+        data = (current_node_id, neighbor_id)
+        return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
+
 # cache_scores
     def update_scores_cache(self, current_node, neighbor, edge_weight, g_scores, f_scores, came_from):
-        neighbor_id = neighbor.id
-        cache_key = hashlib.md5(json.dumps((current_node.id, neighbor_id), sort_keys=True).encode()).hexdigest()
-        if cache_key in self.cache:
-            tentative_g_score, _ = self.cache[cache_key]
-        else:
-            tentative_g_score = g_scores[current_node.id] + edge_weight
-            self.cache[cache_key] = (tentative_g_score, neighbor.h)
+        if not hasattr(neighbor, 'id') or current_node.id is None:
+            log.error("neighbor and current_node must have 'id' attribute")
 
+        neighbor_id = neighbor.id
+        cache_key = self._generate_cache_key(current_node.id, neighbor_id)
+
+        if cache_key in self.cache:
+            tentative_g_score, path = self.cache[cache_key]
+        else:
+            tentative_g_score = g_scores.get(current_node.id, 0) + edge_weight
+            path = [current_node.id] if current_node.id != neighbor_id else []
+            self.cache[cache_key] = (tentative_g_score, path)
+
+        # 检查是否发现更短的路径
         if tentative_g_score < g_scores.get(neighbor_id, float('inf')):
-            came_from[neighbor_id] = current_node
+            if neighbor_id not in came_from:
+                came_from[neighbor_id] = current_node
             g_scores[neighbor_id] = tentative_g_score
             f_scores[neighbor_id] = tentative_g_score + self.cache[cache_key][1]
 
+            # 更新完整路径
+            path.extend([current_node.id])
+            self.cache[cache_key] = (tentative_g_score, path)
+
         return neighbor_id, g_scores[neighbor_id], f_scores[neighbor_id]
-# 溯源Path
+    # 溯源Path
     def _reconstruct_path(self, came_from, start_node, goal_node):
         """重构路径函数，优化可读性和代码复用"""
         current_node = goal_node
