@@ -9,9 +9,8 @@ import json
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-# from .algorithm.A_start.graph.srccode import *
-
 from algorithm.A_start.graph.srccode import *
+
 
 # server config
 class OracleConnectionPool:
@@ -156,14 +155,14 @@ def vehicle_load(p):
                 continue
             ii = json.loads(i)
             if ii.get('ohtID'):
-                if ii['ohtStatus_OnlineControl'] != '1' or ii['ohtStatus_ErrSet'] != '0':
+                if ii.get('ohtStatus_OnlineControl') != '1' or ii.get('ohtStatus_ErrSet') != '0':
                     continue
-                if(( ii['ohtStatus_Roaming'] =='1' or (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Idle']=='1'))or(ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Oncalling']=='1')) or (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Oncall']=='1'):
-                    p.vehicles_get[ii['ohtID']] = ii
+                if(( ii.get('ohtStatus_Roaming') =='1' or (ii.get('ohtStatus_MoveEnable') =='1' and ii.get('ohtStatus_Idle') =='1'))or(ii.get('ohtStatus_MoveEnable') =='1' and ii.get('ohtStatus_Oncalling') =='1')) or (ii.get('ohtStatus_MoveEnable') =='1' and ii.get('ohtStatus_Oncall') =='1'):
+                    p.vehicles_get[ii.get('ohtID') ] = ii
                     set_data(p.vehicles_bay_get,ii["bay"],ii)
                 else:
-                    if  ii['ohtStatus_IsHaveFoup'] =='1' and (ii['ohtStatus_MoveEnable']=='1' and ii['ohtStatus_Idle']=='1'):
-                        p.vehicles_send[ii['ohtID']] = ii
+                    if  ii.get('ohtStatus_IsHaveFoup') =='1' and (ii.get('ohtStatus_MoveEnable') =='1' and ii.get('ohtStatus_Idle') =='1'):
+                        p.vehicles_send[ii.get('ohtID') ] = ii
                         set_data(p.vehicles_bay_send,ii["bay"],ii)
                     else:
                         continue
