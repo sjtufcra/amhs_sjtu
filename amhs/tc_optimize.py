@@ -55,7 +55,7 @@ def task_assign(p, use_multiprocessing=True):
                         start, end = terminus_select(j, v0, p, v)
                         v.vehicle_assigned = veh
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
-                        if p.mode == 1:
+                        if p.mode == 0:
                             log.info(f'success:{k},{v}')
                         else:
                             output_new(p, k, v)
