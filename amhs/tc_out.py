@@ -37,7 +37,7 @@ def output_new(p, k, v):
             cursor.execute(sql)
             db_conn.commit()
             cursor.close()
-
+    log.info(f"task_number: {k},car:{v.vehicle_assigned}")
     # old
     # p.db_cursor.execute(sql)
     # p.db_connection.commit()
