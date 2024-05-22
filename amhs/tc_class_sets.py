@@ -51,7 +51,7 @@ class Dataset:
         def __init__(self):
             self.num_vehicle = 0
             self.global_start_time = None
-            self.task_num = 9999999
+            self.task_num = 10
             self.build_map = True #debugger
             self.out_path = 1  # 1:to_excel; 0:to_db
 
