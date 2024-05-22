@@ -160,11 +160,11 @@ def vehicle_load(p):
                     continue
                 if(( ii.get('ohtStatus_Roaming') =='1' or (ii.get('ohtStatus_MoveEnable') =='1' and ii.get('ohtStatus_Idle') =='1'))or(ii.get('ohtStatus_MoveEnable') =='1' and ii.get('ohtStatus_Oncalling') =='1')) or (ii.get('ohtStatus_MoveEnable') =='1' and ii.get('ohtStatus_Oncall') =='1'):
                     p.vehicles_get[ii.get('ohtID') ] = ii
-                    set_data(p.vehicles_bay_get,ii["bay"],ii)
+                    set_data(p.vehicles_bay_get,ii.get('bay'),ii)
                 else:
                     if  ii.get('ohtStatus_IsHaveFoup') =='1' and (ii.get('ohtStatus_MoveEnable') =='1' and ii.get('ohtStatus_Idle') =='1'):
                         p.vehicles_send[ii.get('ohtID') ] = ii
-                        set_data(p.vehicles_bay_send,ii["bay"],ii)
+                        set_data(p.vehicles_bay_send,ii.get("bay"),ii)
                     else:
                         continue
     else:
