@@ -306,7 +306,7 @@ def read_instructions(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
             cursor = db_conn.cursor()
-            cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'")
+            cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS IN (0,10)  and VEHICLE='0'")
             df = pd.DataFrame(cursor.fetchall())
             db_conn.commit()
             cursor.close()
