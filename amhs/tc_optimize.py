@@ -83,6 +83,7 @@ def process_order(order_id, p, car):
             log.info(f'success:{order_id},{v}')
         else:
             output_new(p, order_id, v)
+            log.info(f'success_write:{order_id},{v}')
             pass
         v.finished = 1
         car += 1

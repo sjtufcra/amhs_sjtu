@@ -1,7 +1,7 @@
 import pandas as pd
 
 from loguru import logger as log
-
+import time
 def output(p):
     if p.Control().out_path == 0:
         # to local computer
@@ -15,7 +15,7 @@ def output(p):
         n = 0
         for k, v in p.orders.items():
             if v.finished == 1:
-                s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
+                s0 = "SET VEHICLE = '" + v.vehicle_assigned+"',VEHICLE_TIME = '" + str(time.time()) + "', POSPATH = '" + ','.join(v.delivery_route)
                 s1 = "' WHERE COMMANDID = '" + k + "'"
                 sql = "UPDATE TRANSFER_TABLE " + s0 + s1
                 p.db_cursor.execute(sql)
