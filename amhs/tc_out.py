@@ -28,7 +28,8 @@ def output(p):
 
 
 def output_new(p, k, v):
-    s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
+    s0 = "SET VEHICLE = '" + v.vehicle_assigned+"',VEHICLE_TIME = '" + str(time.time()) + "', POSPATH = '" + ','.join(v.delivery_route)
+    # s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
     s1 = "' WHERE COMMANDID = '" + k + "'"
     sql = "UPDATE TRANSFER_TABLE " + s0 + s1
     with p.db_pool.get_connection() as db_conn:
