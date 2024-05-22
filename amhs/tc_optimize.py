@@ -58,7 +58,7 @@ def task_assign(p, use_multiprocessing=True):
                         if p.mode == 1:
                             log.info(f'success:{k},{v}')
                         else:
-                            # output_new(p, k, v)
+                            output_new(p, k, v)
                             pass
                         v.finished = 1
                         car += 1
@@ -82,7 +82,7 @@ def process_order(order_id, p, car):
         if p.mode == 1:
             log.info(f'success:{order_id},{v}')
         else:
-            # output_new(p, order_id, v)
+            output_new(p, order_id, v)
             pass
         v.finished = 1
         car += 1
