@@ -32,16 +32,16 @@ def task_assign(p, use_multiprocessing=True):
                         for order_id, v in p.orders.items() if v.finished == 0
                     }
 
-                    results = []
-                    for future in concurrent.futures.as_completed(future_to_order_id):
-                        order_id = future_to_order_id[future]
-                        try:
-                            finished = future.result()
-                            if finished:
-                                n += 1
-                            results.append((order_id, finished))
-                        except Exception as exc:
-                            log.error(f"Order {order_id} processing generated an exception: {exc}")
+                    # results = []
+                    # for future in concurrent.futures.as_completed(future_to_order_id):
+                    #     order_id = future_to_order_id[future]
+                    #     try:
+                    #         finished = future.result()
+                    #         if finished:
+                    #             n += 1
+                    #         results.append((order_id, finished))
+                    #     except Exception as exc:
+                    #         log.error(f"Order {order_id} processing generated an exception: {exc}")
 
                     # for order_id, finished in results:
                     #     if finished:
@@ -70,7 +70,7 @@ def task_assign(p, use_multiprocessing=True):
 
 def process_order(order_id, p, car):
     v = p.orders[order_id]
-
+    log.info(f'wirte to db: {order_id}')
     if v.finished == 0:
         # old
         # veh, v0 = vehicle_select(v, p)  # getpath
