@@ -251,7 +251,7 @@ class AStart:
     def manhattan_distance(self,node, goal_node):
         return abs(node.coordinates[0] - goal_node.coordinates[0]) + abs(node.coordinates[1] - goal_node.coordinates[1])
 # no-cache
-    def a_star_search(self,graph,bidirectional=True):
+    def a_star_search(self,graph,bidirectional=False):
         if bidirectional:
             return self.a_star_search_cache(graph)
         else:
@@ -260,36 +260,30 @@ class AStart:
     def a_star_search_nocache(self,graph):
         open_set = []
         heapq.heappush(open_set,(0, graph.start_node))
-        came_from = {graph.start_node.id: graph.start_node}
+        came_from = {graph.start_node.id: None}
         g_scores = {graph.start_node.id: 0}
         f_scores = {graph.start_node.id: (g_scores[graph.start_node.id]+graph.start_node.h)}
-        visited = set()
-        
+
         while open_set:
             current_f_score, current_node = heapq.heappop(open_set)
             if current_node == graph.goal_node:
-                path = self._reconstruct_path(came_from,graph.start_node, graph.goal_node)
+                path = []
+                while current_node != graph.start_node:
+                    path.append(current_node.id)
+                    current_node = came_from[current_node.id]
+                path.append(graph.start_node.id)
+                path.reverse()
                 return path
 
-            # for neighbor, edge_weight in graph.get_neighbors(current_node.id):
-            #     tentative_g_score = g_scores[current_node.id] + edge_weight 
+            for neighbor, edge_weight in graph.get_neighbors(current_node.id):
+                tentative_g_score = g_scores[current_node.id] + edge_weight
 
-            #     if tentative_g_score < g_scores.get(neighbor.id, float('inf')):
-            #         came_from[neighbor.id] = current_node
-            #         g_scores[neighbor.id] = tentative_g_score
-            #         f_scores[neighbor.id] = tentative_g_score + neighbor.h
-            #         heapq.heappush(open_set, (f_scores[neighbor.id], neighbor))
-            if current_node.id not in visited:
-                visited.add(current_node.id)
-                futures = []
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    for neighbor, edge_weight in graph.get_neighbors(current_node.id):
-                        futures.append(executor.submit(self.update_scores, current_node, neighbor, edge_weight, g_scores, f_scores, came_from))
+                if tentative_g_score < g_scores.get(neighbor.id, float('inf')):
+                    came_from[neighbor.id] = current_node
+                    g_scores[neighbor.id] = tentative_g_score
+                    f_scores[neighbor.id] = tentative_g_score + neighbor.h
+                    heapq.heappush(open_set, (f_scores[neighbor.id], neighbor))
 
-                for future in concurrent.futures.as_completed(futures):
-                    neighbor_id, _, _ = future.result()
-                    heapq.heappush(open_set, (f_scores[neighbor_id], graph.get_node_by_id(neighbor_id)))
-        log.error("No path found from start to goal.")
 # cache
     def a_star_search_cache(self, graph):
             # 初始化数据结构
@@ -311,16 +305,15 @@ class AStart:
 
                 # 更新邻居节点的信息
                 for neighbor, edge_weight in graph.get_neighbors(current_node.id):
-                    self.update_scores_cache(open_set,current_node, neighbor, edge_weight, g_scores, f_scores, came_from)
+                    self.update_scores_cache(current_node, neighbor, edge_weight, g_scores, f_scores, came_from)
 
-            log.error("No path found from start to goal.")
     def _generate_cache_key(self, current_node_id, neighbor_id):
         """生成缓存键的辅助函数，使用SHA-256提高安全性"""
         data = (current_node_id, neighbor_id)
         return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 # cache_scores
-    def update_scores_cache(self, open_set,current_node, neighbor, edge_weight, g_scores, f_scores, came_from):
+    def update_scores_cache(self,current_node, neighbor, edge_weight, g_scores, f_scores, came_from):
         if not hasattr(neighbor, 'id') or current_node.id is None:
             log.error("neighbor and current_node must have 'id' attribute")
 
@@ -339,7 +332,7 @@ class AStart:
             if neighbor_id not in came_from:
                 came_from[neighbor_id] = current_node
             g_scores[neighbor_id] = tentative_g_score
-            f_scores[neighbor_id] = tentative_g_score + self.cache[cache_key][1]
+            f_scores[neighbor_id] = tentative_g_score + self.cache[cache_key][0]
 
             # 更新完整路径
             path.extend([current_node.id])
