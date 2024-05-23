@@ -59,7 +59,7 @@ def task_assign(p, use_multiprocessing=True):
                         if p.mode == 1:
                             log.info(f'success:{k},{v}')
                         else:
-                            # output_new(p, k, v)
+                            output_new(p, k, v)
                             pass
                         v.finished = 1
                         car += 1
@@ -76,7 +76,7 @@ def process_order(order_id, p, car):
         start, end = terminus_select(0, v0, p, v)
         v.vehicle_assigned = veh
         v.delivery_route = shortest_path(start, end, p, v, typ=0)
-        if p.mode == 1:
+        if p.mode == 0:
             log.info(f'success:{order_id},{v}')
         else:
             output_new(p, order_id, v)
