@@ -320,7 +320,7 @@ class AStart:
         return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 # cache_scores
-    def update_scores_cache(self, current_node, neighbor, edge_weight, g_scores, f_scores, came_from):
+    def update_scores_cache(self, open_set,current_node, neighbor, edge_weight, g_scores, f_scores, came_from):
         if not hasattr(neighbor, 'id') or current_node.id is None:
             log.error("neighbor and current_node must have 'id' attribute")
 
