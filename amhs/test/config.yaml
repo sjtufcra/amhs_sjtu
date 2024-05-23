@@ -27,7 +27,7 @@ httpServer:
     mode: 1
 
     # server's parameter
-    use_multiprocessing: True
+    use_multiprocessing: False
 
 # local server's parameter
 localServer:

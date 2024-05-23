@@ -260,7 +260,7 @@ class AStart:
     def a_star_search_nocache(self,graph):
         open_set = []
         heapq.heappush(open_set,(0, graph.start_node))
-        came_from = {graph.start_node.id: None}
+        came_from = {graph.start_node.id: graph.start_node}
         g_scores = {graph.start_node.id: 0}
         f_scores = {graph.start_node.id: (g_scores[graph.start_node.id]+graph.start_node.h)}
         visited = set()
@@ -294,7 +294,7 @@ class AStart:
     def a_star_search_cache(self, graph):
             # 初始化数据结构
         open_set = [(0, graph.start_node), (0, graph.goal_node)]
-        came_from = {graph.start_node.id: None, graph.goal_node.id: None}
+        came_from = {graph.start_node.id: graph.start_node, graph.goal_node.id: graph.goal_node}
         g_scores = {graph.start_node.id: 0, graph.goal_node.id: 0}
         f_scores = {graph.start_node.id: graph.start_node.h, graph.goal_node.id: graph.goal_node.h}
         visited = set()
