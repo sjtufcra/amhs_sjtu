@@ -58,7 +58,7 @@ def task_assign(p, use_multiprocessing=True):
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
                         if p.mode == False:
                             log.info(f'success:{k},{v}')
-                            output_new(p, k, v)
+                            # output_new(p, k, v)
                         else:
                             output_new(p, k, v)
                             pass
