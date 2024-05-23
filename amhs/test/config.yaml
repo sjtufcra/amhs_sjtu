@@ -24,7 +24,7 @@ httpServer:
     # load data
     order_on: 1 # 1: load local order data, 0: don't load local order data
     # online
-    mode: 1
+    mode: True
 
     # server's parameter
     use_multiprocessing: False
@@ -53,16 +53,16 @@ localServer:
     circulating_on: 1
 
     # algorithm mode : 1, 2, 3, 4 ;deaulft is 1,A* algorithm is 2, A*+Dijkstra algorithm is 3, Dynamic Programming, DP is 4
-    algorithm_on: 2
+    algorithm_on: 1
 
     # load data
     order_on: 1 # 1: load local order data, 0: don't load local order data
     # reload map data
     build_map: 1
     # local
-    mode: 0
+    mode: False
 
     # local server's parameter
-    use_multiprocessing: True
+    use_multiprocessing: False
 
     log: "./unit.log"
