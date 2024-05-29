@@ -1,7 +1,9 @@
-python3 -m build
-cp -r dist/* ../cflab_amhs/computing/dist/
+@echo off
+python -m build
+xcopy /s /i dist\* ..\cflab_amhs\computing\dist\
 git add .
-git commit -m $1
+set /p commit_message="Enter commit message: "
+git commit -m "%commit_message%"
 git pull
-git push 
-echo "push content: success!"
+git push
+echo "Push content: success!"
