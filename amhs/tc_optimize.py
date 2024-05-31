@@ -62,7 +62,7 @@ def task_assign(p, use_multiprocessing=True):
                         else:
                             output_new(p, k, v)
                             pass
-                        v.finished = 1
+                        # v.finished = 1
                         car += 1
             # log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
 

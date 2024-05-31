@@ -3,6 +3,8 @@ import networkx as nx
 from typing import Dict, List, Tuple
 import json
 import hashlib
+import torch
+import numpy as np
 import concurrent.futures
 import itertools
 from loguru import logger as log
@@ -119,11 +121,14 @@ class NetworkXCompatibleGraph(Graph):
         return G
 
 class DiGraph(nx.DiGraph):
-    def __init__(self):
+    def __init__(self,status='tensor'): #tensor or node
         super().__init__()
         self.nodels: List[Node] = []
         self.edgels: List[Edge] = []
+        self.node_key = []
         self.adjacency_matrix: Dict[Tuple[str, str], float] = {}
+        self.tensor=None
+        self.status=status
    
     def add_nodes(self, node: Node):
         self.nodels.append(node)
@@ -157,14 +162,64 @@ class DiGraph(nx.DiGraph):
                     neighbors.append((neighbor, weight))
         return neighbors
 
+    def create_matrix(self,array):
+    # 创建一个字典,将键映射到数组下标
+        key_to_index = []
+        for key,val in enumerate(array):
+            self.creat_tensor(val[1],key_to_index)
+            self.creat_tensor(val[2],key_to_index)
+        
+        tensorA = np.zeros((len(key_to_index), len(key_to_index)), dtype=float)
+        for j,val in enumerate(array):
+            if val[1] in key_to_index:
+                indexA = key_to_index.index(val[1])
+                indexB = key_to_index.index(val[2])
+                tp = tensorA[indexA]
+                tq = tensorA[indexB]
+                tp[indexB] = val[8]
+                tq[indexA] = val[8]
+        return tensorA
+    
+    def creat_tensor(self,value,tag):
+        if value not in tag:
+            tag.append(value)
+
     def set_start_and_goal(self, start_node: Node, goal_node: Node):
-        self.start_node = start_node
-        self.goal_node = goal_node
+        if self.status == "tensor":
+            self.start_node = self.node_key.index(start_node.id)
+            self.goal_node = self.node_key.index(goal_node.id)
+        else:
+            self.start_node = start_node
+            self.goal_node = goal_node
     def update_edge_weight(self, edge: Edge, new_weight: float):
         edge.weight = new_weight
     def update_adjacent_matrix(self, adjacent_matrix: dict):
         self.adjacent_matrix = adjacent_matrix
 
+    # 新的结构体
+    def create_matrix(self,array):
+    
+    # 创建一个字典,将键映射到数组下标
+        key_to_index = []
+        for key,val in enumerate(array):
+            self.creat_tensor(val[1],key_to_index)
+            self.creat_tensor(val[2],key_to_index)
+        
+        tensor = np.zeros((len(key_to_index), len(key_to_index)), dtype=float)
+        for j,val in enumerate(array):
+            if val[1] in key_to_index:
+                indexA = key_to_index.index(val[1])
+                indexB = key_to_index.index(val[2])
+                tp = tensor[indexA]
+                tq = tensor[indexB]
+                tp[indexB] = val[8]
+                tq[indexA] = val[8]
+        self.tensor = tensor
+        self.node_key = key_to_index
+        return tensor
+    def creat_tensor(self,value,tag):
+        if value not in tag:
+            tag.append(value)
     def modify_adjacent_matrix_edge(self, edge: Edge, new_weight: float):
         self.adjacent_matrix[edge.start_node.id][edge.end_node.id] = new_weight
     # dijkstra算法
@@ -247,11 +302,18 @@ class DiGraph(nx.DiGraph):
 class AStart:
     def __init__(self):
         self.cache = {}
+        self.tensorStart = AStart_matrix()
         pass
     def manhattan_distance(self,node, goal_node):
         return abs(node.coordinates[0] - goal_node.coordinates[0]) + abs(node.coordinates[1] - goal_node.coordinates[1])
 # no-cache
     def a_star_search(self,graph,bidirectional=False):
+        if graph.status == "tensor":
+            index = self.tensorStart.astar_search_single_thread(graph)
+            path = []
+            for x in index:
+                path.append(graph.node_key[x])
+            return path
         if bidirectional:
             return self.a_star_search_cache(graph)
         else:
@@ -424,3 +486,62 @@ class AStart:
             index = self.hash_index(pathindex)
             with open(f'./outpath.txt', 'a') as f:
                 f.write("{"+f'{index}: {pathdata}'+'}'+'\n')
+
+
+# new A*
+
+class AStart_matrix:
+    def __init__(self, max_steps=99999999):
+        self.max_steps = max_steps
+
+    def astar_search_single_thread(self,graph):
+        num_nodes = graph.tensor.shape[0]
+        open_set = []
+        heapq.heappush(open_set, (0, graph.start_node))
+        came_from = torch.full((num_nodes,), -1, dtype=torch.int32)
+        
+        g_score = torch.full((num_nodes,), float('inf'))
+        g_score[graph.start_node] = 0.0
+        
+        f_score = torch.full((num_nodes,), float('inf'))
+        f_score[graph.start_node] = self.h_func(graph.start_node, graph.goal_node)
+        
+        for _ in range(self.max_steps):
+            if len(open_set) == 0:
+                break
+
+            current_f_score, current = heapq.heappop(open_set)
+            
+            if current == graph.start_node:
+                return self.reconstruct_path(came_from, current,graph)
+            
+            neighbors = torch.where(graph.tensor[current] > 0)[0]
+            for neighbor in neighbors:
+                tentative_g_score = g_score[current] + graph.tensor[current, neighbor]
+                
+                if tentative_g_score < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g_score
+                    f_score[neighbor] = tentative_g_score + self.h_func(neighbor, graph.goal_node)
+                    
+                    if neighbor.item() not in [i[1] for i in open_set]:
+                        heapq.heappush(open_set, (f_score[neighbor], neighbor.item()))
+        return []
+
+    def reconstruct_path(self, came_from, current,graph):
+        total_path = [current]
+        while current != graph.start_node:
+            current = came_from[current].item()
+            total_path.append(current)
+        total_path.reverse()
+        return total_path
+
+    def h_func(self,a, b):
+        return torch.abs(torch.tensor(a) - torch.tensor(b)).sum().item()
+
+    def load_adj_matrix(self,file_path):
+        with open(file_path, 'r') as f:
+            adj_matrix = json.load(f)
+        return torch.tensor(adj_matrix, dtype=torch.float32)
+    
+    
