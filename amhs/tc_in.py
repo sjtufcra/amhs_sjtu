@@ -104,6 +104,8 @@ def erect_map(p):
                 length = df[8][i]
                 p.map_info_unchanged.add_node_from(sp,ep,length)
                 p.map_info_unchanged.add_weighted_edges_from([(sp, ep, length)])
+            # tensor generation
+            p.map_info_unchanged.create_matrix(df.values)
             db_conn.commit()
             cursor.close()
             track_generate_station(p, df)
