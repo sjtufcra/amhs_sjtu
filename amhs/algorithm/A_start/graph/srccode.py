@@ -121,7 +121,7 @@ class NetworkXCompatibleGraph(Graph):
         return G
 
 class DiGraph(nx.DiGraph):
-    def __init__(self,status='tensor'): #tensor or node
+    def __init__(self,status='matrix'): #tensor or node
         super().__init__()
         self.nodels: List[Node] = []
         self.edgels: List[Edge] = []
@@ -185,7 +185,7 @@ class DiGraph(nx.DiGraph):
             tag.append(value)
 
     def set_start_and_goal(self, start_node: Node, goal_node: Node):
-        if self.status == "tensor":
+        if self.status == "tensor" or self.status == "matrix":
             self.start_node = self.node_key.index(start_node.id)
             self.goal_node = self.node_key.index(goal_node.id)
         else:
@@ -214,7 +214,10 @@ class DiGraph(nx.DiGraph):
                 tq = tensor[indexB]
                 tp[indexB] = val[8]
                 tq[indexA] = val[8]
-        self.tensor = tensor
+        if self.status == "tensor":
+            self.tensor = torch.from_numpy(tensor)
+        else:
+            self.tensor = tensor
         self.node_key = key_to_index
         return tensor
     def creat_tensor(self,value,tag):
@@ -302,14 +305,18 @@ class DiGraph(nx.DiGraph):
 class AStart:
     def __init__(self):
         self.cache = {}
-        self.tensorStart = AStart_matrix()
+        self.matrixStart = AStart_matrix()
+        self.tensorStart = AStart_tensor()
         pass
     def manhattan_distance(self,node, goal_node):
         return abs(node.coordinates[0] - goal_node.coordinates[0]) + abs(node.coordinates[1] - goal_node.coordinates[1])
 # no-cache
     def a_star_search(self,graph,bidirectional=False):
-        if graph.status == "tensor":
-            index = self.tensorStart.astar_search_single_thread(graph)
+        if graph.status != "node":
+            if graph.status == "tensor":
+                index = self.tensorStart.astar_search_single_thread(graph)
+            if graph.status == "matrix":
+                index = self.matrixStart.astar_search_single_thread(graph)
             path = []
             for x in index:
                 path.append(graph.node_key[x])
@@ -488,10 +495,9 @@ class AStart:
                 f.write("{"+f'{index}: {pathdata}'+'}'+'\n')
 
 
-# new A*
-
-class AStart_matrix:
-    def __init__(self, max_steps=99999999):
+# new A*-tensor
+class AStart_tensor:
+    def __init__(self, max_steps=1000):
         self.max_steps = max_steps
 
     def astar_search_single_thread(self,graph):
@@ -512,7 +518,7 @@ class AStart_matrix:
 
             current_f_score, current = heapq.heappop(open_set)
             
-            if current == graph.start_node:
+            if current == graph.goal_node:
                 return self.reconstruct_path(came_from, current,graph)
             
             neighbors = torch.where(graph.tensor[current] > 0)[0]
@@ -533,7 +539,6 @@ class AStart_matrix:
         while current != graph.start_node:
             current = came_from[current].item()
             total_path.append(current)
-        total_path.reverse()
         return total_path
 
     def h_func(self,a, b):
@@ -544,4 +549,61 @@ class AStart_matrix:
             adj_matrix = json.load(f)
         return torch.tensor(adj_matrix, dtype=torch.float32)
     
-    
+class AStart_matrix:
+    def __init__(self, max_steps=1000):
+        self.max_steps = max_steps
+
+    def heuristic(self, node,gola):
+        # 使用曼哈顿距离作为启发函数
+        x1, y1 = divmod(node, self.num_nodes)  
+        x2, y2 = divmod(gola, self.num_nodes)
+        return abs(x1 - x2) + abs(y1 - y2)
+
+    def astar_search_single_thread(self,graph):
+        self.num_nodes = graph.tensor.shape[0]
+        open_set = [(0, graph.start_node)]
+        heapq.heapify(open_set)
+        came_from = [-1] * self.num_nodes
+        
+        g_score = [float('inf')] * self.num_nodes
+        g_score[graph.start_node] = 0.0
+        
+        f_score = [float('inf')] * self.num_nodes
+        # f_score[graph.start_node] = self.heuristic(graph.start_node,graph.goal_node)
+        f_score[graph.start_node] = graph.tensor[graph.start_node][graph.start_node]
+        
+        open_set_hash = {graph.start_node}
+
+        for _ in range(self.max_steps):
+            if not open_set:
+                break
+
+            current_f_score, current = heapq.heappop(open_set)
+            open_set_hash.remove(current)
+            
+            if current == graph.goal_node:
+                return self.reconstruct_path(came_from, current,graph)
+            
+            for neighbor, weight in enumerate(graph.tensor[current]):
+                if weight > 0:
+                    tentative_g_score = g_score[current] + weight
+                    
+                    if tentative_g_score < g_score[neighbor]:
+                        came_from[neighbor] = current
+                        g_score[neighbor] = tentative_g_score
+                        f_score[neighbor] = tentative_g_score + weight
+                        # f_score[neighbor] = tentative_g_score + self.heuristic(neighbor,graph.goal_node)
+                        
+                        if neighbor not in open_set_hash:
+                            heapq.heappush(open_set, (f_score[neighbor], neighbor))
+                            open_set_hash.add(neighbor)
+        return []
+
+    def reconstruct_path(self, came_from, current,graph):
+        total_path = [current]
+        while current != graph.start_node:
+            current = came_from[current]
+            total_path.append(current)
+        total_path.reverse()
+        return total_path
+

@@ -53,9 +53,14 @@ def task_assign(p, use_multiprocessing=True):
                 for k, v in p.orders.items():
                     if v.finished == 0:
                         veh, v0 = vehicle_select(v, p)  # getpath
+                        # log.info(f"vehicle_select,task_time:{time.time()-start_time}")
                         start, end = terminus_select(j, v0, p, v)
+                        # log.info(f"terminus_select,task_time:{time.time()-start_time}")
                         v.vehicle_assigned = veh
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
+                        # log.info(f"path,task_time:{time.time()-start_time}")
+                        tp = nx.shortest_path(p.map_info, source=start, target=end)
+                        # log.info(f"tp,task_time:{time.time()-start_time}")
                         if p.mode == False:
                             log.info(f'success:{k},{v}')
                             output_new(p, k, v)
@@ -64,7 +69,7 @@ def task_assign(p, use_multiprocessing=True):
                             pass
                         # v.finished = 1
                         car += 1
-            # log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
+            log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
 
 def process_order(order_id, p, car,start_time):
     v = p.orders[order_id]
@@ -160,7 +165,10 @@ def shortest_path(start, end, p, v, typ=0):
         path = 0
         for i in range(len(path0) - 1):
             idx = path0[i:i + 2]
-            path += p.map_info.edges[idx]['weight']
+            try:
+                path += p.map_info.edges[idx]['weight']
+            except:
+                path+=0
         return path
 
 def vehicle_node_search(position, p):
