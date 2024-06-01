@@ -61,15 +61,16 @@ def task_assign(p, use_multiprocessing=True):
                         start, end = terminus_select(j, v0, p, v)
                         log.info(f"terminus_select,task_time:{time.time()-start_time}")
                         v.vehicle_assigned = veh
-                        start_time = time.time()
+                        sl = time.time()
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
-                        log.info(f"path,task_time:{time.time()-start_time}")
-                        start_time = time.time()
+                        log.info(f"path,task_time:{time.time()-sl}")
+                        tl = time.time()
                         tp = nx.shortest_path(p.map_info, source=start, target=end)
-                        log.info(f"tp,task_time:{time.time()-start_time}")
+                        log.info(f"tp,task_time:{time.time()-tl}")
                         if p.mode == False:
+                            log.info(f"alltime,task_time:{time.time()-start_time}")
                             log.info(f'success:{k},{v}')
-                            output_new(p, k, v)
+                            # output_new(p, k, v)
                         else:
                             output_new(p, k, v)
                             pass
@@ -139,7 +140,6 @@ def vehicle_select_fast(task, p):
 def vehicle_select_fast_random(task, p):
     vs0 = get_vehicles_from_bay_fast(task.task_bay, p)
     veh = None
-    veh_len = math.inf
     if isinstance(vs0,list):
                 value = random.choice(vs0)
                 if isinstance(value,list)or isinstance(value,tuple):
@@ -147,12 +147,6 @@ def vehicle_select_fast_random(task, p):
                 else:
                     veh = value["ohtID"]
     else:
-        # for k, v in vs0.items():
-        #     start, end = terminus_select(0, v, p, task)
-        #     length = shortest_path(start, end, p, task, typ=1)
-        #     if length < veh_len:
-        #         veh_len = length
-        #         veh = k
         keys_to_choose_from = list(vs0.keys())
         veh = random.choice(keys_to_choose_from)
     p.used_vehicle.add(veh)

@@ -64,6 +64,6 @@ localServer:
     mode: False
 
     # local server's parameter
-    use_multiprocessing: True
+    use_multiprocessing: False
 
     log: "./unit.log"
