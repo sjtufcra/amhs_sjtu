@@ -173,7 +173,7 @@ def shortest_path(start, end, p, v, typ=0):
         # only return the path
         if p.algorithm_on is not None:
             path = algorithm_on(p,start,end)
-            # path.append(p.stations_name[v.end_location])
+            path.append(p.stations_name[v.end_location])
             log.info(f'sho,time:{time.time()-st}')
             return path
     else:
