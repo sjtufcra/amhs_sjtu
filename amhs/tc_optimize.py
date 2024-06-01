@@ -168,11 +168,13 @@ def terminus_select(j, v0, p, v):
     return start, end
 
 def shortest_path(start, end, p, v, typ=0):
+    st = time.time()
     if typ == 0:
         # only return the path
         if p.algorithm_on is not None:
             path = algorithm_on(p,start,end)
             # path.append(p.stations_name[v.end_location])
+            log.info(f'sho,time:{time.time()-st}')
             return path
     else:
         # return the length
@@ -237,8 +239,10 @@ def get_vehicles_from_bay_fast(bay, p):
 def algorithm_on(p,start,end):
     if p.algorithm_on == 2:
         # A*算法
+        st= time.time()
         p.map_info.set_start_and_goal(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
         path = p.Astart.a_star_search(p.map_info)
+        log.info(f'A*算法,time:{time.time()-st}')
     elif p.algorithm_on == 3:
         # dijkstra算法
         path = p.map_info.dijkstra(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
