@@ -1,13 +1,14 @@
 import networkx as nx
 import math
 import time
+import random
 import concurrent.futures
 import multiprocessing
 from loguru import logger as log
 
-from .tc_out import *
-from .tc_in import *
-from .algorithm.A_start.graph.srccode import *
+from tc_out import *
+from tc_in import *
+from algorithm.A_start.graph.srccode import *
 
 def task_assign(p, use_multiprocessing=True):
         
@@ -24,6 +25,7 @@ def task_assign(p, use_multiprocessing=True):
             j, n = 0, 0
             car = 0
             log.info(f"algorithm:{p.algorithm_on},task:{len(p.orders)}")
+            log.info(f"algorithm,task_time:{time.time()-start_time}")
         # 
             if use_multiprocessing:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
@@ -32,38 +34,20 @@ def task_assign(p, use_multiprocessing=True):
                         executor.submit(process_order, order_id, p, car,start_time): order_id
                         for order_id, v in p.orders.items() if v.finished == 0
                     }
-
-                    # results = []
-                    # for future in concurrent.futures.as_completed(future_to_order_id):
-                    #     order_id = future_to_order_id[future]
-                    #     try:
-                    #         finished = future.result()
-                    #         if finished:
-                    #             n += 1
-                    #         results.append((order_id, finished))
                     except Exception as exc:
                         log.error(f"Order processing generated an exception: {exc}")
-
-                    # for order_id, finished in results:
-                    #     if finished:
-                    #         v = p.orders[order_id]
-                    #         v.finished = 1
-                    #         car += 1
             else:
                 for k, v in p.orders.items():
                     if v.finished == 0:
-                        veh, v0 = vehicle_select(v, p)  # getpath
-                        # log.info(f"vehicle_select,task_time:{time.time()-start_time}")
+                        veh, v0 = vehicle_select_fast_random(v, p)  # getpath
                         start, end = terminus_select(j, v0, p, v)
-                        # log.info(f"terminus_select,task_time:{time.time()-start_time}")
                         v.vehicle_assigned = veh
+                        com = time.time()
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
-                        # log.info(f"path,task_time:{time.time()-start_time}")
-                        tp = nx.shortest_path(p.map_info, source=start, target=end)
-                        # log.info(f"tp,task_time:{time.time()-start_time}")
+                        log.info(f"path,task_time:{time.time()-com}")
                         if p.mode == False:
                             log.info(f'success:{k},{v}')
-                            # output_new(p, k, v)
+                            output_new(p, k, v)
                         else:
                             output_new(p, k, v)
                             pass
@@ -73,12 +57,9 @@ def task_assign(p, use_multiprocessing=True):
 
 def process_order(order_id, p, car,start_time):
     v = p.orders[order_id]
-    log.info(f'wirte to db: {order_id}')
+
     if v.finished == 0:
-        # old
-        # veh, v0 = vehicle_select(v, p)  # getpath
-        # new_fast
-        veh, v0 = vehicle_select_fast(v, p)  # getpath
+        veh, v0 = vehicle_select_fast_random(v, p)  # getpath
         start, end = terminus_select(0, v0, p, v)
         v.vehicle_assigned = veh
         v.delivery_route = shortest_path(start, end, p, v, typ=0)
@@ -87,7 +68,6 @@ def process_order(order_id, p, car,start_time):
             log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
         else:
             output_new(p, order_id, v)
-            log.info(f'success_write:{order_id},{v}')
             pass
         v.finished = 1
         car += 1
@@ -108,6 +88,7 @@ def vehicle_select(task, p):
             veh = k
     p.used_vehicle.add(veh)
     return veh, p.vehicles_get[veh]
+
 # fast seclect
 def vehicle_select_fast(task, p):
     # task_bay = task.start_location.split('_')[1]
@@ -123,7 +104,7 @@ def vehicle_select_fast(task, p):
             length = shortest_path(start, end, p, task, typ=1)
             if length < veh_len:
                 veh_len = length
-                if isinstance(value,list):
+                if isinstance(value,list)or isinstance(value,tuple):
                     veh = value[11]
                 else:
                     veh = value["ohtID"]
@@ -134,6 +115,22 @@ def vehicle_select_fast(task, p):
             if length < veh_len:
                 veh_len = length
                 veh = k
+    p.used_vehicle.add(veh)
+    return veh, p.vehicles_get[veh]
+# random seclect
+def vehicle_select_fast_random(task, p):
+    vs0 = get_vehicles_from_bay_fast(task.task_bay, p)
+    veh = None
+    veh_len = math.inf
+    if isinstance(vs0,list):
+                value = random.choice(vs0)
+                if isinstance(value,list)or isinstance(value,tuple):
+                    veh = value[11]
+                else:
+                    veh = value["ohtID"]
+    else:
+        keys_to_choose_from = list(vs0.keys())
+        veh = random.choice(keys_to_choose_from)
     p.used_vehicle.add(veh)
     return veh, p.vehicles_get[veh]
 
@@ -157,7 +154,7 @@ def shortest_path(start, end, p, v, typ=0):
         # only return the path
         if p.algorithm_on is not None:
             path = algorithm_on(p,start,end)
-            path.append(p.stations_name[v.end_location])
+            # path.append(p.stations_name[v.end_location])
             return path
     else:
         # return the length
@@ -211,13 +208,19 @@ def get_vehicles_from_bay(bay, p):
 
 # fast get vehicles
 def get_vehicles_from_bay_fast(bay, p):
-    if bay is None:
-        return p.vehicles_get
-    else:
+    if bay:
         vehicle_list = p.vehicles_bay_get.get(bay);
-        if vehicle_list is None:
-            return p.vehicles_get
-        return vehicle_list
+        if vehicle_list:
+            return vehicle_list
+    return p.vehicles_get
+
+    # if bay is None:
+    #     return p.vehicles_get
+    # else:
+    #     vehicle_list = p.vehicles_bay_get.get(bay);
+    #     if vehicle_list is None:
+    #         return p.vehicles_get
+    #     return vehicle_list
     
 def algorithm_on(p,start,end):
     if p.algorithm_on == 2:

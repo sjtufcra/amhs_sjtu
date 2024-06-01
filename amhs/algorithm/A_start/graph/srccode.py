@@ -574,10 +574,10 @@ class AStart_matrix:
         
         open_set_hash = {graph.start_node}
 
-        for _ in range(self.max_steps):
-            if not open_set:
-                break
-
+        # for _ in range(self.max_steps):
+        #     if not open_set:
+        #         break
+        while open_set:
             current_f_score, current = heapq.heappop(open_set)
             open_set_hash.remove(current)
             
