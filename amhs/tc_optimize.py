@@ -34,22 +34,31 @@ def task_assign(p, use_multiprocessing=True):
                         executor.submit(process_order, v, p): order_id
                         for order_id, v in p.orders.items() if v.finished == 0
                     }
+
+                    # results = []
+                    # for future in concurrent.futures.as_completed(future_to_order_id):
+                    #     order_id = future_to_order_id[future]
+                    #     try:
+                    #         finished = future.result()
+                    #         if finished:
+                    #             n += 1
+                    #         results.append((order_id, finished))
                     except Exception as exc:
                         log.error(f"Order processing generated an exception: {exc}")
+
+                    # for order_id, finished in results:
+                    #     if finished:
+                    #         v = p.orders[order_id]
+                    #         v.finished = 1
+                    #         car += 1
             else:
                 for k, v in p.orders.items():
                     if v.finished == 0:
+                        # veh, v0 = vehicle_select(v, p)  # getpath
                         veh, v0 = vehicle_select_fast_random(v, p)  # getpath
                         start, end = terminus_select(j, v0, p, v)
                         v.vehicle_assigned = veh
-                        # A*
-                        sl = time.time()
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
-                        log.info(f"path,task_time:{time.time()-sl}")
-                        # nx
-                        # tl = time.time()
-                        # v.delivery_route = nx.shortest_path(p.map_info, source=start, target=end)
-                        # log.info(f"tp,task_time:{time.time()-tl}")
                         if p.mode == False:
                             log.info(f"alltime,task_time:{time.time()-start_time}")
                             log.info(f'success:{k},{v}')
@@ -209,25 +218,21 @@ def get_vehicles_from_bay(bay, p):
 
 # fast get vehicles
 def get_vehicles_from_bay_fast(bay, p):
-    if bay:
+    if bay is None:
+        return p.vehicles_get
+    else:
         vehicle_list = p.vehicles_bay_get.get(bay);
-        if vehicle_list:
-            return vehicle_list
-    return p.vehicles_get
-
-    # if bay is None:
-    #     return p.vehicles_get
-    # else:
-    #     vehicle_list = p.vehicles_bay_get.get(bay);
-    #     if vehicle_list is None:
-    #         return p.vehicles_get
-    #     return vehicle_list
+        if vehicle_list is None:
+            return p.vehicles_get
+        return vehicle_list
     
 def algorithm_on(p,start,end):
     if p.algorithm_on == 2:
         # A*算法
+        st= time.time()
         p.map_info.set_start_and_goal(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
         path = p.Astart.a_star_search(p.map_info)
+        log.info(f'A*算法,time:{time.time()-st}')
     elif p.algorithm_on == 3:
         # dijkstra算法
         path = p.map_info.dijkstra(p.map_info.get_node_by_id(start), p.map_info.get_node_by_id(end))
