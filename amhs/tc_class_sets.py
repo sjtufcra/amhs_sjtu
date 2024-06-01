@@ -47,9 +47,11 @@ class Dataset:
         # mode
         self.mode = out_config['mode']
         self.status = out_config['status']
+        # task_num
+        self.status = out_config['task_num']
 
     class Control:
-        def __init__(self):
+        def __init__(self,):
             self.num_vehicle = 0
             self.global_start_time = None
             self.task_num = 6
