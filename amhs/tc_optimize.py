@@ -1,6 +1,7 @@
 import networkx as nx
 import math
 import time
+import random
 import concurrent.futures
 import multiprocessing
 from loguru import logger as log
@@ -24,6 +25,7 @@ def task_assign(p, use_multiprocessing=True):
             j, n = 0, 0
             car = 0
             log.info(f"algorithm:{p.algorithm_on},task:{len(p.orders)}")
+            log.info(f"algorithm,task_time:{time.time()-start_time}")
         # 
             if use_multiprocessing:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
@@ -52,15 +54,19 @@ def task_assign(p, use_multiprocessing=True):
             else:
                 for k, v in p.orders.items():
                     if v.finished == 0:
-                        veh, v0 = vehicle_select(v, p)  # getpath
-                        # log.info(f"vehicle_select,task_time:{time.time()-start_time}")
+                        start_time = time.time()
+                        # veh, v0 = vehicle_select(v, p)  # getpath
+                        veh, v0 = vehicle_select_fast_random(v, p)  # getpath
+                        log.info(f"vehicle_select,task_time:{time.time()-start_time}")
                         start, end = terminus_select(j, v0, p, v)
-                        # log.info(f"terminus_select,task_time:{time.time()-start_time}")
+                        log.info(f"terminus_select,task_time:{time.time()-start_time}")
                         v.vehicle_assigned = veh
+                        start_time = time.time()
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
-                        # log.info(f"path,task_time:{time.time()-start_time}")
+                        log.info(f"path,task_time:{time.time()-start_time}")
+                        start_time = time.time()
                         tp = nx.shortest_path(p.map_info, source=start, target=end)
-                        # log.info(f"tp,task_time:{time.time()-start_time}")
+                        log.info(f"tp,task_time:{time.time()-start_time}")
                         if p.mode == False:
                             log.info(f'success:{k},{v}')
                             output_new(p, k, v)
@@ -78,7 +84,8 @@ def process_order(order_id, p, car,start_time):
         # old
         # veh, v0 = vehicle_select(v, p)  # getpath
         # new_fast
-        veh, v0 = vehicle_select_fast(v, p)  # getpath
+        # veh, v0 = vehicle_select_fast(v, p)  # getpath
+        veh, v0 = vehicle_select_fast_random(v, p)  # getpath
         start, end = terminus_select(0, v0, p, v)
         v.vehicle_assigned = veh
         v.delivery_route = shortest_path(start, end, p, v, typ=0)
@@ -107,6 +114,7 @@ def vehicle_select(task, p):
             veh = k
     p.used_vehicle.add(veh)
     return veh, p.vehicles_get[veh]
+
 # fast seclect
 def vehicle_select_fast(task, p):
     # task_bay = task.start_location.split('_')[1]
@@ -122,7 +130,7 @@ def vehicle_select_fast(task, p):
             length = shortest_path(start, end, p, task, typ=1)
             if length < veh_len:
                 veh_len = length
-                if isinstance(value,list):
+                if isinstance(value,list)or isinstance(value,tuple):
                     veh = value[11]
                 else:
                     veh = value["ohtID"]
@@ -133,6 +141,28 @@ def vehicle_select_fast(task, p):
             if length < veh_len:
                 veh_len = length
                 veh = k
+    p.used_vehicle.add(veh)
+    return veh, p.vehicles_get[veh]
+# random seclect
+def vehicle_select_fast_random(task, p):
+    vs0 = get_vehicles_from_bay_fast(task.task_bay, p)
+    veh = None
+    veh_len = math.inf
+    if isinstance(vs0,list):
+                value = random.choice(vs0)
+                if isinstance(value,list)or isinstance(value,tuple):
+                    veh = value[11]
+                else:
+                    veh = value["ohtID"]
+    else:
+        # for k, v in vs0.items():
+        #     start, end = terminus_select(0, v, p, task)
+        #     length = shortest_path(start, end, p, task, typ=1)
+        #     if length < veh_len:
+        #         veh_len = length
+        #         veh = k
+        keys_to_choose_from = list(vs0.keys())
+        veh = random.choice(keys_to_choose_from)
     p.used_vehicle.add(veh)
     return veh, p.vehicles_get[veh]
 
@@ -156,7 +186,7 @@ def shortest_path(start, end, p, v, typ=0):
         # only return the path
         if p.algorithm_on is not None:
             path = algorithm_on(p,start,end)
-            path.append(p.stations_name[v.end_location])
+            # path.append(p.stations_name[v.end_location])
             return path
     else:
         # return the length

@@ -46,6 +46,7 @@ class Dataset:
         self.algorithm_on = out_config['algorithm_on'] #算法调整：1、原始算法，2、A*算法
         # mode
         self.mode = out_config['mode']
+        self.status = out_config['status']
 
     class Control:
         def __init__(self):

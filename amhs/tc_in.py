@@ -95,7 +95,7 @@ def erect_map(p):
             cursor.execute('SELECT * FROM OHTC_MAP')
             df = pd.DataFrame(cursor.fetchall())
             p.original_map_info = df
-            p.map_info_unchanged = DiGraph()
+            p.map_info_unchanged = DiGraph(p.status)
             p.Astart = AStart()
             for i in df.index:
                 sp = df[1][i]  # start point
