@@ -31,7 +31,7 @@ def task_assign(p, use_multiprocessing=True):
                 with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
                     try:
                         future_to_order_id = {
-                        executor.submit(process_order, order_id, p, car,start_time): order_id
+                        executor.submit(process_order, v, p): order_id
                         for order_id, v in p.orders.items() if v.finished == 0
                     }
                     except Exception as exc:
@@ -42,12 +42,18 @@ def task_assign(p, use_multiprocessing=True):
                         veh, v0 = vehicle_select_fast_random(v, p)  # getpath
                         start, end = terminus_select(j, v0, p, v)
                         v.vehicle_assigned = veh
-                        com = time.time()
+                        # A*
+                        sl = time.time()
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
-                        log.info(f"path,task_time:{time.time()-com}")
+                        log.info(f"path,task_time:{time.time()-sl}")
+                        # nx
+                        # tl = time.time()
+                        # v.delivery_route = nx.shortest_path(p.map_info, source=start, target=end)
+                        # log.info(f"tp,task_time:{time.time()-tl}")
                         if p.mode == False:
+                            log.info(f"alltime,task_time:{time.time()-start_time}")
                             log.info(f'success:{k},{v}')
-                            output_new(p, k, v)
+                            # output_new(p, k, v)
                         else:
                             output_new(p, k, v)
                             pass
@@ -55,24 +61,20 @@ def task_assign(p, use_multiprocessing=True):
                         car += 1
             log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
 
-def process_order(order_id, p, car,start_time):
-    v = p.orders[order_id]
-
+def process_order(v, p):
+    start_time = time.time()
     if v.finished == 0:
         veh, v0 = vehicle_select_fast_random(v, p)  # getpath
         start, end = terminus_select(0, v0, p, v)
         v.vehicle_assigned = veh
         v.delivery_route = shortest_path(start, end, p, v, typ=0)
         if p.mode == False:
-            log.info(f'success:{order_id},{v}')
+            log.info(f'success:{v.id},{v}')
             log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
         else:
-            output_new(p, order_id, v)
+            output_new(p, v.id, v)
             pass
-        v.finished = 1
-        car += 1
-
-    return v.finished
+    return
 
 def vehicle_select(task, p):
     # task_bay = task.start_location.split('_')[1]
@@ -121,7 +123,6 @@ def vehicle_select_fast(task, p):
 def vehicle_select_fast_random(task, p):
     vs0 = get_vehicles_from_bay_fast(task.task_bay, p)
     veh = None
-    veh_len = math.inf
     if isinstance(vs0,list):
                 value = random.choice(vs0)
                 if isinstance(value,list)or isinstance(value,tuple):
