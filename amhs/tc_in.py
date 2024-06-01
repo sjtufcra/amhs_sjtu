@@ -321,7 +321,7 @@ def read_instructions(p):
         tmp.task_bay = tmp.start_location.split('_')[1]
         p.orders[tmp.id] = tmp
         n += 1
-        if n >= p.Control().task_num:
+        if n >= p.task_num:
             break
     log.info(f'this is the task count:{n}')
 

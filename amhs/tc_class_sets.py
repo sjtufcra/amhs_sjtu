@@ -47,14 +47,13 @@ class Dataset:
         # mode
         self.mode = out_config['mode']
         self.status = out_config['status']
-        # task_num
-        self.status = out_config['task_num']
+        self.task_num = out_config['task_num']
 
     class Control:
-        def __init__(self,):
+        def __init__(self,task_num=10):
             self.num_vehicle = 0
             self.global_start_time = None
-            self.task_num = 6
+            self.task_num = task_num
             self.build_map = True #debugger
             self.out_path = 1  # 1:to_excel; 0:to_db
 

@@ -63,6 +63,8 @@ localServer:
     build_map: 1
     # local
     mode: False
+    # task_number
+    task_num: 10
 
     # local server's parameter
     use_multiprocessing: False
