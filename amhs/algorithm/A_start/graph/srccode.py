@@ -2,6 +2,7 @@ import heapq
 import networkx as nx
 from typing import Dict, List, Tuple
 import json
+import time
 import hashlib
 # import torch
 import numpy as np
@@ -560,6 +561,7 @@ class AStart_matrix:
         return abs(x1 - x2) + abs(y1 - y2)
 
     def astar_search_single_thread(self,graph):
+        st = time.time()
         self.num_nodes = graph.tensor.shape[0]
         open_set = [(0, graph.start_node)]
         heapq.heapify(open_set)
@@ -577,11 +579,14 @@ class AStart_matrix:
         # for _ in range(self.max_steps):
         #     if not open_set:
         #         break
+        log.info(f'cont,time:{time.time()-st}')
+        wt = time.time()
         while open_set:
             current_f_score, current = heapq.heappop(open_set)
             open_set_hash.remove(current)
             
             if current == graph.goal_node:
+                log.info(f'end,time:{time.time()-wt}')
                 return self.reconstruct_path(came_from, current,graph)
             
             for neighbor, weight in enumerate(graph.tensor[current]):
@@ -596,6 +601,7 @@ class AStart_matrix:
                         if neighbor not in open_set_hash:
                             heapq.heappush(open_set, (f_score[neighbor], neighbor))
                             open_set_hash.add(neighbor)
+        
         return []
 
     def reconstruct_path(self, came_from, current,graph):

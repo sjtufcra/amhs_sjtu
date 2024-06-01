@@ -54,7 +54,7 @@ localServer:
     circulating_on: 1
 
     # algorithm mode : 1, 2, 3, 4 ;deaulft is 1,A* algorithm is 2, A*+Dijkstra algorithm is 3, Dynamic Programming, DP is 4
-    algorithm_on: 2
+    algorithm_on: 1
     status: 'matrix' # 'node' or 'tensor' or 'matrix'
 
     # load data
