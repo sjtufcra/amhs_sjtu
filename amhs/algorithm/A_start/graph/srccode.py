@@ -3,7 +3,7 @@ import networkx as nx
 from typing import Dict, List, Tuple
 import json
 import hashlib
-import torch
+# import torch
 import numpy as np
 import concurrent.futures
 import itertools
