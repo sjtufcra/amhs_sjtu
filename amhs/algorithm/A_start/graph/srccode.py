@@ -587,7 +587,6 @@ class AStart_matrix:
             for neighbor, weight in enumerate(graph.tensor[current]):
                 if weight > 0:
                     tentative_g_score = g_score[current] + weight
-                    
                     if tentative_g_score < g_score[neighbor]:
                         came_from[neighbor] = current
                         g_score[neighbor] = tentative_g_score
