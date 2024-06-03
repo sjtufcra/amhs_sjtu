@@ -194,6 +194,8 @@ def vehicle_load(p):
     # 初始化
     p.vehicles_bay_get = clear_data()
     p.vehicles_bay_send = clear_data()
+    p.vehicles_get = dict()
+    p.vehicles_send = dict()
     if p.mode == 1:
         pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         connection = rds.RedisCluster(connection_pool=pool)
@@ -223,25 +225,119 @@ def vehicle_load(p):
     else:
         with p.db_pool.get_connection() as db_conn:
             cursor = db_conn.cursor()
-            cursor.execute('SELECT * FROM OHTC_CAR')
+            cursor.execute('''SELECT *
+                FROM OHTC_CAR
+                WHERE ohtID IS NOT NULL 
+                AND (
+                    (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
+                    OR (ohtStatus_Roaming = '1' 
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Idle = '1') 
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncalling = '1')
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncall = '1'))
+                    OR (ohtStatus_IsHaveFoup = '1' 
+                        AND ohtStatus_MoveEnable = '1'
+                        AND ohtStatus_Idle = '1')
+                )
+            ''')
         v = cursor.fetchall()
+        set_data(p.vehicles_bay_get, i[1], i)
+        for i in v:
+            value = i[11]
+            p.vehicles_get[value] = i
+            set_data(p.vehicles_bay_get, i[1], i)
+        
+        # sql fornt
+        # with p.db_pool.get_connection() as db_conn:
+        #     cursor = db_conn.cursor()
+        #     cursor.execute('SELECT * FROM OHTC_CAR')
+        # v = cursor.fetchall()
+
+        # sql 优化
+        # for i in v:
+        #     if not i:
+        #         continue
+        #     value = i[11]
+        #     if value:
+        #         if i[28] != '1' or i[14] != '0':
+        #             continue
+        #         if ((i[35] == '1' or (i[24] == '1' and i[17] == '1')) or (i[24] == '1' and i[27] == '1')) or (
+        #                 i[24] == '1' and i[26] == '1'):
+        #             p.vehicles_get[value] = i
+        #             set_data(p.vehicles_bay_get, i[1], i)
+        #         else:
+        #             if i[18] == '1' and (i[24] == '1' and i[17] == '1'):
+        #                 p.vehicles_send[value] = i
+        #                 set_data(p.vehicles_bay_send, i[1], i)
+        #             else:
+        #                 continue
+
+            # old code
+            # mapID('10')是起点：[sp, ep] = ii['mapId'].split('_')[1] or [sp, ep] = ii[10].split('_')[1]
+            # vehicles[ii['ohtID']] = ii
+            # existing vehicles in one path
+            # if not ii.get('mapId'):
+            #     continue
+            # [sp, ep] = ii['mapId'].split('_')
+            # if not p.vehicle_jam.get((sp, ep)):
+            #     p.vehicle_jam[sp, ep] = 1
+            # else:
+            #     p.vehicle_jam[sp, ep] += 1
+    # log.info(f'Available vehicles number is:{ len(vehicles)}')
+    # p.vehicles = vehicles
+    return p
+# static select car
+def vehicle_load_static(p):
+    p.vehicles_bay_get = clear_data()
+    p.vehicles_bay_send = clear_data()
+    p.vehicles_get = dict()
+    p.vehicles_send = dict()
+    if p.mode == 1:
+        redis_pattern = """
+                (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
+                OR (ohtStatus_Roaming = '1' 
+                    OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Idle = '1') 
+                    OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncalling = '1')
+                    OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncall = '1'))
+                OR (ohtStatus_IsHaveFoup = '1' 
+                    AND ohtStatus_MoveEnable = '1'
+                    AND ohtStatus_Idle = '1')*
+                """
+
+        pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        connection = rds.RedisCluster(connection_pool=pool)
+        v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}{redis_pattern}*'))
+        log.info('start a car search')
         for i in v:
             if not i:
                 continue
+            ii = json.loads(i)
+            p.vehicles_get[ii.get('ohtID')] = ii
+            set_data(p.vehicles_bay_get, ii["bay"], ii)
+    else:
+        with p.db_pool.get_connection() as db_conn:
+            cursor = db_conn.cursor()
+            cursor.execute('''SELECT *
+                FROM OHTC_CAR
+                WHERE ohtID IS NOT NULL 
+                AND (
+                    (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
+                    OR (ohtStatus_Roaming = '1' 
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Idle = '1') 
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncalling = '1')
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncall = '1'))
+                    OR (ohtStatus_IsHaveFoup = '1' 
+                        AND ohtStatus_MoveEnable = '1'
+                        AND ohtStatus_Idle = '1')
+                )
+            ''')
+        v = cursor.fetchall()
+        set_data(p.vehicles_bay_get, i[1], i)
+        for i in v:
             value = i[11]
-            if value:
-                if i[28] != '1' or i[14] != '0':
-                    continue
-                if ((i[35] == '1' or (i[24] == '1' and i[17] == '1')) or (i[24] == '1' and i[27] == '1')) or (
-                        i[24] == '1' and i[26] == '1'):
-                    p.vehicles_get[value] = i
-                    set_data(p.vehicles_bay_get, i[1], i)
-                else:
-                    if i[18] == '1' and (i[24] == '1' and i[17] == '1'):
-                        p.vehicles_send[value] = i
-                        set_data(p.vehicles_bay_send, i[1], i)
-                    else:
-                        continue
+            p.vehicles_get[value] = i
+            set_data(p.vehicles_bay_get, i[1], i)
+
+            # mapID('10')是起点：[sp, ep] = ii['mapId'].split('_')[1] or [sp, ep] = ii[10].split('_')[1]
             # vehicles[ii['ohtID']] = ii
             # existing vehicles in one path
             # if not ii.get('mapId'):
@@ -271,6 +367,8 @@ def set_data(dictionary, key, data):
 # clear data in element
 def clear_data():
     return defaultdict(list, dict())
+def clear_dict():
+    return dict()
 
 
 def track_generate(p):
