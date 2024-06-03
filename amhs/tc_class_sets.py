@@ -24,7 +24,7 @@ class Dataset:
         self.oracle_user = out_config['oracle_user']
         self.oracle_password = out_config['oracle_password']
         self.oracle_dsn = out_config['oracle_dsn']
-        self.database = out_config['database']
+        # self.database = out_config['database']
         # from redis
         self.rds_connection = out_config['rds_connection']
         self.rds_port = out_config['rds_port']
@@ -46,8 +46,14 @@ class Dataset:
         self.algorithm_on = out_config['algorithm_on'] #算法调整：1、原始算法，2、A*算法
         # mode
         self.mode = out_config['mode']
-        self.status = out_config['status']
-        self.task_num = out_config['task_num']
+        # self.status = out_config['status']
+        self.status = 'matrix'
+        # self.task_num = out_config['task_num']
+        self.task_num = 10
+
+        # added in 240603
+        self.internal_paths = None
+        self.external_paths = None
 
     class Control:
         def __init__(self,task_num=10):
