@@ -198,6 +198,7 @@ def vehicle_load(p):
         pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         connection = rds.RedisCluster(connection_pool=pool)
         v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+        p.redis_link = connection
         # vehicles = dict()
         log.info('start a car search')
         for i in v:
