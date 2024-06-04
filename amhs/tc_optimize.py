@@ -87,6 +87,7 @@ def task_assign_static(p, use_multiprocessing=True):
                     except Exception as exc:
                         log.error(f"Order processing generated an exception: {exc}")
             else:
+                log.info(f"car+task: {len(orederlist)}")
                 for v in orederlist:
                         start_time = time.time()
                         if p.mode == False:

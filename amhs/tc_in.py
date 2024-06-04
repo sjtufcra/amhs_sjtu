@@ -711,6 +711,7 @@ def read_instructions_static(p):
         cursor = db_conn.cursor()
         cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'")
         df = pd.DataFrame(cursor.fetchall())
+        log.info(f'task count:{len(df)}')
         db_conn.commit()
         cursor.close()
     n = 0
