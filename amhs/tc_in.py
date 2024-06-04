@@ -381,8 +381,6 @@ def vehicle_load_static(p):
                     return orederlist
             if not i:
                 continue
-            if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0'or i.get('ohtStatus_Idle') == '0':
-                continue
             bay = i[1]
             value = i[11]
             flag = i[10]
