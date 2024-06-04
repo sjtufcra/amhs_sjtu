@@ -327,7 +327,7 @@ def vehicle_load_static(p):
             for ty in p.taskList:
                 till = 0
                 while till<10:
-                        car = random.choice[temcar] #todo： 优化选车逻辑
+                        car = random.choice(temcar)#todo： 优化选车逻辑
                         order = ty
                         bay = car.get('bay')
                         value = car('ohtID')
@@ -523,7 +523,7 @@ def vehicle_load_static_fast(p):
             for ty in p.taskList:
                 till = True
                 while till:
-                    car = random.choice[temcar]
+                    car = random.choice(temcar)
                     computeCarPath(ty,car,p,orederlist,1,10,11,till)
 
     return orederlist
