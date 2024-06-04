@@ -294,9 +294,9 @@ def vehicle_load_static(p):
                 continue
             if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0'or i.get('ohtStatus_Idle') == '0':
                 continue
-            bay = i['bay']
-            value = i['ohtID']
-            flag = i['mapId']
+            bay = i.get('bay')
+            value = i.get('ohtID')
+            flag = i.get('mapId')
             if bay in p.bays_relation:
                 task = p.bays_relation[bay]
                 if len(task)>0:
@@ -329,9 +329,9 @@ def vehicle_load_static(p):
                 while till<10:
                         car = random.choice[temcar] #todo： 优化选车逻辑
                         order = ty
-                        bay = car['bay']
-                        value = car['ohtID']
-                        flag = car['mapId']
+                        bay = car.get('bay')
+                        value = car('ohtID')
+                        flag = car('mapId')
                         
                         try:
                             speed = int(i[2])
