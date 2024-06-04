@@ -95,12 +95,12 @@ def task_assign_static(p, use_multiprocessing=True):
                     except Exception as exc:
                         log.error(f"Order processing generated an exception: {exc}")
             else:
-                for k, v in orederlist:
+                for v in orederlist:
                         start_time = time.time()
                         if p.mode == False:
                             log.info(f"alltime,task_time:{time.time()-start_time}")
-                            log.info(f'success:{k},{v}')
-                            output_new(p, v.id, v)
+                            log.info(f'success:{v.id},{v}')
+                            # output_new(p, v.id, v)
                         else:
                             output_new(p, v.id, v)
                             pass

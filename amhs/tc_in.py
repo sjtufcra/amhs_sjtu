@@ -105,7 +105,7 @@ def erect_map(p):
                 p.map_info_unchanged.add_node_from(sp, ep, length)
                 p.map_info_unchanged.add_weighted_edges_from([(sp, ep, length)])
             # tensor generation
-            p.map_info_unchanged.create_matrix(df.values)
+            # p.map_info_unchanged.create_matrix(df.values)
             db_conn.commit()
             cursor.close()
             track_generate_station(p, df)
@@ -179,15 +179,9 @@ def map_divided(p):
         pic = DiGraph(p.status)
         for k2, v2 in v['internal'].items():
             pic.add_weighted_edges_from([(k2[0], k2[1], v2)])
-        paths_in_bays[k] = dict(nx.shortest_path(pic))
-    paths_between_bays = dict()
-    for starting in tmp3:
-        for ending in tmp4:
-            if starting != ending:
-                tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
-                paths_between_bays.update({(starting, ending): tmp5})
+        pathA = dict(nx.all_pairs_dijkstra(pic,weight='weight'))
+        paths_in_bays[k] = dict({"path":dict(pathA), "entrance":v['entrance'], "outlet":v['outlet']})
     p.internal_paths = paths_in_bays
-    p.external_paths = paths_between_bays
     return p
 
 
@@ -290,7 +284,7 @@ def vehicle_load_static(p):
                     return orederlist
             if not i:
                 continue
-            if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0':
+            if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0'or i.get('ohtStatus_Idle') == '0':
                 continue
             bay = i['bay']
             value = i['ohtID']
@@ -299,7 +293,10 @@ def vehicle_load_static(p):
                 task = p.bays_relation[bay]
                 if len(task)>0:
                     order = task[0]
-                    ts = float(p.original_map_info[p.original_map_info[0]==flag][4]-int(i[43]))/int(i[2])
+                    speed = int(i[2])
+                    if speed==0:
+                        speed = 1
+                    ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
                     if ts < p.tts:
                         temcar.append(i)
                         continue
@@ -307,7 +304,9 @@ def vehicle_load_static(p):
                         start = flag.split('_')[1]
                         end = p.all_stations[order.start_location]
                         taynum = p.stations_name[order.end_location]
-                        path = p.internal_paths[bay][start][end].append(taynum)
+                        path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                        path.append(taynum)
+                        path.append(taynum)
                         order.vehicle_assigned = value
                         order.delivery_route = path
                         orederlist.append(order)
@@ -325,20 +324,23 @@ def vehicle_load_static(p):
                         bay = car['bay']
                         value = car['ohtID']
                         flag = car['mapId']
-                        ts = (p.original_map_info[p.original_map_info[0]==flag][4]-int(car[43]))/int(car[2]).values[0]
+                        speed = int(i[2])
+                        if speed==0:
+                            speed = 1
+                        ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
                         if ts < p.tts:
                             continue
                         else:
                             start = flag.split('_')[1]
                             end = p.all_stations[order.start_location]
                             taynum = p.stations_name[order.end_location]
-                            path = p.internal_paths[bay][start][end].append(taynum)
+                            path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                            path.append(taynum)
                             order.vehicle_assigned = value
                             order.delivery_route = path
                             orederlist.append(order)
                             ty.pop(0)
                         till = False
-
     else:
         with p.db_pool.get_connection() as db_conn:
             cursor = db_conn.cursor()
@@ -346,7 +348,7 @@ def vehicle_load_static(p):
                 FROM OHTC_CAR
                 WHERE ohtID IS NOT NULL 
                 AND (
-                    (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
+                    (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0' OR ohtStatus_Idle = '0')
                     OR (ohtStatus_Roaming = '1' 
                         OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Idle = '1') 
                         OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncalling = '1')
@@ -371,7 +373,7 @@ def vehicle_load_static(p):
                     order = task[0]
                     loaction = i[10]
                     speed = int(i[2])
-                    if int(i[2])==0:
+                    if speed==0:
                         speed = 1
                     ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
                     if ts < p.tts:
@@ -382,38 +384,46 @@ def vehicle_load_static(p):
                         start = flag.split('_')[1]
                         end = p.all_stations[order.start_location]
                         taynum = p.stations_name[order.end_location]
-                        path = copy.deepcopy(p.internal_paths[bay][start][end])
+                        path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
                         path.append(taynum)
                         order.vehicle_assigned = value
                         order.delivery_route = path
                         orederlist.append(order)
                         if len(task)>0:
                             task.pop(0)
-                        
             else:
                 temcar.append(i)
                 pass
         if len(orederlist)<10:
-            for ty in p.taskList:
-                till = True
-                while till:
-                        car = random.choice[temcar]
+            try:
+                for ty in p.taskList:
+                    till = True
+                    while till:
+                        car = random.choice(temcar)
                         order = ty
                         loaction = car[10]
                         value = car[11]
-                        ts = (p.original_map_info[p.original_map_info[0]==loaction][4]-int(car[43]))/int(car[2]).values[0]
+                        speed = int(car[2])
+                        if speed == 0:
+                            speed = 1
+                        ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
                         if ts < p.tts:
                             continue
                         else:
-                            start = loaction.split('_')[1]
+                            tay = loaction.split('_')
+                            bayA = tay[0].split('_')[0]
+                            start = tay('_')[1]
                             end = p.all_stations[order.start_location]
                             taynum = p.stations_name[order.end_location]
-                            path = p.internal_paths[bay][start][end].append(taynum)
+                            # bay
+                            path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                            path.append(taynum)
                             order.vehicle_assigned = value
                             order.delivery_route = path
                             orederlist.append(order)
                         till = False
-
+            except:
+                pass
     return orederlist
 # static select car
 def vehicle_load_static_fast(p):
@@ -485,23 +495,6 @@ def vehicle_load_static_fast(p):
                 if len(task)>0:
                     order = task[0]
                     computeCarPath(order,i,p,orederlist,1,10,11,True)
-                    # flag = i[10]
-                    # order = task[0]
-                    # loaction = i[10]
-                    # ts = (p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/int(i[2]).values[0]
-                    # if ts < p.tts:
-                    #     temcar.append(i)
-                    #     continue
-                    # else:
-                    #     start = flag.split('_')[1]
-                    #     end = p.all_stations[loaction]
-                    #     taynum = p.stations_name[order.end_location]
-                    #     path = p.internal_paths[bay][start][end].append(taynum)
-                    #     order.vehicle_assigned = value
-                    #     order.delivery_route = path
-                    #     orederlist.append(order)
-                    #     task.pop(0)
-                    #     p.taskList.pop(p.taskList.index(task))
             else:
                 temcar.append(i)
                 pass
@@ -511,33 +504,7 @@ def vehicle_load_static_fast(p):
                 while till:
                     car = random.choice[temcar]
                     computeCarPath(ty,car,p,orederlist,1,10,11,till)
-                        # car = random.choice[temcar]
-                        # order = ty
-                        # loaction = car[10]
-                        # ts = (p.original_map_info[p.original_map_info[0]==loaction][4]-int(car[43]))/int(car[2]).values[0]
-                        # if ts < p.tts:
-                        #     continue
-                        # else:
-                        #     start = car[10].split('_')[1]
-                        #     end = p.all_stations[car[1]]
-                        #     taynum = p.stations_name[car[1]]
-                        #     path = p.internal_paths[bay][start][end].append(taynum)
-                        #     order.vehicle_assigned = car[11]
-                        #     order.delivery_route = path
-                        #     orederlist.append(order)
-                        #     ty.pop(0)
-                        # till = False
 
-            # mapID('10')是起点：[sp, ep] = ii['mapId'].split('_')[1] or [sp, ep] = ii[10].split('_')[1]
-            # vehicles[ii['ohtID']] = ii
-            # existing vehicles in one path
-            # if not ii.get('mapId'):
-            #     continue
-            # [sp, ep] = ii['mapId'].split('_')
-            # if not p.vehicle_jam.get((sp, ep)):
-            #     p.vehicle_jam[sp, ep] = 1
-            # else:
-            #     p.vehicle_jam[sp, ep] += 1
     return orederlist
 
 def computeCarPath(ty,car,p,orderlist,inx,flag,mapid,plist = False,boll = False,):
