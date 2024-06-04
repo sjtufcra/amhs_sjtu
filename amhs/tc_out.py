@@ -1,7 +1,9 @@
 import pandas as pd
-
 from loguru import logger as log
 import time
+import json
+
+
 def output(p):
     if p.Control().out_path == 0:
         # to local computer
@@ -38,7 +40,12 @@ def output_new(p, k, v):
             cursor.execute(sql)
             db_conn.commit()
             cursor.close()
-    log.info(f"task_number: {k},car:{v.vehicle_assigned}")
+
+    # checking if tasks are assigned successfully
+    time.sleep(0.1)
+    idx = "Car:monitor:128.168.11.142_1" + v.vehicle_assigned[1:]
+    tmp = json.loads(p.redis_link.get(idx))['ohtStatus_Idle']
+    log.info(f'vehicle[{v.vehicle_assigned}],status[{tmp}],1:false/0:true')
     # old
     # p.db_cursor.execute(sql)
     # p.db_connection.commit()

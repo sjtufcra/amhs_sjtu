@@ -69,8 +69,51 @@ def task_assign(p, use_multiprocessing=True):
                         # v.finished = 1
                         car += 1
             log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
+# new_function_static
+def task_assign_static(p, use_multiprocessing=True):
+        while p.runBool:
+            start_time = time.time()
+            p.map_info = p.map_info_unchanged
+            p = read_instructions_static(p)
+            orederlist = vehicle_load_static(p)
+            log.info(f"algorithm,task_time:{time.time()-start_time}")
+            if use_multiprocessing:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+                    try:
+                        future_to_order_id = {
+                        executor.submit(process_order_static, v, p): order_id
+                        for order_id, v in p.orders.items() if v.finished == 0
+                    }
+                    except Exception as exc:
+                        log.error(f"Order processing generated an exception: {exc}")
+            else:
+                for v in orederlist:
+                        start_time = time.time()
+                        if p.mode == False:
+                            log.info(f"alltime,task_time:{time.time()-start_time}")
+                            log.info(f'success:{v.id},{v}')
+                            # output_new(p, v.id, v)
+                        else:
+                            output_new(p, v.id, v)
+                            pass
+            log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
 
 def process_order(v, p):
+    start_time = time.time()
+    if v.finished == 0:
+        veh, v0 = vehicle_select_fast_random(v, p)  # getpath
+        start, end = terminus_select(0, v0, p, v)
+        v.vehicle_assigned = veh
+        v.delivery_route = shortest_path(start, end, p, v, typ=0)
+        if p.mode == False:
+            log.info(f'success:{v.id},{v}')
+            log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
+        else:
+            output_new(p, v.id, v)
+            pass
+    return
+
+def process_order_static(v, p):
     start_time = time.time()
     if v.finished == 0:
         veh, v0 = vehicle_select_fast_random(v, p)  # getpath
@@ -144,6 +187,10 @@ def vehicle_select_fast_random(task, p):
     p.used_vehicle.add(veh)
     return veh, p.vehicles_get[veh]
 
+# bay seclect
+def vehicle_select_fast_bay(task, p):   
+
+    pass
 def terminus_select(j, v0, p, v):
     if j == 0:
         # routh: position -> start

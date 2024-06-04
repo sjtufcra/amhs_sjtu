@@ -30,6 +30,7 @@ class Dataset:
         self.rds_port = out_config['rds_port']
         self.rds_search_pattern = out_config['rds_search_pattern']
         self.use_multiprocessing = out_config['use_multiprocessing']
+        self.redis_link = None
         # database cursor
         self.db_connection = None
         self.db_cursor = None
@@ -46,8 +47,16 @@ class Dataset:
         self.algorithm_on = out_config['algorithm_on'] #算法调整：1、原始算法，2、A*算法
         # mode
         self.mode = out_config['mode']
-        self.status = out_config['status']
-        self.task_num = out_config['task_num']
+        # self.status = out_config['status']
+        self.status = 'matrix'
+        # self.task_num = out_config['task_num']
+        self.task_num = 10
+        # add time control
+        self.tts = 2
+
+        # added in 240603
+        self.internal_paths = None
+        self.external_paths = None
 
     class Control:
         def __init__(self,task_num=10):
