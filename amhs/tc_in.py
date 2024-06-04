@@ -323,38 +323,41 @@ def vehicle_load_static(p):
                 temcar.append(i)
                 pass
         if len(orederlist)<10:
-            for ty in p.taskList:
-                till = 0
-                while till<10:
-                        car = random.choice(temcar)#todo： 优化选车逻辑
-                        order = ty
-                        bay = car.get('bay')
-                        value = car('ohtID')
-                        flag = car('mapId')
-                        
-                        try:
-                            speed = int(i[2])
-                            if speed==0:
-                                speed = 1
+            try:
+                for ty in p.taskList:
+                    till = 0
+                    while till<10:
+                            car = random.choice(temcar)#todo： 优化选车逻辑
+                            order = ty
+                            bay = car.get('bay')
+                            value = car('ohtID')
+                            flag = car('mapId')
+                            
+                            try:
+                                speed = int(i[2])
+                                if speed==0:
+                                    speed = 1
+                                ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
+                            except:
+                                ts = 0
                             ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
-                        except:
-                            ts = 0
-                        ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
-                        if ts < p.tts:
-                            till+=1
-                            continue
-                        else:
-                            # todo:
-                            start = flag.split('_')[1]
-                            end = p.all_stations[order.start_location]
-                            taynum = p.stations_name[order.end_location]
-                            path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
-                            path.append(taynum)
-                            order.vehicle_assigned = value
-                            order.delivery_route = path
-                            orederlist.append(order)
-                            ty.pop(0)
-                            till = 10
+                            if ts < p.tts:
+                                till+=1
+                                continue
+                            else:
+                                # todo:
+                                start = flag.split('_')[1]
+                                end = p.all_stations[order.start_location]
+                                taynum = p.stations_name[order.end_location]
+                                path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                                path.append(taynum)
+                                order.vehicle_assigned = value
+                                order.delivery_route = path
+                                orederlist.append(order)
+                                ty.pop(0)
+                                till = 10
+            except:
+                pass
     else:
         with p.db_pool.get_connection() as db_conn:
             cursor = db_conn.cursor()
