@@ -1,6 +1,8 @@
 import pandas as pd
-
 from loguru import logger as log
+from time import sleep
+import json
+
 
 def output(p):
     if p.Control().out_path == 0:
@@ -38,6 +40,11 @@ def output_new(p, k, v):
             db_conn.commit()
             cursor.close()
 
+    # checking if tasks are assigned successfully
+    sleep(0.1)
+    idx = "Car:monitor:128.168.11.142_1" + v.vehicle_assigned[1:]
+    tmp = json.loads(p.redis_link.get(idx))['ohtStatus_Idle']
+    log.info(f'vehicle[{v.vehicle_assigned}],status[{tmp}],1:false/0:true')
     # old
     # p.db_cursor.execute(sql)
     # p.db_connection.commit()
