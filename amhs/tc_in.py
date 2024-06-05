@@ -11,7 +11,7 @@ import copy
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-from .algorithm.A_start.graph.srccode import *
+from algorithm.A_start.graph.srccode import *
 
 
 
@@ -183,13 +183,13 @@ def map_divided(p):
         pathA = dict(nx.all_pairs_dijkstra(pic,weight='weight'))
         paths_in_bays[k] = dict({"path":dict(pathA), "entrance":v['entrance'], "outlet":v['outlet']})
     p.internal_paths = paths_in_bays
-    paths_between_bays = dict()
-    for starting in tmp3:
-        for ending in tmp4:
-            if starting != ending:
-                tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
-                paths_between_bays.update({(starting, ending): tmp5})
-    p.external_paths = paths_between_bays
+    # paths_between_bays = dict()
+    # for starting in tmp3:
+    #     for ending in tmp4:
+    #         if starting != ending:
+    #             tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
+    #             paths_between_bays.update({(starting, ending): tmp5})
+    # p.external_paths = paths_between_bays
     return p
 
 
@@ -303,10 +303,14 @@ def vehicle_load_static(p):
                 task = p.bays_relation[bay]
                 if len(task)>0:
                     order = task[0]
-                    speed = int(i[2])
-                    if speed==0:
-                        speed = 1
-                    ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
+                    try:
+                        speed = int(i[2])
+                        if speed==0:
+                            speed = 1
+                        number = (p.original_map_info[p.original_map_info[0]==location][4]).iloc[0]
+                        ts = float(float(number-float(i[43]))/speed)
+                    except:
+                        ts = 0
                     if ts < p.tts:
                         temcar.append(i)
                         continue
@@ -335,15 +339,14 @@ def vehicle_load_static(p):
                             bay = car.get('bay')
                             value = car('ohtID')
                             flag = car('mapId')
-                            
                             try:
                                 speed = int(i[2])
                                 if speed==0:
                                     speed = 1
-                                ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
+                                number = (p.original_map_info[p.original_map_info[0]==location][4]).iloc[0]
+                                ts = float(float(number-float(i[43]))/speed)
                             except:
                                 ts = 0
-                            ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
                             if ts < p.tts:
                                 continue
                             else:
@@ -383,8 +386,6 @@ def vehicle_load_static(p):
                     return orederlist
             if not i:
                 continue
-            if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0'or i.get('ohtStatus_Idle') == '0':
-                continue
             bay = i[1]
             value = i[11]
             flag = i[10]
@@ -392,12 +393,13 @@ def vehicle_load_static(p):
                 task = p.bays_relation[bay]
                 if len(task)>0:
                     order = task[0]
-                    loaction = i[10]
+                    location = i[10]
                     try:
                         speed = int(i[2])
                         if speed==0:
                             speed = 1
-                        ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
+                        number = (p.original_map_info[p.original_map_info[0]==location][4]).iloc[0]
+                        ts = float(float(number-float(i[43]))/speed)
                     except:
                         ts = 0
                     if ts < p.tts:
@@ -425,16 +427,17 @@ def vehicle_load_static(p):
                     while till:
                         car = random.choice(temcar)
                         order = ty
-                        loaction = car[10]
+                        location = car[10]
                         value = car[11]
                         speed = int(car[2])
                         if speed == 0:
                             speed = 1
-                        ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
+                        number = (p.original_map_info[p.original_map_info[0]==location][4]).iloc[0]
+                        ts = float(float(number-float(i[43]))/speed)
                         if ts < p.tts:
                             continue
                         else:
-                            tay = loaction.split('_')
+                            tay = location.split('_')
                             bayA = tay[0].split('_')[0]
                             start = tay('_')[1]
                             end = p.all_stations[order.start_location]
@@ -534,8 +537,8 @@ def vehicle_load_static_fast(p):
 def computeCarPath(ty,car,p,orderlist,inx,flag,mapid,plist = False,boll = False,):
     bay = car[inx]
     order = ty
-    loaction = car[flag]
-    ts = (p.original_map_info[p.original_map_info[0]==loaction][4]-int(car[43]))/int(car[2]).values[0]
+    location = car[flag]
+    ts = (p.original_map_info[p.original_map_info[0]==location][4]-int(car[43]))/int(car[2]).values[0]
     if ts < p.tts:
         boll = True
         pass
