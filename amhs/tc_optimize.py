@@ -64,7 +64,7 @@ def task_assign(p, use_multiprocessing=True):
                             log.info(f'success:{k},{v}')
                             # output_new(p, k, v)
                         else:
-                            output_new(p, k, v)
+                            # output_new(p, k, v)
                             pass
                         # v.finished = 1
                         car += 1
