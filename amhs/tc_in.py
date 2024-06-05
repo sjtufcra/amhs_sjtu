@@ -5,11 +5,14 @@ import rediscluster as rds
 import networkx as nx
 import threading
 import json
+import random
+import copy
 
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
 from algorithm.A_start.graph.srccode import *
+
 
 
 # server config
@@ -103,7 +106,7 @@ def erect_map(p):
                 p.map_info_unchanged.add_node_from(sp, ep, length)
                 p.map_info_unchanged.add_weighted_edges_from([(sp, ep, length)])
             # tensor generation
-            p.map_info_unchanged.create_matrix(df.values)
+            # p.map_info_unchanged.create_matrix(df.values)
             db_conn.commit()
             cursor.close()
             track_generate_station(p, df)
@@ -177,15 +180,16 @@ def map_divided(p):
         pic = DiGraph(p.status)
         for k2, v2 in v['internal'].items():
             pic.add_weighted_edges_from([(k2[0], k2[1], v2)])
-        paths_in_bays[k] = dict(nx.shortest_path(pic))
-    paths_between_bays = dict()
-    for starting in tmp3:
-        for ending in tmp4:
-            if starting != ending:
-                tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
-                paths_between_bays.update({(starting, ending): tmp5})
+        pathA = dict(nx.all_pairs_dijkstra(pic,weight='weight'))
+        paths_in_bays[k] = dict({"path":dict(pathA), "entrance":v['entrance'], "outlet":v['outlet']})
     p.internal_paths = paths_in_bays
-    p.external_paths = paths_between_bays
+    # paths_between_bays = dict()
+    # for starting in tmp3:
+    #     for ending in tmp4:
+    #         if starting != ending:
+    #             tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
+    #             paths_between_bays.update({(starting, ending): tmp5})
+    # p.external_paths = paths_between_bays
     return p
 
 
@@ -262,10 +266,9 @@ def vehicle_load(p):
     return p
 # static select car
 def vehicle_load_static(p):
-    p.vehicles_bay_get = clear_data()
-    p.vehicles_bay_send = clear_data()
-    p.vehicles_get = dict()
-    p.vehicles_send = dict()
+    orederlist=[]
+    temcar = []
+    tasklength = len(p.taskList)
     if p.mode == 1:
         redis_pattern = """
                 (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
@@ -280,14 +283,216 @@ def vehicle_load_static(p):
 
         pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         connection = rds.RedisCluster(connection_pool=pool)
+        # v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}{redis_pattern}*'))
+        v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+        log.info('start a car search')
+
+        for i in v:
+            log.info(f'加载数据:{i}')
+            i = json.loads(i)
+            if len(orederlist)>tasklength:
+                    return orederlist
+            if not i:
+                continue
+            if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0'or i.get('ohtStatus_Idle') == '0':
+                continue
+            bay = i.get('bay')
+            value = i.get('ohtID')
+            flag = i.get('mapId')
+            if bay in p.bays_relation:
+                task = p.bays_relation[bay]
+                if len(task)>0:
+                    order = task[0]
+                    try:
+                        speed = int(i[2])
+                        if speed==0:
+                            speed = 1
+                        number = (p.original_map_info[p.original_map_info[0]==location][4]).iloc[0]
+                        ts = float(float(number-float(i[43]))/speed)
+                    except:
+                        ts = 0
+                    if ts < p.tts:
+                        temcar.append(i)
+                        continue
+                    else:
+                        p.taskList.pop(p.taskList.index(order))
+                        start = flag.split('_')[1]
+                        end = p.all_stations[order.start_location]
+                        taynum = p.stations_name[order.end_location]
+                        path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                        path.append(taynum)
+                        order.vehicle_assigned = value
+                        order.delivery_route = path
+                        orederlist.append(order)
+                        if len(task)>0:
+                            task.pop(0)
+            else:
+                temcar.append(i)
+                pass
+        if len(orederlist)<tasklength:
+            try:
+                for ty in p.taskList:
+                    till = True
+                    while till:
+                            car = random.choice(temcar)#todo： 优化选车逻辑
+                            order = ty
+                            bay = car.get('bay')
+                            value = car('ohtID')
+                            flag = car('mapId')
+                            try:
+                                speed = int(i[2])
+                                if speed==0:
+                                    speed = 1
+                                number = (p.original_map_info[p.original_map_info[0]==location][4]).iloc[0]
+                                ts = float(float(number-float(i[43]))/speed)
+                            except:
+                                ts = 0
+                            if ts < p.tts:
+                                continue
+                            else:
+                                # todo:
+                                start = flag.split('_')[1]
+                                end = p.all_stations[order.start_location]
+                                taynum = p.stations_name[order.end_location]
+                                path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                                path.append(taynum)
+                                order.vehicle_assigned = value
+                                order.delivery_route = path
+                                orederlist.append(order)
+                                ty.pop(0)
+                                till = False
+            except:
+                pass
+    else:
+        with p.db_pool.get_connection() as db_conn:
+            cursor = db_conn.cursor()
+            cursor.execute('''SELECT *
+                FROM OHTC_CAR
+                WHERE ohtID IS NOT NULL 
+                AND (
+                    (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0' OR ohtStatus_Idle = '0')
+                    OR (ohtStatus_Roaming = '1' 
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Idle = '1') 
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncalling = '1')
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncall = '1'))
+                    OR (ohtStatus_IsHaveFoup = '1' 
+                        AND ohtStatus_MoveEnable = '1'
+                        AND ohtStatus_Idle = '1')
+                )
+            ''')
+        v = cursor.fetchall()
+        for i in v:
+            if len(orederlist)>tasklength:
+                    return orederlist
+            if not i:
+                continue
+            bay = i[1]
+            value = i[11]
+            flag = i[10]
+            if bay in p.bays_relation:
+                task = p.bays_relation[bay]
+                if len(task)>0:
+                    order = task[0]
+                    location = i[10]
+                    try:
+                        speed = int(i[2])
+                        if speed==0:
+                            speed = 1
+                        number = (p.original_map_info[p.original_map_info[0]==location][4]).iloc[0]
+                        ts = float(float(number-float(i[43]))/speed)
+                    except:
+                        ts = 0
+                    if ts < p.tts:
+                        temcar.append(i)
+                        continue
+                    else:
+                        p.taskList.pop(p.taskList.index(order))
+                        start = flag.split('_')[1]
+                        end = p.all_stations[order.start_location]
+                        taynum = p.stations_name[order.end_location]
+                        path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                        path.append(taynum)
+                        order.vehicle_assigned = value
+                        order.delivery_route = path
+                        orederlist.append(order)
+                        if len(task)>0:
+                            task.pop(0)
+            else:
+                temcar.append(i)
+                pass
+        if len(orederlist)<tasklength:
+            try:
+                for ty in p.taskList:
+                    till = True
+                    while till:
+                        car = random.choice(temcar)
+                        order = ty
+                        location = car[10]
+                        value = car[11]
+                        speed = int(car[2])
+                        if speed == 0:
+                            speed = 1
+                        number = (p.original_map_info[p.original_map_info[0]==location][4]).iloc[0]
+                        ts = float(float(number-float(i[43]))/speed)
+                        if ts < p.tts:
+                            continue
+                        else:
+                            tay = location.split('_')
+                            bayA = tay[0].split('_')[0]
+                            start = tay('_')[1]
+                            end = p.all_stations[order.start_location]
+                            taynum = p.stations_name[order.end_location]
+                            # bay
+                            path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                            path.append(taynum)
+                            order.vehicle_assigned = value
+                            order.delivery_route = path
+                            orederlist.append(order)
+                            till = False
+            except:
+                pass
+    return orederlist
+# static select car
+def vehicle_load_static_fast(p):
+    orederlist=[]
+    temcar = []
+    if p.mode == 1:
+        redis_pattern = """
+                    WHERE ohtID IS NOT NULL
+                    AND (
+                        (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
+                        OR (ohtStatus_Roaming = '1'
+                            OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Idle = '1')
+                            OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncalling = '1')
+                            OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncall = '1'))
+                        OR (ohtStatus_IsHaveFoup = '1'
+                            AND ohtStatus_MoveEnable = '1'
+                            AND ohtStatus_Idle = '1')
+                    )
+        """
+
+
+        pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        connection = rds.RedisCluster(connection_pool=pool)
         v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}{redis_pattern}*'))
         log.info('start a car search')
+        
         for i in v:
+            if len(orederlist)>10:
+                    return orederlist
             if not i:
                 continue
             ii = json.loads(i)
-            p.vehicles_get[ii.get('ohtID')] = ii
-            set_data(p.vehicles_bay_get, ii["bay"], ii)
+            bay = ii['bay']
+            if bay in p.bays_relation:
+                task = p.bays_relation[bay]
+                if len(task)>0:
+                    start = ii['mapId'].split('_')[1]
+                    orederlist.append(task[0])
+                    task.pop(0)
+            else:
+                temcar.append(ii)
+                pass
     else:
         with p.db_pool.get_connection() as db_conn:
             cursor = db_conn.cursor()
@@ -306,26 +511,52 @@ def vehicle_load_static(p):
                 )
             ''')
         v = cursor.fetchall()
-        set_data(p.vehicles_bay_get, i[1], i)
         for i in v:
-            value = i[11]
-            p.vehicles_get[value] = i
-            set_data(p.vehicles_bay_get, i[1], i)
+            if len(orederlist)>10:
+                    return orederlist
+            if not i:
+                continue
+            bay = i[1]
+            if bay in p.bays_relation:
+                task = p.bays_relation[bay]
+                if len(task)>0:
+                    order = task[0]
+                    computeCarPath(order,i,p,orederlist,1,10,11,True)
+            else:
+                temcar.append(i)
+                pass
+        if len(orederlist)<10:
+            for ty in p.taskList:
+                till = True
+                while till:
+                    car = random.choice(temcar)
+                    computeCarPath(ty,car,p,orederlist,1,10,11,till)
 
-            # mapID('10')是起点：[sp, ep] = ii['mapId'].split('_')[1] or [sp, ep] = ii[10].split('_')[1]
-            # vehicles[ii['ohtID']] = ii
-            # existing vehicles in one path
-            # if not ii.get('mapId'):
-            #     continue
-            # [sp, ep] = ii['mapId'].split('_')
-            # if not p.vehicle_jam.get((sp, ep)):
-            #     p.vehicle_jam[sp, ep] = 1
-            # else:
-            #     p.vehicle_jam[sp, ep] += 1
-    # log.info(f'Available vehicles number is:{ len(vehicles)}')
-    # p.vehicles = vehicles
-    return p
+    return orederlist
 
+def computeCarPath(ty,car,p,orderlist,inx,flag,mapid,plist = False,boll = False,):
+    bay = car[inx]
+    order = ty
+    location = car[flag]
+    ts = (p.original_map_info[p.original_map_info[0]==location][4]-int(car[43]))/int(car[2]).values[0]
+    if ts < p.tts:
+        boll = True
+        pass
+    else:
+        start = car[flag].split('_')[1]
+        end = p.all_stations[bay]
+        taynum = p.stations_name[bay]
+        path = p.internal_paths[bay][start][end].append(taynum)
+
+        if plist:
+             p.taskList.pop(p.taskList.index(order))
+
+        order.vehicle_assigned = car[mapid]
+        order.delivery_route = path
+        orderlist.append(order)
+        ty.pop(0)
+        
+        boll = False
 
 # set data in element
 def set_data(dictionary, key, data):
@@ -435,11 +666,11 @@ def track_generate_station(p, df):
 def read_instructions(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
-        cursor = db_conn.cursor()
-        cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'")
-        df = pd.DataFrame(cursor.fetchall())
-        db_conn.commit()
-        cursor.close()
+            cursor = db_conn.cursor()
+            cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS IN (0,10)  and VEHICLE='0'")
+            df = pd.DataFrame(cursor.fetchall())
+            db_conn.commit()
+            cursor.close()
     n = 0
     for i in df.index:
         tmp = p.Task()
@@ -448,6 +679,55 @@ def read_instructions(p):
         tmp.end_location = df[5][i]
         tmp.task_bay = tmp.start_location.split('_')[1]
         p.orders[tmp.id] = tmp
+        n += 1
+        if n >= p.task_num:
+            break
+    log.info(f'this is the task count:{n}')
+
+    # p.db_cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'")
+    # df = pd.DataFrame(p.db_cursor.fetchall())
+    # debuger
+    # if len(df) == 0:
+    #     pass
+    #     exit('All tasks have finished :)')
+    # else:
+    #     pass
+    #     # print('Tasks number is', len(df))
+    # n = 0
+    # for i in df.index:
+    #     tmp = p.Task()
+    #     tmp.id = df[0][i]
+    #     tmp.start_location = df[4][i]
+    #     tmp.end_location = df[5][i]
+    #     tmp.task_bay = tmp.start_location.split('_')[1]
+    #     p.orders[tmp.id] = tmp
+    #     n += 1
+    #     if n >= p.Control().task_num:
+    #         break
+    # log.info(f'this is the task count:{n}')
+    return p
+
+
+def read_instructions_static(p):
+    # oracle
+    with p.db_pool.get_connection() as db_conn:
+        cursor = db_conn.cursor()
+        cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'")
+        df = pd.DataFrame(cursor.fetchall())
+        log.info(f'task count:{len(df)}')
+        db_conn.commit()
+        cursor.close()
+    n = 0
+    p.bays_relation=clear_data()
+    p.taskList=[]
+    for i in df.index:
+        tmp = p.Task()
+        tmp.id = df[0][i]
+        tmp.start_location = df[4][i]
+        tmp.end_location = df[5][i]
+        tmp.task_bay = tmp.start_location.split('_')[1]
+        set_data(p.bays_relation,tmp.task_bay,tmp)
+        p.taskList.append(tmp)
         n += 1
         if n >= p.task_num:
             break
