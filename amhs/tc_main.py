@@ -14,6 +14,7 @@ class Amhs():
     def start(self):
         # if not self.loadBool():
         #     return 
+        
         d = Dataset(self.config)
         self.Node = d
         d = generating(d)
