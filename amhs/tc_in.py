@@ -268,6 +268,7 @@ def vehicle_load(p):
 def vehicle_load_static(p):
     orederlist=[]
     temcar = []
+    number_task = len(p.taskList)
     if p.mode == 1:
         redis_pattern = """
                 (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
@@ -285,11 +286,12 @@ def vehicle_load_static(p):
         # v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}{redis_pattern}*'))
         v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         log.info('start a car search')
-
+        if v is None:
+            return orederlist
         for i in v:
             log.info(f'加载数据:{i}')
             i = json.loads(i)
-            if len(orederlist)>10:
+            if len(orederlist)>=number_task:
                     return orederlist
             if not i:
                 continue
@@ -305,7 +307,8 @@ def vehicle_load_static(p):
                     speed = int(i[2])
                     if speed==0:
                         speed = 1
-                    ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
+                    number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                    ts = float(number-int(i[43]))/speed
                     if ts < p.tts:
                         temcar.append(i)
                         continue
@@ -324,11 +327,11 @@ def vehicle_load_static(p):
             else:
                 temcar.append(i)
                 pass
-        if len(orederlist)<10:
+        if len(orederlist)<number_task:
             try:
                 for ty in p.taskList:
-                    till = 0
-                    while till<10:
+                    till = True
+                    while till:
                             car = random.choice(temcar)#todo： 优化选车逻辑
                             order = ty
                             bay = car.get('bay')
@@ -339,12 +342,11 @@ def vehicle_load_static(p):
                                 speed = int(i[2])
                                 if speed==0:
                                     speed = 1
-                                ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
+                                number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                                ts = float(number-int(i[43]))/speed
                             except:
                                 ts = 0
-                            ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
                             if ts < p.tts:
-                                till+=1
                                 continue
                             else:
                                 # todo:
@@ -357,7 +359,7 @@ def vehicle_load_static(p):
                                 order.delivery_route = path
                                 orederlist.append(order)
                                 ty.pop(0)
-                                till = 10
+                                till = False
             except:
                 pass
     else:
@@ -379,11 +381,11 @@ def vehicle_load_static(p):
             ''')
         v = cursor.fetchall()
         for i in v:
-            if len(orederlist)>10:
+            if len(orederlist)>number_task:
                     return orederlist
             if not i:
                 continue
-            if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0'or i.get('ohtStatus_Idle') == '0':
+            if i[28] != '1' or i[14] != '0'or i[17] == '0':
                 continue
             bay = i[1]
             value = i[11]
@@ -397,7 +399,8 @@ def vehicle_load_static(p):
                         speed = int(i[2])
                         if speed==0:
                             speed = 1
-                        ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
+                        number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                        ts = float(number-int(i[43]))/speed
                     except:
                         ts = 0
                     if ts < p.tts:
@@ -418,11 +421,11 @@ def vehicle_load_static(p):
             else:
                 temcar.append(i)
                 pass
-        if len(orederlist)<10:
+        if len(orederlist)<number_task:
             try:
                 for ty in p.taskList:
-                    till = 0
-                    while till<10:
+                    till = True
+                    while till:
                         car = random.choice(temcar)
                         order = ty
                         loaction = car[10]
@@ -430,7 +433,8 @@ def vehicle_load_static(p):
                         speed = int(car[2])
                         if speed == 0:
                             speed = 1
-                        ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
+                        number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                        ts = float(number-int(i[43]))/speed
                         if ts < p.tts:
                             till+=1
                             continue
@@ -446,7 +450,7 @@ def vehicle_load_static(p):
                             order.vehicle_assigned = value
                             order.delivery_route = path
                             orederlist.append(order)
-                            till = 10
+                            till = False
             except:
                 pass
     return orederlist
