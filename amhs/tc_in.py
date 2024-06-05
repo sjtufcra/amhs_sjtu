@@ -1,4 +1,5 @@
 from collections import defaultdict
+from functools import partial
 import pandas as pd
 import oracledb
 import rediscluster as rds
@@ -7,6 +8,7 @@ import threading
 import json
 import random
 import copy
+import multiprocessing
 
 from mysql import connector
 from loguru import logger as log
@@ -109,7 +111,8 @@ def erect_map(p):
             # p.map_info_unchanged.create_matrix(df.values)
             db_conn.commit()
             cursor.close()
-            track_generate_station(p, df)
+            # track_generate_station(p, df)
+            track_generate_station_mulit(p, df)
 
         # added in 240603 by lby
         # a new model used to divide map into two pieces,
@@ -286,9 +289,9 @@ def vehicle_load_static(p):
         # v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}{redis_pattern}*'))
         v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         log.info('start a car search')
-
+        if v == None:
+            return orederlist
         for i in v:
-            log.info(f'加载数据:{i}')
             i = json.loads(i)
             if len(orederlist)>tasklength:
                     return orederlist
@@ -662,7 +665,57 @@ def track_generate_station(p, df):
     # p.stations_name = station_name
     return p
 
+def track_generate_station_mulit(p, df):
+    if p.all_stations is not None:
+        return p
 
+    df2 = get_station_data(p)
+
+    station_location = dict()
+    station_name = dict()
+
+    num_threads = multiprocessing.cpu_count()
+    newdata = split_data(df2, num_threads)
+
+    set_station = partial(create_map_form_pd, orgine=df, start=station_location, end=station_name)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as pross:
+        results = pross.map(set_station, newdata)
+
+    for start, end in results:
+        station_location.update(start)
+        station_name.update(end)
+
+    p.all_stations = station_location
+    p.stations_name = station_name
+
+    return p
+
+# 多进程处理台位数据
+def create_map_form_pd(iteram, orgine,start,end):
+    for i in iteram.index:
+        num = iteram[1][i]
+        loc = iteram[3][i]
+        dft = orgine[(orgine[3] <= loc) & (orgine[4] >= loc)]
+        if not dft.empty:
+            start[num] = dft[1].values[0]
+            end[num] = str(dft[3].values[0])
+    return start,end
+
+# 台位数据分割
+def split_data(data,num_processes):
+    size = len(data)
+    split_size = size//num_processes
+    return [data[i:i+split_size]for i in range(0,size,split_size)]
+
+# 读取数据库数据
+def get_station_data(p):
+    with p.db_pool.get_connection() as db_conn:
+        cursor = db_conn.cursor()
+        cursor.execute('SELECT * FROM OHTC_POSITION')
+        df2 = pd.DataFrame(cursor.fetchall())
+        cursor.close()
+        db_conn.commit()
+    return df2
 def read_instructions(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
