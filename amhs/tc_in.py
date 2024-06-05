@@ -283,10 +283,11 @@ def vehicle_load_static(p):
         pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}{redis_pattern}*'))
-        v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}'))
+        v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         log.info('start a car search')
 
         for i in v:
+            log.info(f'加载数据:{i}')
             i = json.loads(i)
             if len(orederlist)>10:
                     return orederlist
