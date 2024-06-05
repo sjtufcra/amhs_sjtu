@@ -6,9 +6,9 @@ import concurrent.futures
 import multiprocessing
 from loguru import logger as log
 
-from tc_out import *
-from tc_in import *
-from algorithm.A_start.graph.srccode import *
+from .tc_out import *
+from .tc_in import *
+from .algorithm.A_start.graph.srccode import *
 
 def task_assign(p, use_multiprocessing=True):
         
@@ -54,19 +54,11 @@ def task_assign(p, use_multiprocessing=True):
             else:
                 for k, v in p.orders.items():
                     if v.finished == 0:
-                        start_time = time.time()
                         # veh, v0 = vehicle_select(v, p)  # getpath
                         veh, v0 = vehicle_select_fast_random(v, p)  # getpath
-                        log.info(f"vehicle_select,task_time:{time.time()-start_time}")
                         start, end = terminus_select(j, v0, p, v)
-                        log.info(f"terminus_select,task_time:{time.time()-start_time}")
                         v.vehicle_assigned = veh
-                        sl = time.time()
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
-                        log.info(f"path,task_time:{time.time()-sl}")
-                        tl = time.time()
-                        tp = nx.shortest_path(p.map_info, source=start, target=end)
-                        log.info(f"tp,task_time:{time.time()-tl}")
                         if p.mode == False:
                             log.info(f"alltime,task_time:{time.time()-start_time}")
                             log.info(f'success:{k},{v}')
@@ -95,6 +87,7 @@ def task_assign_static(p, use_multiprocessing=True):
                     except Exception as exc:
                         log.error(f"Order processing generated an exception: {exc}")
             else:
+                log.info(f"car+task: {len(orederlist)}")
                 for v in orederlist:
                         start_time = time.time()
                         if p.mode == False:

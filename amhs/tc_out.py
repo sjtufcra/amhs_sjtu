@@ -1,6 +1,6 @@
 import pandas as pd
 from loguru import logger as log
-from time import sleep
+import time
 import json
 
 
@@ -17,7 +17,7 @@ def output(p):
         n = 0
         for k, v in p.orders.items():
             if v.finished == 1:
-                s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
+                s0 = "SET VEHICLE = '" + v.vehicle_assigned+"',VEHICLE_TIME = '" + str(time.time()) + "', POSPATH = '" + ','.join(v.delivery_route)
                 s1 = "' WHERE COMMANDID = '" + k + "'"
                 sql = "UPDATE TRANSFER_TABLE " + s0 + s1
                 p.db_cursor.execute(sql)
@@ -30,6 +30,7 @@ def output(p):
 
 
 def output_new(p, k, v):
+    # s0 = "SET VEHICLE = '" + v.vehicle_assigned+ "', POSPATH = '" + ','.join(v.delivery_route)+"',VEHICLE_TIME = TO_DATE('"+str(time.time())+"', 'yyyy-mm-dd hh24:mi:ss')"
     s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
     s1 = "' WHERE COMMANDID = '" + k + "'"
     sql = "UPDATE TRANSFER_TABLE " + s0 + s1
@@ -41,7 +42,7 @@ def output_new(p, k, v):
             cursor.close()
 
     # checking if tasks are assigned successfully
-    sleep(0.1)
+    time.sleep(0.1)
     idx = "Car:monitor:128.168.11.142_1" + v.vehicle_assigned[1:]
     tmp = json.loads(p.redis_link.get(idx))['ohtStatus_Idle']
     log.info(f'vehicle[{v.vehicle_assigned}],status[{tmp}],1:false/0:true')

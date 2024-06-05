@@ -3,15 +3,11 @@ import math
 import time
 from loguru import logger as log
 
-# local
-from tc_out import *
-from tc_in import *
-from algorithm.A_start.graph.srccode import *
 
 ## online
-# from .tc_out import *
-# from .tc_in import *
-# from .algorithm.A_start.graph.srccode import *
+from .tc_out import *
+from .tc_in import *
+from .algorithm.A_start.graph.srccode import *
 
 
 def task_assign(p):

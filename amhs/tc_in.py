@@ -11,7 +11,8 @@ import copy
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-from algorithm.A_start.graph.srccode import *
+from .algorithm.A_start.graph.srccode import *
+
 
 
 # server config
@@ -267,6 +268,7 @@ def vehicle_load(p):
 def vehicle_load_static(p):
     orederlist=[]
     temcar = []
+    tasklength = len(p.taskList)
     if p.mode == 1:
         redis_pattern = """
                 (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
@@ -282,12 +284,13 @@ def vehicle_load_static(p):
         pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}{redis_pattern}*'))
-        v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}'))
+        v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         log.info('start a car search')
 
         for i in v:
+            log.info(f'加载数据:{i}')
             i = json.loads(i)
-            if len(orederlist)>10:
+            if len(orederlist)>tasklength:
                     return orederlist
             if not i:
                 continue
@@ -322,11 +325,11 @@ def vehicle_load_static(p):
             else:
                 temcar.append(i)
                 pass
-        if len(orederlist)<10:
+        if len(orederlist)<tasklength:
             try:
                 for ty in p.taskList:
-                    till = 0
-                    while till<10:
+                    till = True
+                    while till:
                             car = random.choice(temcar)#todo： 优化选车逻辑
                             order = ty
                             bay = car.get('bay')
@@ -342,7 +345,6 @@ def vehicle_load_static(p):
                                 ts = 0
                             ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
                             if ts < p.tts:
-                                till+=1
                                 continue
                             else:
                                 # todo:
@@ -355,7 +357,7 @@ def vehicle_load_static(p):
                                 order.delivery_route = path
                                 orederlist.append(order)
                                 ty.pop(0)
-                                till = 10
+                                till = False
             except:
                 pass
     else:
@@ -377,7 +379,7 @@ def vehicle_load_static(p):
             ''')
         v = cursor.fetchall()
         for i in v:
-            if len(orederlist)>10:
+            if len(orederlist)>tasklength:
                     return orederlist
             if not i:
                 continue
@@ -414,11 +416,11 @@ def vehicle_load_static(p):
             else:
                 temcar.append(i)
                 pass
-        if len(orederlist)<10:
+        if len(orederlist)<tasklength:
             try:
                 for ty in p.taskList:
-                    till = 0
-                    while till<10:
+                    till = True
+                    while till:
                         car = random.choice(temcar)
                         order = ty
                         loaction = car[10]
@@ -428,7 +430,6 @@ def vehicle_load_static(p):
                             speed = 1
                         ts = float(p.original_map_info[p.original_map_info[0]==loaction][4]-int(i[43]))/speed
                         if ts < p.tts:
-                            till+=1
                             continue
                         else:
                             tay = loaction.split('_')
@@ -442,7 +443,7 @@ def vehicle_load_static(p):
                             order.vehicle_assigned = value
                             order.delivery_route = path
                             orederlist.append(order)
-                            till = 10
+                            till = False
             except:
                 pass
     return orederlist
@@ -660,11 +661,11 @@ def track_generate_station(p, df):
 def read_instructions(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
-        cursor = db_conn.cursor()
-        cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'")
-        df = pd.DataFrame(cursor.fetchall())
-        db_conn.commit()
-        cursor.close()
+            cursor = db_conn.cursor()
+            cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS IN (0,10)  and VEHICLE='0'")
+            df = pd.DataFrame(cursor.fetchall())
+            db_conn.commit()
+            cursor.close()
     n = 0
     for i in df.index:
         tmp = p.Task()
@@ -708,6 +709,7 @@ def read_instructions_static(p):
         cursor = db_conn.cursor()
         cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'")
         df = pd.DataFrame(cursor.fetchall())
+        log.info(f'task count:{len(df)}')
         db_conn.commit()
         cursor.close()
     n = 0

@@ -1,6 +1,6 @@
 [project]
 name = "amhs-sjtu"
-version = "1.0.1"
+version = "1.0.2"
 description = "A simple python package for AMHS"
 authors = [
     { name = "cflab", email = "" },
