@@ -6,10 +6,6 @@ import concurrent.futures
 import multiprocessing
 from loguru import logger as log
 
-<<<<<<< HEAD
-# self
-=======
->>>>>>> dev_d
 from .tc_out import *
 from .tc_in import *
 from .algorithm.A_start.graph.srccode import *
