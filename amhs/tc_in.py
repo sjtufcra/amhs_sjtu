@@ -13,7 +13,7 @@ import multiprocessing
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-from algorithm.A_start.graph.srccode import *
+from .algorithm.A_start.graph.srccode import *
 
 
 

@@ -1,5 +1,5 @@
 # mode's parameter
-runing_mode: 0 # 0: local mode, 1: server mode
+runing_mode: 1 # 0: local mode, 1: server mode
 
 # server's parameter
 httpServer:
@@ -19,8 +19,7 @@ httpServer:
     circulating_on: 1
 
     # algorithm mode : 1, 2, 3, 4 ;deaulft is 1,A* algorithm is 2, A*+Dijkstra algorithm is 3, Dynamic Programming, DP is 4
-    algorithm_on: 2
-    status: 'matrix' # 'node' or 'tensor' or 'matrix'
+    algorithm_on: 1
 
     # load data
     order_on: 1 # 1: load local order data, 0: don't load local order data
