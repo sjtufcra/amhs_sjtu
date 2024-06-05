@@ -11,7 +11,7 @@ import copy
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-from .algorithm.A_start.graph.srccode import *
+from algorithm.A_start.graph.srccode import *
 
 
 
@@ -710,7 +710,7 @@ def read_instructions_static(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
         cursor = db_conn.cursor()
-        cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS=0 and VEHICLE='0'")
+        cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS in (0,10) or VEHICLE='0'")
         df = pd.DataFrame(cursor.fetchall())
         log.info(f'task count:{len(df)}')
         db_conn.commit()
