@@ -345,15 +345,10 @@ class AStart:
         else:
             return self.a_star_search_nocache(graph)
 
-<<<<<<< HEAD
     def a_star_search_fast(self,graph,start,end):
         return nx.astar_path(graph,start,end)
 # no-cache
     def a_star_search_nocache(self,graph):
-=======
-    # no-cache
-    def a_star_search_nocache(self, graph):
->>>>>>> 08c937d48dd7fb642ba6e95a228cdef212c4aade
         open_set = []
         heapq.heappush(open_set, (0, graph.start_node))
         came_from = {graph.start_node.id: None}
