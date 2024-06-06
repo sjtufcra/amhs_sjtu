@@ -339,11 +339,11 @@ def vehicle_load_static(p):
                         flag = car('mapId')
                         
                         try:
-                            speed = int(i[2])
+                            speed = int(i['currentSpeed'])
                             if speed==0:
                                 speed = 1
                             number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
-                            ts = float(number-int(i[43]))/speed
+                            ts = float(number-int(i['position']))/speed
                         except:
                             ts = 0
                         if ts < p.tts:
