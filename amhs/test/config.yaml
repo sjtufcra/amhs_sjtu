@@ -38,6 +38,7 @@ httpServer:
 
     # server's parameter
     use_multiprocessing: False
+    log: "./unit.log"
 
 # local server's parameter
 localServer:
