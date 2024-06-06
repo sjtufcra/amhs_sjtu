@@ -304,11 +304,11 @@ def vehicle_load_static(p):
                 task = p.bays_relation[bay]
                 if len(task)>0:
                     order = task[0]
-                    speed = int(i[2])
+                    speed = int(i.get('currentSpeed'))
                     if speed==0:
                         speed = 1
                     number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
-                    ts = float(number-int(i[43]))/speed
+                    ts = float(number-int(i['position']))/speed
                     if ts < p.tts:
                         temcar.append(i)
                         continue
