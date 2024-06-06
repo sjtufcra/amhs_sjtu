@@ -97,15 +97,16 @@ def task_assign_static(p, use_multiprocessing=True):
                         log.error(f"Order processing generated an exception: {exc}")
             else:
                 log.info(f"car+task: {len(orederlist)}")
-                for v in orederlist:
-                        start_time = time.time()
-                        if p.mode == False:
-                            log.info(f"alltime,task_time:{time.time()-start_time}")
-                            log.info(f'success:{v.id},{v}')
-                            # output_new(p, v.id, v)
-                        else:
-                            output_new(p, v.id, v)
-                            pass
+                if len(orederlist) > 0:
+                    for v in orederlist:
+                            start_time = time.time()
+                            if p.mode == False:
+                                log.info(f"alltime,task_time:{time.time()-start_time}")
+                                log.info(f'success:{v.id},{v}')
+                                # output_new(p, v.id, v)
+                            else:
+                                output_new(p, v.id, v)
+                                pass
             log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
 
 def process_order(v, p):
