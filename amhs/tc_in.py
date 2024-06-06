@@ -347,8 +347,10 @@ def vehicle_load_static(p):
                         except:
                             ts = 0
                         if ts < p.tts:
+                            temcar.pop(temcar.index(car))
                             continue
                         else:
+                            temcar.pop(temcar.index(car))
                             out = 'outlet'
                             entrance = 'entrance'
                             f_path = 'path'
@@ -370,7 +372,7 @@ def vehicle_load_static(p):
                             path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
 
                             # allpath
-                            path = path1+path2+path3
+                            path = path1+path2[1:-1]+path3
 
                             # return path
                             path.append(taynum)
@@ -454,8 +456,10 @@ def vehicle_load_static(p):
                         number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
                         ts = float(number-int(i[43]))/speed
                         if ts < p.tts:
+                            temcar.pop(temcar.index(car))
                             continue
                         else:
+                            temcar.pop(temcar.index(car))
                             out = 'outlet'
                             entrance = 'entrance'
                             f_path = 'path'
@@ -477,7 +481,7 @@ def vehicle_load_static(p):
                             path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
 
                             # allpath
-                            path = path1+path2+path3
+                            path = path1+path2[1:-1]+path3
 
                             # return path
                             path.append(taynum)
