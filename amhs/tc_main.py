@@ -1,9 +1,9 @@
 # online
-from tc_class_sets import *
-from tc_in import *
+from .tc_class_sets import *
+from .tc_in import *
 # from .tc_assign import *
-from tc_optimize import *
-from tc_out import *
+from .tc_optimize import *
+from .tc_out import *
 
 class Amhs():
     def __init__(self,config) -> None:
