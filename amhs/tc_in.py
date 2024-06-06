@@ -290,11 +290,11 @@ def vehicle_load_static(p):
             return orederlist
         for i in v:
             log.info(f'加载数据:{i}')
+            if i is None:
+                continue
             i = json.loads(i)
             if len(orederlist)>=number_task:
                     return orederlist
-            if not i:
-                continue
             if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0'or i.get('ohtStatus_Idle') == '0':
                 continue
             bay = i.get('bay')
