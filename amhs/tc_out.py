@@ -1,6 +1,6 @@
 import pandas as pd
+import time
 from loguru import logger as log
-from time import sleep
 import json
 
 
@@ -41,7 +41,7 @@ def output_new(p, k, v):
             cursor.close()
 
     # checking if tasks are assigned successfully
-    sleep(0.1)
+    time.sleep(0.1)
     idx = "Car:monitor:128.168.11.142_1" + v.vehicle_assigned[1:]
     tmp = json.loads(p.redis_link.get(idx))['ohtStatus_Idle']
     log.info(f'vehicle[{v.vehicle_assigned}],status[{tmp}],1:false/0:true')
