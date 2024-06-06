@@ -296,7 +296,7 @@ def vehicle_load_static(p):
         if v is None:
             return orederlist
         for i in v:
-            log.info(f'加载数据:{i}')
+            # log.info(f'加载数据:{i}')
             if i is None:
                 continue
             i = json.loads(i)
@@ -389,7 +389,7 @@ def vehicle_load_static(p):
                             orederlist.append(order)
                             till = False
             except:
-                pass
+                return orederlist
     else:
         with p.db_pool.get_connection() as db_conn:
             cursor = db_conn.cursor()
