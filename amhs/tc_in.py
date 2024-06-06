@@ -366,7 +366,7 @@ def vehicle_load_static(p):
                             # path2
                             bayB = end.split('-')[0]
                             path2_start = p.internal_paths[bayB][entrance][0] #todo:应该精确选取位置，这里随机录取
-                            path2 = nx.astar_path(p.map_info, path1_end, path2_start)
+                            path2 = p.Astart.a_star_search_fast(p.map_info, path1_end, path2_start)
                             
                             # path3 
                             path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
@@ -475,8 +475,7 @@ def vehicle_load_static(p):
                             # path2
                             bayB = end.split('-')[0]
                             path2_start = p.internal_paths[bayB][entrance][0] #todo:应该精确选取位置，这里随机录取
-                            # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
-                            path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
+                            path2 = p.Astart.a_star_search_fast(p.map_info, path1_end, path2_start)
                             
                             # path3 
                             path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])

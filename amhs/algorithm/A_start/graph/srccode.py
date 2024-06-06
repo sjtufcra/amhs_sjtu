@@ -326,6 +326,9 @@ class AStart:
             return self.a_star_search_cache(graph)
         else:
             return self.a_star_search_nocache(graph)
+
+    def a_star_search_fast(self,graph,start,end):
+        return nx.astar_path(graph,start,end)
 # no-cache
     def a_star_search_nocache(self,graph):
         open_set = []
