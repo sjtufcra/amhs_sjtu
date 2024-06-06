@@ -1,9 +1,9 @@
 # online
-from tc_class_sets import *
-from tc_in import *
+from .tc_class_sets import *
+from .tc_in import *
 # from .tc_assign import *
-from tc_optimize import *
-from tc_out import *
+from .tc_optimize import *
+from .tc_out import *
 
 class Amhs():
     def __init__(self,config) -> None:
@@ -17,13 +17,10 @@ class Amhs():
         
         d = Dataset(self.config)
         self.Node = d
-        log.info('init success')
         d = generating(d)
-        log.info('generating success')
         # await track_generate_station(d, d.original_map_info)
         # d = task_assign_new(d)
-        # d = task_assign(d,d.use_multiprocessing)
-        d = task_assign_static(d,d.use_multiprocessing)
+        d = task_assign(d,d.use_multiprocessing)
     
     def over(self):
         output_close_connection(self.d)

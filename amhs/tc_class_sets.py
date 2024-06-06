@@ -51,9 +51,8 @@ class Dataset:
         self.status = 'matrix'
         # self.task_num = out_config['task_num']
         self.task_num = 10
-        # add time control
+        # add time control      
         self.tts = 2
-
         # added in 240603
         self.internal_paths = None
         self.external_paths = None

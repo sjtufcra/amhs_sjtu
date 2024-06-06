@@ -8,7 +8,7 @@ from loguru import logger as log
 
 from tc_out import *
 from tc_in import *
-from algorithm.A_start.graph.srccode import *
+from .algorithm.A_start.graph.srccode import *
 
 def task_assign(p, use_multiprocessing=True):
         
@@ -54,11 +54,19 @@ def task_assign(p, use_multiprocessing=True):
             else:
                 for k, v in p.orders.items():
                     if v.finished == 0:
+                        start_time = time.time()
                         # veh, v0 = vehicle_select(v, p)  # getpath
                         veh, v0 = vehicle_select_fast_random(v, p)  # getpath
+                        log.info(f"vehicle_select,task_time:{time.time()-start_time}")
                         start, end = terminus_select(j, v0, p, v)
+                        log.info(f"terminus_select,task_time:{time.time()-start_time}")
                         v.vehicle_assigned = veh
+                        sl = time.time()
                         v.delivery_route = shortest_path(start, end, p, v, typ=0)
+                        log.info(f"path,task_time:{time.time()-sl}")
+                        tl = time.time()
+                        tp = nx.shortest_path(p.map_info, source=start, target=end)
+                        log.info(f"tp,task_time:{time.time()-tl}")
                         if p.mode == False:
                             log.info(f"alltime,task_time:{time.time()-start_time}")
                             log.info(f'success:{k},{v}')
@@ -74,8 +82,12 @@ def task_assign_static(p, use_multiprocessing=True):
         while p.runBool:
             start_time = time.time()
             p.map_info = p.map_info_unchanged
-            p = read_instructions_static(p)
-            orederlist = vehicle_load_static(p)
+            p = vehicle_load(p)
+            p = read_instructions(p)
+            p.used_vehicle = set()
+            j, n = 0, 0
+            car = 0
+            log.info(f"algorithm:{p.algorithm_on},task:{len(p.orders)}")
             log.info(f"algorithm,task_time:{time.time()-start_time}")
             if use_multiprocessing:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
@@ -87,16 +99,30 @@ def task_assign_static(p, use_multiprocessing=True):
                     except Exception as exc:
                         log.error(f"Order processing generated an exception: {exc}")
             else:
-                log.info(f"car+task: {len(orederlist)}")
-                for v in orederlist:
+                for k, v in p.orders.items():
+                    if v.finished == 0:
                         start_time = time.time()
+                        # veh, v0 = vehicle_select(v, p)  # getpath
+                        veh, v0 = vehicle_select_fast_random(v, p)  # getpath
+                        log.info(f"vehicle_select,task_time:{time.time()-start_time}")
+                        start, end = terminus_select(j, v0, p, v)
+                        log.info(f"terminus_select,task_time:{time.time()-start_time}")
+                        v.vehicle_assigned = veh
+                        sl = time.time()
+                        v.delivery_route = shortest_path(start, end, p, v, typ=0)
+                        log.info(f"path,task_time:{time.time()-sl}")
+                        tl = time.time()
+                        tp = nx.shortest_path(p.map_info, source=start, target=end)
+                        log.info(f"tp,task_time:{time.time()-tl}")
                         if p.mode == False:
                             log.info(f"alltime,task_time:{time.time()-start_time}")
-                            log.info(f'success:{v.id},{v}')
-                            # output_new(p, v.id, v)
+                            log.info(f'success:{k},{v}')
+                            # output_new(p, k, v)
                         else:
-                            output_new(p, v.id, v)
+                            output_new(p, k, v)
                             pass
+                        # v.finished = 1
+                        car += 1
             log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
 
 def process_order(v, p):

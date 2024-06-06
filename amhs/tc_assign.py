@@ -7,7 +7,12 @@ from loguru import logger as log
 ## online
 from tc_out import *
 from tc_in import *
-from algorithm.A_start.graph.srccode import *
+from .algorithm.A_start.graph.srccode import *
+
+## online
+# from .tc_out import *
+# from .tc_in import *
+# from .algorithm.A_start.graph.srccode import *
 
 
 def task_assign(p):

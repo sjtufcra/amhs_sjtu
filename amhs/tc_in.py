@@ -1,4 +1,5 @@
 from collections import defaultdict
+from functools import partial
 import pandas as pd
 import oracledb
 import rediscluster as rds
@@ -7,11 +8,12 @@ import threading
 import json
 import random
 import copy
+import multiprocessing
 
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-from algorithm.A_start.graph.srccode import *
+from .algorithm.A_start.graph.srccode import *
 
 
 
@@ -109,7 +111,8 @@ def erect_map(p):
             # p.map_info_unchanged.create_matrix(df.values)
             db_conn.commit()
             cursor.close()
-            track_generate_station(p, df)
+            # track_generate_station(p, df)
+            track_generate_station_mulit(p, df)
 
         # added in 240603 by lby
         # a new model used to divide map into two pieces,
@@ -183,6 +186,13 @@ def map_divided(p):
         pathA = dict(nx.all_pairs_dijkstra(pic,weight='weight'))
         paths_in_bays[k] = dict({"path":dict(pathA), "entrance":v['entrance'], "outlet":v['outlet']})
     p.internal_paths = paths_in_bays
+    # paths_between_bays = dict()
+    # for starting in tmp3:
+    #     for ending in tmp4:
+    #         if starting != ending:
+    #             tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
+    #             paths_between_bays.update({(starting, ending): tmp5})
+    # p.external_paths = paths_between_bays
     # paths_between_bays = dict()
     # for starting in tmp3:
     #     for ending in tmp4:
@@ -289,7 +299,6 @@ def vehicle_load_static(p):
         if v is None:
             return orederlist
         for i in v:
-            log.info(f'加载数据:{i}')
             i = json.loads(i)
             if len(orederlist)>=number_task:
                     return orederlist
@@ -299,7 +308,7 @@ def vehicle_load_static(p):
                 continue
             bay = i.get('bay')
             value = i.get('ohtID')
-            flag = i.get('mapId')
+            location = i.get('mapId')
             if bay in p.bays_relation:
                 task = p.bays_relation[bay]
                 if len(task)>0:
@@ -307,14 +316,14 @@ def vehicle_load_static(p):
                     speed = int(i[2])
                     if speed==0:
                         speed = 1
-                    number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                    number = float(p.original_map_info[p.original_map_info[0]==location][4].iloc[0])
                     ts = float(number-int(i[43]))/speed
                     if ts < p.tts:
                         temcar.append(i)
                         continue
                     else:
                         p.taskList.pop(p.taskList.index(order))
-                        start = flag.split('_')[1]
+                        start = location.split('_')[1]
                         end = p.all_stations[order.start_location]
                         taynum = p.stations_name[order.end_location]
                         path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
@@ -336,13 +345,13 @@ def vehicle_load_static(p):
                         order = ty
                         bay = car.get('bay')
                         value = car('ohtID')
-                        flag = car('mapId')
+                        location = car('mapId')
                         
                         try:
                             speed = int(i[2])
                             if speed==0:
                                 speed = 1
-                            number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                            number = float(p.original_map_info[p.original_map_info[0]==location][4].iloc[0])
                             ts = float(number-int(i[43]))/speed
                         except:
                             ts = 0
@@ -354,7 +363,7 @@ def vehicle_load_static(p):
                             out = 'outlet'
                             entrance = 'entrance'
                             f_path = 'path'
-                            tay = loaction.split('_')
+                            tay = location.split('_')
                             bayA = tay[0].split('-')[0]
                             start = tay[1]
                             end = p.all_stations[order.start_location]
@@ -409,17 +418,16 @@ def vehicle_load_static(p):
                 continue
             bay = i[1]
             value = i[11]
-            flag = i[10]
+            location = i[10]
             if bay in p.bays_relation:
                 task = p.bays_relation[bay]
                 if len(task)>0:
                     order = task[0]
-                    loaction = i[10]
                     try:
                         speed = int(i[2])
                         if speed==0:
                             speed = 1
-                        number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                        number = float(p.original_map_info[p.original_map_info[0]==location][4].iloc[0])
                         ts = float(number-int(i[43]))/speed
                     except:
                         ts = 0
@@ -428,7 +436,7 @@ def vehicle_load_static(p):
                         continue
                     else:
                         p.taskList.pop(p.taskList.index(order))
-                        start = flag.split('_')[1]
+                        start = location.split('_')[1]
                         end = p.all_stations[order.start_location]
                         taynum = p.stations_name[order.end_location]
                         path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
@@ -448,12 +456,12 @@ def vehicle_load_static(p):
                     while till:
                         car = random.choice(temcar)
                         order = ty
-                        loaction = car[10]
+                        location = car[10]
                         value = car[11]
                         speed = int(car[2])
                         if speed == 0:
                             speed = 1
-                        number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                        number = float(p.original_map_info[p.original_map_info[0]==location][4].iloc[0])
                         ts = float(number-int(i[43]))/speed
                         if ts < p.tts:
                             temcar.pop(temcar.index(car))
@@ -463,7 +471,7 @@ def vehicle_load_static(p):
                             out = 'outlet'
                             entrance = 'entrance'
                             f_path = 'path'
-                            tay = loaction.split('_')
+                            tay = location.split('_')
                             bayA = tay[0].split('-')[0]
                             start = tay[1]
                             end = p.all_stations[order.start_location]
@@ -577,8 +585,8 @@ def vehicle_load_static_fast(p):
 def computeCarPath(ty,car,p,orderlist,inx,flag,mapid,plist = False,boll = False,):
     bay = car[inx]
     order = ty
-    loaction = car[flag]
-    ts = (p.original_map_info[p.original_map_info[0]==loaction][4]-int(car[43]))/int(car[2]).values[0]
+    location = car[flag]
+    ts = (p.original_map_info[p.original_map_info[0]==location][4]-int(car[43]))/int(car[2]).values[0]
     if ts < p.tts:
         boll = True
         pass
@@ -702,7 +710,57 @@ def track_generate_station(p, df):
     # p.stations_name = station_name
     return p
 
+def track_generate_station_mulit(p, df):
+    if p.all_stations is not None:
+        return p
 
+    df2 = get_station_data(p)
+
+    station_location = dict()
+    station_name = dict()
+
+    num_threads = multiprocessing.cpu_count()
+    newdata = split_data(df2, num_threads)
+
+    set_station = partial(create_map_form_pd, orgine=df, start=station_location, end=station_name)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as pross:
+        results = pross.map(set_station, newdata)
+
+    for start, end in results:
+        station_location.update(start)
+        station_name.update(end)
+
+    p.all_stations = station_location
+    p.stations_name = station_name
+
+    return p
+
+# 多进程处理台位数据
+def create_map_form_pd(iteram, orgine,start,end):
+    for i in iteram.index:
+        num = iteram[1][i]
+        loc = iteram[3][i]
+        dft = orgine[(orgine[3] <= loc) & (orgine[4] >= loc)]
+        if not dft.empty:
+            start[num] = dft[1].values[0]
+            end[num] = str(dft[3].values[0])
+    return start,end
+
+# 台位数据分割
+def split_data(data,num_processes):
+    size = len(data)
+    split_size = size//num_processes
+    return [data[i:i+split_size]for i in range(0,size,split_size)]
+
+# 读取数据库数据
+def get_station_data(p):
+    with p.db_pool.get_connection() as db_conn:
+        cursor = db_conn.cursor()
+        cursor.execute('SELECT * FROM OHTC_POSITION')
+        df2 = pd.DataFrame(cursor.fetchall())
+        cursor.close()
+        db_conn.commit()
+    return df2
 def read_instructions(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
