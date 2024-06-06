@@ -196,18 +196,8 @@ def map_divided(p):
                     tmp5[eb][sb] = tmp6
                 # paths_between_bays.update({(starting, ending): tmp5})
     # p.external_paths = paths_between_bays
-<<<<<<< HEAD
-    # paths_between_bays = dict()
-    # for starting in tmp3:
-    #     for ending in tmp4:
-    #         if starting != ending:
-    #             tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
-    #             paths_between_bays.update({(starting, ending): tmp5})
-    # p.external_paths = paths_between_bays
-=======
     p.all_bays = all_bays
     p.length_between_bays = tmp5
->>>>>>> origin/dev_zq
     return p
 
 
@@ -336,21 +326,6 @@ def vehicle_load_static(p):
         v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         log.info(f'cars number:{len(v)}, time:{time.process_time()-t0}')
         if v is None:
-<<<<<<< HEAD
-            return orederlist
-        for i in v:
-            # log.info(f'加载数据:{i}')
-            if i is None:
-                continue
-            i = json.loads(i)
-            if len(orederlist)>=number_task:
-                    return orederlist
-            if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0'or i.get('ohtStatus_Idle') == '0':
-                continue
-            bay = i.get('bay')
-            value = i.get('ohtID')
-            location = i.get('mapId')
-=======
             return order_list
         all_vehicles_num = 0
         for value in v:
@@ -380,93 +355,11 @@ def vehicle_load_static(p):
             i['mapId'] = flag
             temp_cars[bay].append(i)
             all_vehicles_num += 1
->>>>>>> origin/dev_zq
             if bay in p.bays_relation:
                 task = p.bays_relation[bay]
                 log.info(f"任务【{task[0].id}】+车辆【{i['ohtID']}】")
                 if len(task) > 0:
                     order = task[0]
-<<<<<<< HEAD
-                    speed = int(i.get('currentSpeed'))
-                    if speed==0:
-                        speed = 1
-                    number = float(p.original_map_info[p.original_map_info[0]==location][4].iloc[0])
-                    ts = float(number-int(i['position']))/speed
-                    if ts < p.tts:
-                        temcar.append(i)
-                        continue
-                    else:
-                        p.taskList.pop(p.taskList.index(order))
-                        start = location.split('_')[1]
-                        end = p.all_stations[order.start_location]
-                        taynum = p.stations_name[order.end_location]
-                        path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
-                        path.append(taynum)
-                        order.vehicle_assigned = value
-                        order.delivery_route = path
-                        orederlist.append(order)
-                        if len(task)>0:
-                            task.pop(0)
-            else:
-                temcar.append(i)
-                pass
-        if len(orederlist)<number_task:
-            try:
-                for ty in p.taskList:
-                    till = True
-                    while till:
-                        car = random.choice(temcar)#todo： 优化选车逻辑
-                        order = ty
-                        bay = car.get('bay')
-                        value = car('ohtID')
-                        location = car('mapId')
-                        
-                        try:
-                            speed = int(i['currentSpeed'])
-                            if speed==0:
-                                speed = 1
-                            number = float(p.original_map_info[p.original_map_info[0]==location][4].iloc[0])
-                            ts = float(number-int(i['position']))/speed
-                        except:
-                            ts = 0
-                        if ts < p.tts:
-                            temcar.pop(temcar.index(car))
-                            continue
-                        else:
-                            temcar.pop(temcar.index(car))
-                            out = 'outlet'
-                            entrance = 'entrance'
-                            f_path = 'path'
-                            tay = location.split('_')
-                            bayA = tay[0].split('-')[0]
-                            start = tay[1]
-                            end = p.all_stations[order.start_location]
-                            taynum = p.stations_name[order.end_location]
-                            # path1
-                            path1_end = p.internal_paths[bayA][out][0]  #todo:应该精确选取位置，这里随机录取
-                            path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
-
-                            # path2
-                            bayB = end.split('-')[0]
-                            path2_start = p.internal_paths[bayB][entrance][0] #todo:应该精确选取位置，这里随机录取
-                            # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
-                            path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
-                            
-                            # path3 
-                            path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
-
-                            # allpath
-                            path = path1+path2[1:-1]+path3
-
-                            # return path
-                            path.append(taynum)
-                            order.vehicle_assigned = value
-                            order.delivery_route = path
-                            orederlist.append(order)
-                            till = False
-            except:
-                return orederlist
-=======
                     p.taskList.pop(p.taskList.index(order))
                     start = flag.split('_')[1]
                     end = p.all_stations[order.start_location]
@@ -507,7 +400,6 @@ def vehicle_load_static(p):
             except IndexError as e:
                 log.error(e)
     # local running
->>>>>>> origin/dev_zq
     else:
         with p.db_pool.get_connection() as db_conn:
             cursor = db_conn.cursor()
@@ -544,13 +436,8 @@ def vehicle_load_static(p):
                         speed = int(i[2])
                         if speed == 0:
                             speed = 1
-<<<<<<< HEAD
-                        number = float(p.original_map_info[p.original_map_info[0]==location][4].iloc[0])
-                        ts = float(number-int(i[43]))/speed
-=======
                         number = float(p.original_map_info[p.original_map_info[0] == loaction][4].iloc[0])
                         ts = float(number - int(i[43])) / speed
->>>>>>> origin/dev_zq
                     except:
                         ts = 0
                     if ts < p.tts:
@@ -576,25 +463,14 @@ def vehicle_load_static(p):
                 for order in p.taskList:
                     till = True
                     while till:
-<<<<<<< HEAD
-                        car = random.choice(temcar)
-                        order = ty
-                        location = car[10]
-=======
                         car = random.choice(temp_cars)
                         loaction = car[10]
->>>>>>> origin/dev_zq
                         value = car[11]
                         speed = int(car[2])
                         if speed == 0:
                             speed = 1
-<<<<<<< HEAD
-                        number = float(p.original_map_info[p.original_map_info[0]==location][4].iloc[0])
-                        ts = float(number-int(i[43]))/speed
-=======
                         number = float(p.original_map_info[p.original_map_info[0] == loaction][4].iloc[0])
                         ts = float(number - int(i[43])) / speed
->>>>>>> origin/dev_zq
                         if ts < p.tts:
                             temp_cars.pop(temp_cars.index(car))
                             continue
@@ -734,13 +610,8 @@ def vehicle_load_static_fast(p):
 def computeCarPath(ty, car, p, orderlist, inx, flag, mapid, plist=False, boll=False, ):
     bay = car[inx]
     order = ty
-<<<<<<< HEAD
-    location = car[flag]
-    ts = (p.original_map_info[p.original_map_info[0]==location][4]-int(car[43]))/int(car[2]).values[0]
-=======
     loaction = car[flag]
     ts = (p.original_map_info[p.original_map_info[0] == loaction][4] - int(car[43])) / int(car[2]).values[0]
->>>>>>> origin/dev_zq
     if ts < p.tts:
         boll = True
         pass
