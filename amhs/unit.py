@@ -9,7 +9,8 @@ runmode = 'runing_mode'
 server = 'httpServer'  #online
 local = 'localServer' #local
 # config_file_path = './test/config.yaml' #local
-config_file_path = './amhs_sjtu/amhs/test/config.yaml' #local
+# config_file_path = './amhs_sjtu/amhs/test/config.yaml' #local
+config_file_path = './test/config.yaml' #local
 
 
 
