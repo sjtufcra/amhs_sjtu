@@ -183,13 +183,13 @@ def map_divided(p):
         pathA = dict(nx.all_pairs_dijkstra(pic,weight='weight'))
         paths_in_bays[k] = dict({"path":dict(pathA), "entrance":v['entrance'], "outlet":v['outlet']})
     p.internal_paths = paths_in_bays
-    paths_between_bays = dict()
-    for starting in tmp3:
-        for ending in tmp4:
-            if starting != ending:
-                tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
-                paths_between_bays.update({(starting, ending): tmp5})
-    p.external_paths = paths_between_bays
+    # paths_between_bays = dict()
+    # for starting in tmp3:
+    #     for ending in tmp4:
+    #         if starting != ending:
+    #             tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
+    #             paths_between_bays.update({(starting, ending): tmp5})
+    # p.external_paths = paths_between_bays
     return p
 
 
