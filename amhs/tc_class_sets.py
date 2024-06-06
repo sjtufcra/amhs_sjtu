@@ -47,12 +47,10 @@ class Dataset:
         self.algorithm_on = out_config['algorithm_on'] #算法调整：1、原始算法，2、A*算法
         # mode
         self.mode = out_config['mode']
-        # self.status = out_config['status']
-        self.status = 'matrix'
-        # self.task_num = out_config['task_num']
-        self.task_num = 10
+        self.status = out_config['status']
+        self.task_num = out_config['task_num']
         # add time control
-        self.tts = 2
+        self.tts = out_config['tts']
 
         # added in 240603
         self.internal_paths = None
