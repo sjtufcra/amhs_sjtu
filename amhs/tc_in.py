@@ -1,5 +1,4 @@
 from collections import defaultdict
-from functools import partial
 import pandas as pd
 import oracledb
 import rediscluster as rds
@@ -8,7 +7,6 @@ import threading
 import json
 import random
 import copy
-import multiprocessing
 
 from mysql import connector
 from loguru import logger as log
@@ -111,8 +109,7 @@ def erect_map(p):
             # p.map_info_unchanged.create_matrix(df.values)
             db_conn.commit()
             cursor.close()
-            # track_generate_station(p, df)
-            track_generate_station_mulit(p, df)
+            track_generate_station(p, df)
 
         # added in 240603 by lby
         # a new model used to divide map into two pieces,
@@ -317,7 +314,7 @@ def vehicle_load_static(p):
                     speed = int(i.get('currentSpeed'))
                     if speed==0:
                         speed = 1
-                    number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                    number = float(p.original_map_info[p.original_map_info[0]==location][4].iloc[0])
                     ts = float(number-int(i['position']))/speed
                     if ts < p.tts:
                         temcar.append(i)
