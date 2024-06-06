@@ -332,34 +332,52 @@ def vehicle_load_static(p):
                 for ty in p.taskList:
                     till = True
                     while till:
-                            car = random.choice(temcar)#todo： 优化选车逻辑
-                            order = ty
-                            bay = car.get('bay')
-                            value = car('ohtID')
-                            flag = car('mapId')
+                        car = random.choice(temcar)#todo： 优化选车逻辑
+                        order = ty
+                        bay = car.get('bay')
+                        value = car('ohtID')
+                        flag = car('mapId')
+                        
+                        try:
+                            speed = int(i[2])
+                            if speed==0:
+                                speed = 1
+                            number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
+                            ts = float(number-int(i[43]))/speed
+                        except:
+                            ts = 0
+                        if ts < p.tts:
+                            continue
+                        else:
+                            out = 'outlet'
+                            entrance = 'entrance'
+                            f_path = 'path'
+                            tay = loaction.split('_')
+                            bayA = tay[0].split('-')[0]
+                            start = tay[1]
+                            end = p.all_stations[order.start_location]
+                            taynum = p.stations_name[order.end_location]
+                            # path1
+                            path1_end = p.internal_paths[bayA][out][0]  #todo:应该精确选取位置，这里随机录取
+                            path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
+
+                            # path2
+                            bayB = end.split('-')[0]
+                            path2_start = p.internal_paths[bayB][entrance][0] #todo:应该精确选取位置，这里随机录取
+                            path2 = nx.astar_path(p.map_info, path1_end, path2_start)
                             
-                            try:
-                                speed = int(i[2])
-                                if speed==0:
-                                    speed = 1
-                                number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
-                                ts = float(number-int(i[43]))/speed
-                            except:
-                                ts = 0
-                            if ts < p.tts:
-                                continue
-                            else:
-                                # todo:
-                                start = flag.split('_')[1]
-                                end = p.all_stations[order.start_location]
-                                taynum = p.stations_name[order.end_location]
-                                path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
-                                path.append(taynum)
-                                order.vehicle_assigned = value
-                                order.delivery_route = path
-                                orederlist.append(order)
-                                ty.pop(0)
-                                till = False
+                            # path3 
+                            path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
+
+                            # allpath
+                            path = path1+path2+path3
+
+                            # return path
+                            path.append(taynum)
+                            order.vehicle_assigned = value
+                            order.delivery_route = path
+                            orederlist.append(order)
+                            till = False
             except:
                 pass
     else:
@@ -436,16 +454,32 @@ def vehicle_load_static(p):
                         number = float(p.original_map_info[p.original_map_info[0]==loaction][4].iloc[0])
                         ts = float(number-int(i[43]))/speed
                         if ts < p.tts:
-                            till+=1
                             continue
                         else:
+                            out = 'outlet'
+                            entrance = 'entrance'
+                            f_path = 'path'
                             tay = loaction.split('_')
-                            bayA = tay[0].split('_')[0]
-                            start = tay('_')[1]
+                            bayA = tay[0].split('-')[0]
+                            start = tay[1]
                             end = p.all_stations[order.start_location]
                             taynum = p.stations_name[order.end_location]
-                            # bay
-                            path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                            # path1
+                            path1_end = p.internal_paths[bayA][out][0]  #todo:应该精确选取位置，这里随机录取
+                            path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
+
+                            # path2
+                            bayB = end.split('-')[0]
+                            path2_start = p.internal_paths[bayB][entrance][0] #todo:应该精确选取位置，这里随机录取
+                            path2 = nx.astar_path(p.map_info, path1_end, path2_start)
+                            
+                            # path3 
+                            path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
+
+                            # allpath
+                            path = path1+path2+path3
+
+                            # return path
                             path.append(taynum)
                             order.vehicle_assigned = value
                             order.delivery_route = path
