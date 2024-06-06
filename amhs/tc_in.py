@@ -299,11 +299,12 @@ def vehicle_load_static(p):
         if v is None:
             return orederlist
         for i in v:
+            log.info(f'加载数据:{i}')
+            if i is None:
+                continue
             i = json.loads(i)
             if len(orederlist)>=number_task:
                     return orederlist
-            if not i:
-                continue
             if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0'or i.get('ohtStatus_Idle') == '0':
                 continue
             bay = i.get('bay')
@@ -375,7 +376,8 @@ def vehicle_load_static(p):
                             # path2
                             bayB = end.split('-')[0]
                             path2_start = p.internal_paths[bayB][entrance][0] #todo:应该精确选取位置，这里随机录取
-                            path2 = p.Astart.a_star_search_fast(p.map_info, path1_end, path2_start)
+                            # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
+                            path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
                             
                             # path3 
                             path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
@@ -483,7 +485,7 @@ def vehicle_load_static(p):
                             # path2
                             bayB = end.split('-')[0]
                             path2_start = p.internal_paths[bayB][entrance][0] #todo:应该精确选取位置，这里随机录取
-                            path2 = p.Astart.a_star_search_fast(p.map_info, path1_end, path2_start)
+                            path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
                             
                             # path3 
                             path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])

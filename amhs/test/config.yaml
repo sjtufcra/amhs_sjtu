@@ -31,6 +31,8 @@ httpServer:
     mode: 1
     # task_number
     task_num: 10
+    # control_scenond
+    tts: 2
 
     # server's parameter
     use_multiprocessing: False
@@ -70,6 +72,9 @@ localServer:
     mode: False
     # task_number
     task_num: 10
+
+    # control_scenond
+    tts: 2
 
     # local server's parameter
     use_multiprocessing: False

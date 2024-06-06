@@ -49,8 +49,9 @@ class Dataset:
         self.mode = out_config['mode']
         self.status = out_config['status']
         self.task_num = out_config['task_num']
-        # add time control      
-        self.tts = 2
+        # add time control
+        self.tts = out_config['tts']
+
         # added in 240603
         self.internal_paths = None
         self.external_paths = None
