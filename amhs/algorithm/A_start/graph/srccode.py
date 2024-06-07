@@ -586,7 +586,7 @@ class AStart_matrix:
         return abs(x1 - x2) + abs(y1 - y2)
 
     def astar_search_single_thread(self, graph):
-        st = time.time()
+        # st = time.time()
         self.num_nodes = graph.tensor.shape[0]
         open_set = [(0, graph.start_node)]
         heapq.heapify(open_set)
@@ -604,7 +604,7 @@ class AStart_matrix:
         # for _ in range(self.max_steps):
         #     if not open_set:
         #         break
-        log.info(f'cont,time:{time.time() - st}')
+        # log.info(f'cont,time:{time.time() - st}')
         wt = time.time()
         while open_set:
             current_f_score, current = heapq.heappop(open_set)

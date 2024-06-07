@@ -41,10 +41,11 @@ class Dataset:
 
         # control on-off
         self.pattern = out_config['circulating_on']  # 1:circulating; 0:just one time
+        self.debug_on = out_config['debug_on']  # 1:circulating; 0:just one time
 
         # loop-bool
         self.runBool = True
-        self.algorithm_on = out_config['algorithm_on'] #算法调整：1、原始算法，2、A*算法
+        self.algorithm_on = out_config['algorithm_on']  # 算法调整：1、原始算法，2、A*算法
         # mode
         self.mode = out_config['mode']
         self.status = out_config['status']

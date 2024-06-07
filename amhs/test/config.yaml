@@ -34,11 +34,12 @@ httpServer:
     # control_scenond
     tts: 2
 
-    database: 'amhs'
-
     # server's parameter
     use_multiprocessing: False
     log: "./unit.log"
+
+    # debug on_off
+    debug_on: True
 
 # local server's parameter
 localServer:
