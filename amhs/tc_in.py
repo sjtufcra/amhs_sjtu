@@ -297,12 +297,14 @@ def drop_car_task(x, i):
 
 def path_search(p, start, end, entrance, f_path, bayA, out):
     # path1
-    path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
+    # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
+    path1_end = search_point(p,bayA,start,out)  # 精确选取位置
     path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
 
     # path2
     bayB = end.split('-')[0]
-    path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
+    # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
+    path2_start = search_point(p,bayB,entrance,end)  # 精确选取位置
     # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
     path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
 
@@ -310,9 +312,18 @@ def path_search(p, start, end, entrance, f_path, bayA, out):
     path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
     return path1 + path2[1:-1] + path3
 
-def foreach_path(p,bayA,out,start):
-    p.internal_paths[bayA][out][0]
-    return path
+def search_point(p,bay,start,status,direction=1):
+    pointA,pointB = p.internal_paths[bay][status]
+    path = p.internal_paths[bay]['path']
+    if direction:
+        # 出口
+        tagA = path[start][0][pointA]
+        tagB = path[start][0][pointB]
+    else:
+        # 入口
+        tagA = path[pointA][0][start]
+        tagB = path[pointB][0][start]
+    return pointB if tagA >= tagB else pointA
 
 # static select car
 def vehicle_load_static(p):
@@ -403,7 +414,7 @@ def vehicle_load_static(p):
                 log.error(e)
     # local running
     else:
-        order_list = local_sql_search(p,order_list,temp_cars,number_task)
+        order_list = local_sql_search(p,order_list,[],number_task)
     return order_list
 # 本地测试
 def local_sql_search(p,order_list,temp_cars,number_task):
