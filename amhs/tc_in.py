@@ -304,7 +304,7 @@ def path_search(p, start, end, entrance, f_path, bayA, out):
     # path2
     bayB = end.split('-')[0]
     # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
-    path2_start = search_point(p,bayB,entrance,end)  # 精确选取位置
+    path2_start = search_point(p,bayB,end,entrance,direction=0)  # 精确选取位置
     # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
     path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
 
@@ -763,10 +763,10 @@ def track_generate_station_mulit(p, df):
     station_location = dict()
     station_name = dict()
 
-    num_threads = multiprocessing.cpu_count()
+    num_threads = multiprocessing.cpu_count() # type: ignore
     newdata = split_data(df2, num_threads)
 
-    set_station = partial(create_map_form_pd, orgine=df, start=station_location, end=station_name)
+    set_station = partial(create_map_form_pd, orgine=df, start=station_location, end=station_name) # type: ignore
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as pross:
         results = pross.map(set_station, newdata)
 
