@@ -72,17 +72,22 @@ def task_assign(p, use_multiprocessing=True):
 
 
 # new_function_static
-def task_assign_static(p):
-    start_time = time.time()
+def epoch_static(p):
     while p.runBool:
+        log.info(f"开始运行算法")
+        start_time = time.time()
         p.map_info = p.map_info_unchanged
         # load less than 10 tasks
+        t0 = time.time()
         p = read_instructions_static(p)
+        log.info(f"本轮读取任务时长:{time.time() - t0}")
         # added in 20240607, only select stations used instead of all
         if p.debug_on:
             p = track_generate_station_new(p)
+        t1 = time.time()
         vehicle_load_static(p)
-    log.info(f"algorithm,task_time:{time.time() - start_time}")
+        log.info(f"本轮分配任务时长:{time.time() - t1}")
+        log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return 0
 
 

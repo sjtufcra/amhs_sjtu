@@ -67,7 +67,7 @@ class MysqlConnectionPool:
 
 
 def generating(p):
-    t0 = time.process_time()
+    t0 = time.time()
     if p.mode == 1:
         p.db_pool = OracleConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
     else:
@@ -75,7 +75,7 @@ def generating(p):
                                         database=p.database)
     # extracting local json documentation
     p = erect_map(p)
-    log.info(f'generating success, time cost:{time.process_time() - t0}')
+    log.info(f'generating success, time cost:{time.time() - t0}')
     return p
 
 
@@ -111,6 +111,8 @@ def map_divided(p):
     tmp3, tmp4, all_bays = [], [], df[16].unique()
     p.all_bays = all_bays
     p.map_info_unchanged = DiGraph(p.status)
+    if p.debug_on:
+        p.map_info_unchanged.create_matrix(df.values)
     for i in all_bays:
         tmp[i] = {'internal': {}, 'entrance': [], 'outlet': []}
     for i in df.index:
@@ -130,8 +132,9 @@ def map_divided(p):
                 tmp4.append(sp)
         p.map_info_unchanged.add_node_from(sp, ep, length)
         p.map_info_unchanged.add_weighted_edges_from([(sp, ep, length)])
+        # flyd(p.map_info_unchanged)
 
-    t0 = time.process_time()
+    t0 = time.time()
     # figuring out the shortest paths in every part
     paths_in_bays = dict()
     for k, v in tmp.items():
@@ -141,23 +144,26 @@ def map_divided(p):
         pathA = dict(nx.all_pairs_dijkstra(pic, weight='weight'))
         paths_in_bays[k] = dict({"path": dict(pathA), "entrance": v['entrance'], "outlet": v['outlet']})
     p.internal_paths = paths_in_bays
-    log.info(f'time cost of internal routes:{time.process_time() - t0}')
-    t0 = time.process_time()
+    log.info(f'time cost of internal routes:{time.time() - t0}')
+    t0 = time.time()
     # paths_between_bays = dict()
     tmp5 = pd.DataFrame(data=math.inf, columns=all_bays, index=all_bays)
     for start in tmp3:
         for end in tmp4:
             if start != end:
                 sb, eb = start.split('-')[0], end.split('-')[0]
-                starting = p.map_info_unchanged.get_node_by_id(start)
-                ending = p.map_info_unchanged.get_node_by_id(end)
-                p.map_info_unchanged.set_start_and_goal(starting, ending)
-                path0 = p.Astart.a_star_search(p.map_info_unchanged)
-                tmp6 = len(path0)
+                # A*
+                # starting = p.map_info_unchanged.get_node_by_id(start)
+                # ending = p.map_info_unchanged.get_node_by_id(end)
+                # p.map_info_unchanged.set_start_and_goal(starting, ending)
+                # path0 = p.Astart.a_star_search(p.map_info_unchanged)
+                # nx
+                # tmp6 = nx.dijkstra_path_length(p.map_info_unchanged, source=start, target=end)
+                tmp6 = nx.shortest_path_length(p.map_info_unchanged, source=start, target=end)
                 if tmp6 < tmp5[eb][sb]:
                     tmp5[eb][sb] = tmp6
                 # paths_between_bays.update({(starting, ending): tmp5})
-    log.info(f'time cost of external routes:{time.process_time() - t0}')
+    log.info(f'time cost of external routes:{time.time() - t0}')
     # p.external_paths = paths_between_bays
     p.length_between_bays = tmp5
     return p
@@ -280,19 +286,20 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
 
 # static select car
 def vehicle_load_static(p):
+    t_start = time.time()
+    log.info(f"开始分配任务")
     temp_cars = dict()
     for i in p.all_bays:
         temp_cars[i] = []
     if p.mode == 1:
-        t0 = time.process_time()
         pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         connection = rds.RedisCluster(connection_pool=pool)
         v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-        log.info(f'cars number:{len(v)}, time:{time.process_time()-t0}')
+        log.info(f'取车数辆:{len(v)}, 取车时间:{time.time()-t_start}')
         if v is None:
             return None
-
         all_vehicles_num = 0
+        t1 = time.time()
         for value in v:
             tmp = vehicles_continue(p, value)
             if tmp[0]:
@@ -308,12 +315,17 @@ def vehicle_load_static(p):
                 assign_same_bay(p, bay, i, flag, temp_cars)
             if len(p.taskList) == 0:
                 return None
+        log.info(f'phase 1 cost:{time.time()-t1}')
+        
+        t2 = time.time()
         log.info(f'本轮可用车辆数:{all_vehicles_num}')
         if all_vehicles_num == 0:
             return None
         try:
             for order in p.taskList:
                 car = near_bay_search(order.task_bay, p, temp_cars)
+                if not car:
+                    continue
                 value = car.get('ohtID')
                 log.info(f"任务:{order.id}+车辆:{value}")
                 flag = car.get('mapId')
@@ -330,6 +342,8 @@ def vehicle_load_static(p):
                 # output_new(p, order)
         except IndexError as e:
             log.error(e)
+        log.info(f'phase 2 cost:{time.time() - t2}')
+        log.info(f'phase 1 and 2 cost:{time.time() - t1}')
     return None
 
 
@@ -438,6 +452,7 @@ def read_instructions(p):
 
 
 def read_instructions_static(p):
+    log.info(f"开始读取任务")
     # oracle
     with p.db_pool.get_connection() as db_conn:
         cursor = db_conn.cursor()

@@ -22,7 +22,7 @@ def output_new(p, v):
     idx = "Car:monitor:128.168.11.142_1" + v.vehicle_assigned[1:]
     tmp = json.loads(p.redis_link.get(idx))['ohtStatus_Idle']
     log.info(f'vehicle[{v.vehicle_assigned}],status[{tmp}],1:false/0:true')
-    return 0
+    return None
 
 
 def output_close_connection(p):
