@@ -12,7 +12,7 @@ import copy
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-from .algorithm.A_start.graph.srccode import *
+from algorithm.A_start.graph.srccode import *
 
 
 # server config
@@ -310,6 +310,9 @@ def path_search(p, start, end, entrance, f_path, bayA, out):
     path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
     return path1 + path2[1:-1] + path3
 
+def foreach_path(p,bayA,out,start):
+    p.internal_paths[bayA][out][0]
+    return path
 
 # static select car
 def vehicle_load_static(p):
@@ -400,7 +403,11 @@ def vehicle_load_static(p):
                 log.error(e)
     # local running
     else:
-        with p.db_pool.get_connection() as db_conn:
+        order_list = local_sql_search(p,order_list,temp_cars,number_task)
+    return order_list
+# 本地测试
+def local_sql_search(p,order_list,temp_cars,number_task):
+    with p.db_pool.get_connection() as db_conn:
             cursor = db_conn.cursor()
             cursor.execute('''SELECT *
                 FROM OHTC_CAR
@@ -416,98 +423,97 @@ def vehicle_load_static(p):
                         AND ohtStatus_Idle = '1')
                 )
             ''')
-        v = cursor.fetchall()
-        for i in v:
-            if len(order_list) > number_task:
-                return order_list
-            if not i:
-                continue
-            if i[28] != '1' or i[14] != '0' or i[17] == '0':
-                continue
-            bay = i[1]
-            value = i[11]
-            location = i[10]
-            if bay in p.bays_relation:
-                task = p.bays_relation[bay]
-                if len(task) > 0:
-                    order = task[0]
-                    try:
-                        speed = int(i[2])
-                        if speed == 0:
-                            speed = 1
-                        number = float(p.original_map_info[p.original_map_info[0] == loaction][4].iloc[0])
-                        ts = float(number - int(i[43])) / speed
-                    except:
-                        ts = 0
+    v = cursor.fetchall()
+    for i in v:
+        if len(order_list) > number_task:
+            return order_list
+        if not i:
+            continue
+        if i[28] != '1' or i[14] != '0' or i[17] == '0':
+            continue
+        bay = i[1]
+        value = i[11]
+        location = i[10]
+        if bay in p.bays_relation:
+            task = p.bays_relation[bay]
+            if len(task) > 0:
+                order = task[0]
+                try:
+                    speed = int(i[2])
+                    if speed == 0:
+                        speed = 1
+                    number = float(p.original_map_info[p.original_map_info[0] == loaction][4].iloc[0])
+                    ts = float(number - int(i[43])) / speed
+                except:
+                    ts = 0
+                if ts < p.tts:
+                    temp_cars.append(i)
+                    continue
+                else:
+                    p.taskList.pop(p.taskList.index(order))
+                    start = location.split('_')[1]
+                    end = p.all_stations[order.start_location]
+                    taynum = p.stations_name[order.end_location]
+                    path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                    path.append(taynum)
+                    order.vehicle_assigned = value
+                    order.delivery_route = path
+                    order_list.append(order)
+                    if len(task) > 0:
+                        task.pop(0)
+        else:
+            temp_cars.append(i)
+            pass
+    if len(order_list) < number_task:
+        try:
+            for order in p.taskList:
+                till = True
+                while till:
+                    car = random.choice(temp_cars)
+                    loaction = car[10]
+                    value = car[11]
+                    speed = int(car[2])
+                    if speed == 0:
+                        speed = 1
+                    number = float(p.original_map_info[p.original_map_info[0] == loaction][4].iloc[0])
+                    ts = float(number - int(i[43])) / speed
                     if ts < p.tts:
-                        temp_cars.append(i)
+                        temp_cars.pop(temp_cars.index(car))
                         continue
                     else:
-                        p.taskList.pop(p.taskList.index(order))
-                        start = location.split('_')[1]
+                        temp_cars.pop(temp_cars.index(car))
+                        out = 'outlet'
+                        entrance = 'entrance'
+                        f_path = 'path'
+                        tay = location.split('_')
+                        bayA = tay[0].split('-')[0]
+                        start = tay[1]
                         end = p.all_stations[order.start_location]
                         taynum = p.stations_name[order.end_location]
-                        path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+                        # path1
+                        path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
+                        path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
+
+                        # path2
+                        bayB = end.split('-')[0]
+                        path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
+                        path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
+
+                        # path3
+                        path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
+
+                        # allpath
+                        path = path1 + path2[1:-1] + path3
+
+                        # return path
                         path.append(taynum)
                         order.vehicle_assigned = value
                         order.delivery_route = path
                         order_list.append(order)
-                        if len(task) > 0:
-                            task.pop(0)
-            else:
-                temp_cars.append(i)
-                pass
-        if len(order_list) < number_task:
-            try:
-                for order in p.taskList:
-                    till = True
-                    while till:
-                        car = random.choice(temp_cars)
-                        loaction = car[10]
-                        value = car[11]
-                        speed = int(car[2])
-                        if speed == 0:
-                            speed = 1
-                        number = float(p.original_map_info[p.original_map_info[0] == loaction][4].iloc[0])
-                        ts = float(number - int(i[43])) / speed
-                        if ts < p.tts:
-                            temp_cars.pop(temp_cars.index(car))
-                            continue
-                        else:
-                            temp_cars.pop(temp_cars.index(car))
-                            out = 'outlet'
-                            entrance = 'entrance'
-                            f_path = 'path'
-                            tay = location.split('_')
-                            bayA = tay[0].split('-')[0]
-                            start = tay[1]
-                            end = p.all_stations[order.start_location]
-                            taynum = p.stations_name[order.end_location]
-                            # path1
-                            path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
-                            path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
-
-                            # path2
-                            bayB = end.split('-')[0]
-                            path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
-                            path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
-
-                            # path3
-                            path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
-
-                            # allpath
-                            path = path1 + path2[1:-1] + path3
-
-                            # return path
-                            path.append(taynum)
-                            order.vehicle_assigned = value
-                            order.delivery_route = path
-                            order_list.append(order)
-                            till = False
-            except:
-                pass
+                        till = False
+        except:
+            pass
     return order_list
-
 
 def near_bay_search(bay0, p, cars):
     g = 0
