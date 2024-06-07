@@ -8,7 +8,6 @@ import threading
 import json
 import random
 import copy
-import math
 
 from mysql import connector
 from loguru import logger as log
