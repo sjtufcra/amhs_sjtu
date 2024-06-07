@@ -7,6 +7,7 @@ import threading
 import json
 import random
 import copy
+import math
 
 from mysql import connector
 from loguru import logger as log
@@ -156,8 +157,8 @@ def map_divided(p):
     # output: routes in two parts
     df = p.original_map_info
     tmp = dict()
-    tmp3, tmp4 = [], []
-    for i in df[16].unique():
+    tmp3, tmp4, all_bays = [], [], df[16].unique()
+    for i in all_bays:
         tmp[i] = {'internal': {}, 'entrance': [], 'outlet': []}
     for i in df.index:
         sp = df[1][i]  # start point
@@ -184,19 +185,18 @@ def map_divided(p):
         paths_in_bays[k] = dict({"path":dict(pathA), "entrance":v['entrance'], "outlet":v['outlet']})
     p.internal_paths = paths_in_bays
     # paths_between_bays = dict()
-    # for starting in tmp3:
-    #     for ending in tmp4:
-    #         if starting != ending:
-    #             tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
-    #             paths_between_bays.update({(starting, ending): tmp5})
+    tmp5 = pd.DataFrame(data=math.inf, columns=all_bays, index=all_bays)
+    for starting in tmp3:
+        for ending in tmp4:
+            if starting != ending:
+                sb, eb = starting.split('-')[0], ending.split('-')[0]
+                tmp6 = len(nx.shortest_path(p.map_info_unchanged, starting, ending))
+                if tmp6 < tmp5[eb][sb]:
+                    tmp5[eb][sb] = tmp6
+                # paths_between_bays.update({(starting, ending): tmp5})
     # p.external_paths = paths_between_bays
-    # paths_between_bays = dict()
-    # for starting in tmp3:
-    #     for ending in tmp4:
-    #         if starting != ending:
-    #             tmp5 = nx.shortest_path(p.map_info_unchanged, starting, ending)
-    #             paths_between_bays.update({(starting, ending): tmp5})
-    # p.external_paths = paths_between_bays
+    p.all_bays = all_bays
+    p.length_between_bays = tmp5
     return p
 
 

@@ -55,6 +55,9 @@ class Dataset:
         # added in 240603
         self.internal_paths = None
         self.external_paths = None
+        self.length_between_bays = None
+        self.all_bays = None
+        self.max_search = 3
 
     class Control:
         def __init__(self,task_num=10):
