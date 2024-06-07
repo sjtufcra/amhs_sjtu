@@ -282,6 +282,18 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
     return path1 + path2[1:-1] + path3
 
+def search_point(p,bay,start,status,direction=1):
+    pointA,pointB = p.internal_paths[bay][status]
+    path = p.internal_paths[bay]['path']
+    if direction:
+        # 出口
+        tagA = path[start][0][pointA]
+        tagB = path[start][0][pointB]
+    else:
+        # 入口
+        tagA = path[pointA][0][start]
+        tagB = path[pointB][0][start]
+    return pointB if tagA >= tagB else pointA
 
 # static select car
 def vehicle_load_static(p):
