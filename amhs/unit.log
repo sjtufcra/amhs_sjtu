@@ -185,3 +185,102 @@
 2024-06-07 15:21:15.408 | INFO     | tc_in:read_instructions_static:478 - this is the task count:10
 2024-06-07 15:21:15.408 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.24163532257080078
 2024-06-07 15:21:15.833 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-09 18:05:05.105 | INFO     | tc_in:map_divided:147 - time cost of internal routes:0.4551117420196533
+2024-06-09 18:06:10.616 | INFO     | tc_in:map_divided:166 - time cost of external routes:65.5094301700592
+2024-06-09 18:06:10.616 | INFO     | tc_in:generating:78 - generating success, time cost:70.14788007736206
+2024-06-09 18:06:10.616 | INFO     | tc_optimize:epoch_static:77 - 开始运行算法
+2024-06-09 18:06:10.617 | INFO     | tc_in:read_instructions_static:455 - 开始读取任务
+2024-06-09 18:06:10.747 | INFO     | tc_in:read_instructions_static:461 - task count:11
+2024-06-09 18:06:10.758 | INFO     | tc_in:read_instructions_static:478 - this is the task count:10
+2024-06-09 18:06:10.758 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.14163446426391602
+2024-06-09 18:06:11.186 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-09 18:06:32.778 | INFO     | tc_in:vehicle_load_static:298 - 取车数辆:1000, 取车时间:21.59150767326355
+2024-06-09 18:06:32.783 | INFO     | tc_in:vehicle_load_static:318 - phase 1 cost:0.004996776580810547
+2024-06-09 18:06:32.784 | INFO     | tc_in:vehicle_load_static:321 - 本轮可用车辆数:0
+2024-06-09 18:06:32.785 | INFO     | tc_optimize:epoch_static:89 - 本轮分配任务时长:21.598509311676025
+2024-06-09 18:06:32.785 | INFO     | tc_optimize:epoch_static:90 - 本轮算法执行时长:22.168078660964966
+2024-06-09 18:06:32.785 | INFO     | tc_optimize:epoch_static:77 - 开始运行算法
+2024-06-09 18:06:32.786 | INFO     | tc_in:read_instructions_static:455 - 开始读取任务
+2024-06-09 18:06:32.828 | INFO     | tc_in:read_instructions_static:461 - task count:6
+2024-06-09 18:06:32.839 | INFO     | tc_in:read_instructions_static:478 - this is the task count:6
+2024-06-09 18:06:32.840 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.05454444885253906
+2024-06-09 18:06:33.109 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-09 18:06:53.750 | INFO     | tc_in:vehicle_load_static:298 - 取车数辆:1000, 取车时间:20.641359090805054
+2024-06-09 18:06:53.755 | INFO     | tc_in:vehicle_load_static:318 - phase 1 cost:0.005494832992553711
+2024-06-09 18:06:53.755 | INFO     | tc_in:vehicle_load_static:321 - 本轮可用车辆数:0
+2024-06-09 18:06:53.756 | INFO     | tc_optimize:epoch_static:89 - 本轮分配任务时长:20.647852182388306
+2024-06-09 18:06:53.756 | INFO     | tc_optimize:epoch_static:90 - 本轮算法执行时长:20.970771312713623
+2024-06-09 18:06:53.757 | INFO     | tc_optimize:epoch_static:77 - 开始运行算法
+2024-06-09 18:06:53.757 | INFO     | tc_in:read_instructions_static:455 - 开始读取任务
+2024-06-09 18:06:53.792 | INFO     | tc_in:read_instructions_static:461 - task count:4
+2024-06-09 18:06:53.803 | INFO     | tc_in:read_instructions_static:478 - this is the task count:4
+2024-06-09 18:06:53.804 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.04613208770751953
+2024-06-09 18:06:53.976 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-09 18:07:23.269 | INFO     | tc_in:vehicle_load_static:298 - 取车数辆:1000, 取车时间:29.29315757751465
+2024-06-09 18:07:23.275 | INFO     | tc_in:vehicle_load_static:318 - phase 1 cost:0.004994869232177734
+2024-06-09 18:07:23.275 | INFO     | tc_in:vehicle_load_static:321 - 本轮可用车辆数:0
+2024-06-09 18:07:23.276 | INFO     | tc_optimize:epoch_static:89 - 本轮分配任务时长:29.30013608932495
+2024-06-09 18:07:23.277 | INFO     | tc_optimize:epoch_static:90 - 本轮算法执行时长:29.5196213722229
+2024-06-09 18:07:23.277 | INFO     | tc_optimize:epoch_static:77 - 开始运行算法
+2024-06-09 18:07:23.277 | INFO     | tc_in:read_instructions_static:455 - 开始读取任务
+2024-06-09 18:07:23.368 | INFO     | tc_in:read_instructions_static:461 - task count:3
+2024-06-09 18:07:23.381 | INFO     | tc_in:read_instructions_static:478 - this is the task count:3
+2024-06-09 18:07:23.382 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.1052401065826416
+2024-06-09 18:07:23.528 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-09 18:07:47.017 | INFO     | tc_in:vehicle_load_static:298 - 取车数辆:1000, 取车时间:23.489208221435547
+2024-06-09 18:07:47.023 | INFO     | tc_in:vehicle_load_static:318 - phase 1 cost:0.0060045719146728516
+2024-06-09 18:07:47.023 | INFO     | tc_in:vehicle_load_static:321 - 本轮可用车辆数:0
+2024-06-09 18:07:47.024 | INFO     | tc_optimize:epoch_static:89 - 本轮分配任务时长:23.496211290359497
+2024-06-09 18:07:47.024 | INFO     | tc_optimize:epoch_static:90 - 本轮算法执行时长:23.747318744659424
+2024-06-09 18:07:47.025 | INFO     | tc_optimize:epoch_static:77 - 开始运行算法
+2024-06-09 18:07:47.025 | INFO     | tc_in:read_instructions_static:455 - 开始读取任务
+2024-06-09 18:07:47.180 | INFO     | tc_in:read_instructions_static:461 - task count:4
+2024-06-09 18:07:47.192 | INFO     | tc_in:read_instructions_static:478 - this is the task count:4
+2024-06-09 18:07:47.192 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.16680216789245605
+2024-06-09 18:07:47.370 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-09 18:08:05.808 | INFO     | tc_in:vehicle_load_static:298 - 取车数辆:1000, 取车时间:18.43741202354431
+2024-06-09 18:08:05.813 | INFO     | tc_in:vehicle_load_static:318 - phase 1 cost:0.005003690719604492
+2024-06-09 18:08:05.813 | INFO     | tc_in:vehicle_load_static:321 - 本轮可用车辆数:0
+2024-06-09 18:08:05.815 | INFO     | tc_optimize:epoch_static:89 - 本轮分配任务时长:18.44441866874695
+2024-06-09 18:08:05.815 | INFO     | tc_optimize:epoch_static:90 - 本轮算法执行时长:18.789332151412964
+2024-06-09 18:08:05.815 | INFO     | tc_optimize:epoch_static:77 - 开始运行算法
+2024-06-09 18:08:05.815 | INFO     | tc_in:read_instructions_static:455 - 开始读取任务
+2024-06-09 18:08:05.859 | INFO     | tc_in:read_instructions_static:461 - task count:8
+2024-06-09 18:08:05.871 | INFO     | tc_in:read_instructions_static:478 - this is the task count:8
+2024-06-09 18:08:05.871 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.05632615089416504
+2024-06-09 18:08:06.190 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-09 18:08:28.394 | INFO     | tc_in:vehicle_load_static:298 - 取车数辆:1000, 取车时间:22.204253435134888
+2024-06-09 18:08:28.400 | INFO     | tc_in:vehicle_load_static:318 - phase 1 cost:0.006011009216308594
+2024-06-09 18:08:28.400 | INFO     | tc_in:vehicle_load_static:321 - 本轮可用车辆数:1
+2024-06-09 18:08:28.402 | INFO     | tc_in:vehicle_load_static:345 - phase 2 cost:0.0019953250885009766
+2024-06-09 18:08:28.402 | INFO     | tc_in:vehicle_load_static:346 - phase 1 and 2 cost:0.00800633430480957
+2024-06-09 18:08:28.404 | INFO     | tc_optimize:epoch_static:89 - 本轮分配任务时长:22.2142653465271
+2024-06-09 18:08:28.404 | INFO     | tc_optimize:epoch_static:90 - 本轮算法执行时长:22.58916997909546
+2024-06-09 18:08:28.404 | INFO     | tc_optimize:epoch_static:77 - 开始运行算法
+2024-06-09 18:08:28.404 | INFO     | tc_in:read_instructions_static:455 - 开始读取任务
+2024-06-09 18:08:28.434 | INFO     | tc_in:read_instructions_static:461 - task count:2
+2024-06-09 18:08:28.446 | INFO     | tc_in:read_instructions_static:478 - this is the task count:2
+2024-06-09 18:08:28.446 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.042253971099853516
+2024-06-09 18:08:28.535 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-09 18:08:50.102 | INFO     | tc_in:vehicle_load_static:298 - 取车数辆:1000, 取车时间:21.56680679321289
+2024-06-09 18:08:50.107 | INFO     | tc_in:vehicle_load_static:318 - phase 1 cost:0.004513978958129883
+2024-06-09 18:08:50.107 | INFO     | tc_in:vehicle_load_static:321 - 本轮可用车辆数:0
+2024-06-09 18:08:50.108 | INFO     | tc_optimize:epoch_static:89 - 本轮分配任务时长:21.573351621627808
+2024-06-09 18:08:50.108 | INFO     | tc_optimize:epoch_static:90 - 本轮算法执行时长:21.70436954498291
+2024-06-09 18:08:50.109 | INFO     | tc_optimize:epoch_static:77 - 开始运行算法
+2024-06-09 18:08:50.109 | INFO     | tc_in:read_instructions_static:455 - 开始读取任务
+2024-06-09 18:08:50.134 | INFO     | tc_in:read_instructions_static:461 - task count:8
+2024-06-09 18:08:50.147 | INFO     | tc_in:read_instructions_static:478 - this is the task count:8
+2024-06-09 18:08:50.148 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.03912472724914551
+2024-06-09 18:08:50.473 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-09 18:09:10.581 | INFO     | tc_in:vehicle_load_static:298 - 取车数辆:1000, 取车时间:20.1078360080719
+2024-06-09 18:09:10.586 | INFO     | tc_in:vehicle_load_static:318 - phase 1 cost:0.0040090084075927734
+2024-06-09 18:09:10.587 | INFO     | tc_in:vehicle_load_static:321 - 本轮可用车辆数:0
+2024-06-09 18:09:10.588 | INFO     | tc_optimize:epoch_static:89 - 本轮分配任务时长:20.115188598632812
+2024-06-09 18:09:10.588 | INFO     | tc_optimize:epoch_static:90 - 本轮算法执行时长:20.479021072387695
+2024-06-09 18:09:10.588 | INFO     | tc_optimize:epoch_static:77 - 开始运行算法
+2024-06-09 18:09:10.588 | INFO     | tc_in:read_instructions_static:455 - 开始读取任务
+2024-06-09 18:09:10.638 | INFO     | tc_in:read_instructions_static:461 - task count:4
+2024-06-09 18:09:10.651 | INFO     | tc_in:read_instructions_static:478 - this is the task count:4
+2024-06-09 18:09:10.651 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.06259417533874512
+2024-06-09 18:09:10.818 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
