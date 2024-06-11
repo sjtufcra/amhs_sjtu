@@ -109,12 +109,13 @@ def track_generate_station_new(p):
                         num = df2[1][i]
                         loc = df2[3][i]
                         dft = df[(df[3] <= loc) & (df[4] >= loc)]
-                        station_location[num] = dft[1].values[0]
-                        station_name[num] = str(dft[3].values[0])
+                        station_location[num] = dft[1].values[0] #台位所在的轨道起点编号
+                        station_name[num] = df2[2][i]#台位所在轨道的台位编号
+        
             db_conn.commit()
             cursor.close()
-    p.all_stations = station_location
-    p.stations_name = station_name
+    p.all_stations = p.all_stations.update(station_location)
+    p.stations_name = p.stations_name.update(station_name)
     return p
 
 
