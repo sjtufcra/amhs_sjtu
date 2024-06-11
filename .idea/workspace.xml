@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="89c6d321-c1cf-41b4-942b-d32bcac867bf" name="Changes" comment="增加指派后的车辆状态读取" />
+    <list default="true" id="89c6d321-c1cf-41b4-942b-d32bcac867bf" name="Changes" comment="增加指派后的车辆状态读取">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amhs/tc_in.py" beforeDir="false" afterPath="$PROJECT_DIR$/amhs/tc_in.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amhs/tc_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/amhs/tc_main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/amhs_sjtu-1.0.2-py2.py3-none-any.whl" beforeDir="false" afterPath="$PROJECT_DIR$/dist/amhs_sjtu-1.0.2-py2.py3-none-any.whl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/amhs_sjtu-1.0.2.tar.gz" beforeDir="false" afterPath="$PROJECT_DIR$/dist/amhs_sjtu-1.0.2.tar.gz" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -47,7 +53,7 @@
     "Python.unit.executor": "Debug",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "Merging main",
     "last_opened_file_path": "C:/Code/from_github/amhs_sjtu_dev",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
