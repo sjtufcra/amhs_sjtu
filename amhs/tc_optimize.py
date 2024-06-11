@@ -113,8 +113,8 @@ def track_generate_station_new(p):
         
             db_conn.commit()
             cursor.close()
-    p.all_stations = p.all_stations.update(station_location)
-    p.stations_name = p.stations_name.update(station_name)
+    p.all_stations.update(station_location)
+    p.stations_name.update(station_name)
     return p
 
 
