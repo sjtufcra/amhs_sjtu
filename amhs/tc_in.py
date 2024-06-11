@@ -361,7 +361,6 @@ def vehicle_load_static(p):
 def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
     tmp_id = i.get('ohtID')
-    log.info(f"任务【{task[0].id}】+车辆【{tmp_id}】")
     if len(task) > 0:
         order = task[0]
         p.taskList.pop(p.taskList.index(order))
