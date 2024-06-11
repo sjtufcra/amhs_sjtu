@@ -2,7 +2,15 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
+      <module fileurl="file://$PROJECT_DIR$/.idea/amhs_sjtu.iml" filepath="$PROJECT_DIR$/.idea/amhs_sjtu.iml" />
+=======
+<<<<<<< HEAD
       <module fileurl="file://$PROJECT_DIR$/.idea/amhs_sjtu_dev.iml" filepath="$PROJECT_DIR$/.idea/amhs_sjtu_dev.iml" />
+=======
+      <module fileurl="file://$PROJECT_DIR$/.idea/amhs_sjtu.iml" filepath="$PROJECT_DIR$/.idea/amhs_sjtu.iml" />
+>>>>>>> origin/dev_zq
+>>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
     </modules>
   </component>
 </project>

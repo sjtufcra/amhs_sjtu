@@ -228,7 +228,7 @@ class DiGraph(nx.DiGraph):
                 tp[indexB] = val[8]
                 tq[indexA] = val[8]
         if self.status == "tensor":
-            self.tensor = torch.from_numpy(tensor)
+            self.tensor = torch.from_numpy(tensor) # type: ignore
         else:
             self.tensor = tensor
         self.node_key = key_to_index
@@ -345,8 +345,10 @@ class AStart:
         else:
             return self.a_star_search_nocache(graph)
 
-    # no-cache
-    def a_star_search_nocache(self, graph):
+    def a_star_search_fast(self,graph,start,end):
+        return nx.astar_path(graph,start,end)
+# no-cache
+    def a_star_search_nocache(self,graph):
         open_set = []
         heapq.heappush(open_set, (0, graph.start_node))
         came_from = {graph.start_node.id: None}
@@ -527,12 +529,12 @@ class AStart_tensor:
         num_nodes = graph.tensor.shape[0]
         open_set = []
         heapq.heappush(open_set, (0, graph.start_node))
-        came_from = torch.full((num_nodes,), -1, dtype=torch.int32)
+        came_from = torch.full((num_nodes,), -1, dtype=torch.int32) # type: ignore
 
-        g_score = torch.full((num_nodes,), float('inf'))
+        g_score = torch.full((num_nodes,), float('inf')) # type: ignore
         g_score[graph.start_node] = 0.0
 
-        f_score = torch.full((num_nodes,), float('inf'))
+        f_score = torch.full((num_nodes,), float('inf')) # type: ignore
         f_score[graph.start_node] = self.h_func(graph.start_node, graph.goal_node)
 
         for _ in range(self.max_steps):
@@ -544,7 +546,7 @@ class AStart_tensor:
             if current == graph.goal_node:
                 return self.reconstruct_path(came_from, current, graph)
 
-            neighbors = torch.where(graph.tensor[current] > 0)[0]
+            neighbors = torch.where(graph.tensor[current] > 0)[0] # type: ignore
             for neighbor in neighbors:
                 tentative_g_score = g_score[current] + graph.tensor[current, neighbor]
 
@@ -565,12 +567,12 @@ class AStart_tensor:
         return total_path
 
     def h_func(self, a, b):
-        return torch.abs(torch.tensor(a) - torch.tensor(b)).sum().item()
+        return torch.abs(torch.tensor(a) - torch.tensor(b)).sum().item() # type: ignore
 
     def load_adj_matrix(self, file_path):
         with open(file_path, 'r') as f:
             adj_matrix = json.load(f)
-        return torch.tensor(adj_matrix, dtype=torch.float32)
+        return torch.tensor(adj_matrix, dtype=torch.float32) # type: ignore
 
 
 class AStart_matrix:
@@ -584,7 +586,7 @@ class AStart_matrix:
         return abs(x1 - x2) + abs(y1 - y2)
 
     def astar_search_single_thread(self, graph):
-        st = time.time()
+        # st = time.time()
         self.num_nodes = graph.tensor.shape[0]
         open_set = [(0, graph.start_node)]
         heapq.heapify(open_set)
@@ -602,7 +604,7 @@ class AStart_matrix:
         # for _ in range(self.max_steps):
         #     if not open_set:
         #         break
-        log.info(f'cont,time:{time.time() - st}')
+        # log.info(f'cont,time:{time.time() - st}')
         wt = time.time()
         while open_set:
             current_f_score, current = heapq.heappop(open_set)

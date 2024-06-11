@@ -1,5 +1,5 @@
 # mode's parameter
-runing_mode: 1 # 0: local mode, 1: server mode
+runing_mode: 0 # 0: local mode, 1: server mode
 
 # server's parameter
 httpServer:
@@ -7,6 +7,9 @@ httpServer:
     oracle_user: 'wf2prodmoc'
     oracle_password: 'wf2moc_22FAB2'
     oracle_dsn: '10.34.58.15:1521/f2wdb'
+
+    # default is amhs
+    database: 'amhs'
 
     # redis linking
     rds_connection: '10.34.58.42'
@@ -19,15 +22,24 @@ httpServer:
     circulating_on: 1
 
     # algorithm mode : 1, 2, 3, 4 ;deaulft is 1,A* algorithm is 2, A*+Dijkstra algorithm is 3, Dynamic Programming, DP is 4
-    algorithm_on: 1
+    algorithm_on: 2
+    status: 'matrix' # 'node' or 'tensor' or 'matrix'
 
     # load data
     order_on: 1 # 1: load local order data, 0: don't load local order data
     # online
-    mode: True
+    mode: 1
+    # task_number
+    task_num: 10
+    # control_scenond
+    tts: 2
 
     # server's parameter
     use_multiprocessing: False
+    log: "./unit.log"
+
+    # debug on_off
+    debug_on: True
 
 # local server's parameter
 localServer:
@@ -64,6 +76,9 @@ localServer:
     mode: False
     # task_number
     task_num: 10
+
+    # control_scenond
+    tts: 2
 
     # local server's parameter
     use_multiprocessing: False
