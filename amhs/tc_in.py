@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 import pandas as pd
 import oracledb
@@ -9,12 +10,11 @@ import json
 import random
 import copy
 
-from tc_out import *
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
+from .tc_out import *
 from .algorithm.A_start.graph.srccode import *
-
 
 
 # server config
@@ -87,16 +87,7 @@ def erect_map(p):
             cursor.execute('SELECT * FROM OHTC_MAP')
             df = pd.DataFrame(cursor.fetchall())
             p.original_map_info = df
-            p.map_info_unchanged = DiGraph(p.status)
             p.Astart = AStart()
-            for i in df.index:
-                sp = df[1][i]  # start point
-                ep = df[2][i]  # end point
-                length = df[8][i]
-                p.map_info_unchanged.add_node_from(sp, ep, length)
-                p.map_info_unchanged.add_weighted_edges_from([(sp, ep, length)])
-            # tensor generation
-            # p.map_info_unchanged.create_matrix(df.values)
             db_conn.commit()
             cursor.close()
         # load all stations' information, but an old version
@@ -370,9 +361,9 @@ def vehicle_load_static(p):
 def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
     tmp_id = i.get('ohtID')
-    log.info(f"任务【{task[0].id}】+车辆【{tmp_id}】")
     if len(task) > 0:
         order = task[0]
+        log.info(f"任务:{order.id},车辆:{tmp_id}")
         p.taskList.pop(p.taskList.index(order))
         end_station = order.start_location
         start = flag.split('_')[1]
@@ -440,7 +431,7 @@ def track_generate_station(p, df):
             dft = df[(df[3] <= loc) & (df[4] >= loc)]
             station_location[num] = dft[1].values[0]
             station_name[num] = str(dft[3].values[0])
-        p.all_stations = station_location
+        p.all_stations = p.all_stations.update(station_location)
         p.stations_name = station_name
         db_conn.commit()
         cursor.close()

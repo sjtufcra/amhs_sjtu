@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   <component name="Black">
     <option name="sdkName" value="C:\App\anaconda3" />
   </component>
 >>>>>>> dev
+=======
+  <component name="Black">
+    <option name="sdkName" value="C:\App\anaconda3" />
+  </component>
+>>>>>>> dev_zq
   <component name="ProjectRootManager" version="2" project-jdk-name="C:\App\anaconda3" project-jdk-type="Python SDK" />
 </project>
