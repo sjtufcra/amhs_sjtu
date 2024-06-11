@@ -351,7 +351,7 @@ def vehicle_load_static(p):
                 path = path_search(p, start, entrance, f_path, bayA, out, order)
                 order.vehicle_assigned = value
                 order.delivery_route = path
-                # output_new(p, order)
+                output_new(p, order)
         except IndexError as e:
             log.error(e)
         log.info(f'phase 2 cost:{time.time() - t2}')
@@ -368,13 +368,13 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
         p.taskList.pop(p.taskList.index(order))
         end_station = order.start_location
         start = flag.split('_')[1]
-        end = p.all_stations[end_station]
+        end = p.all_stations.get(end_station)
         path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
-        path.append(p.stations_name[end_station])
+        path.append(p.stations_name.get(end_station))
 
         order.vehicle_assigned = tmp_id
         order.delivery_route = path
-        # output_new(p, order)
+        output_new(p, order)
         # drop car and task
         drop_car_task(temp_cars.get(bay), i)
         drop_car_task(task, task[0])
