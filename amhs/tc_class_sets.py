@@ -9,7 +9,7 @@ class Dataset:
         self.original_map_info = None
         self.all_routes = None
         self.all_stations = dict()
-        self.stations_name = None
+        self.stations_name = dict()
         self.adjacent_matrix = None
         self.valued_adjacent_matrix = None
         self.bays_relation = None
