@@ -3,6 +3,11 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
+=======
+<<<<<<< HEAD
+>>>>>>> 9f8857ffbdabd8a05e3345668712f70221462197
+<<<<<<< HEAD
+=======
   <component name="Black">
     <option name="sdkName" value="C:\App\anaconda3" />
   </component>
@@ -11,6 +16,11 @@
   <component name="Black">
     <option name="sdkName" value="C:\App\anaconda3" />
   </component>
+<<<<<<< HEAD
 >>>>>>> dev_zq
+=======
+>>>>>>> origin/dev_zq
+>>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+>>>>>>> 9f8857ffbdabd8a05e3345668712f70221462197
   <component name="ProjectRootManager" version="2" project-jdk-name="C:\App\anaconda3" project-jdk-type="Python SDK" />
 </project>

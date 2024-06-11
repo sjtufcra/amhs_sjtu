@@ -10,7 +10,6 @@ from .tc_out import *
 from .tc_in import *
 from .algorithm.A_start.graph.srccode import *
 
-
 def task_assign(p, use_multiprocessing=True):
     g = 0
     while p.runBool:
