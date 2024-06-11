@@ -418,8 +418,6 @@ def clear_dict():
 
 
 def track_generate_station(p, df):
-    if p.all_stations is not None:
-        return p
     with p.db_pool.get_connection() as db_conn:
         cursor = db_conn.cursor()
         cursor.execute('SELECT * FROM OHTC_POSITION')
