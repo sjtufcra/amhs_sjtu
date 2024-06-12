@@ -4,6 +4,7 @@ import pandas as pd
 import oracledb
 import aioredis as rds
 import asyncio
+from fastapi import BackgroundTasks as btk
 
 import math
 import networkx as nx
@@ -314,12 +315,13 @@ def vehicle_load_static(p):
     if p.mode == 1:
         t0 = time.time()
         # 同步调用
+        btk(read_car_to_cache_back,p)
         # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         # connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         # 异步调用
-        asyncio.run(read_car_to_cach(p))
-        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.time()-t0}')
+        # asyncio.run(read_car_to_cach(p))
+        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.process_time()-t0}')
         if p.vehicles_get is None:
             return None
         all_vehicles_num = 0
@@ -406,7 +408,7 @@ def near_bay_search(bay0, p, cars):
             g += 1
         if g > p.max_search:
             return None
-
+# 异步线程
 async def read_car_to_cache_async(p):
     redis = rds.from_url(
         f'redis://{p.rds_connection}:{p.rds_port}/',
@@ -420,15 +422,18 @@ async def read_car_to_cache_async(p):
         await redis.close()
 async def read_car_to_cach(p):
     # 同步读取
-    # if p.vehicles_get is None:
-    # import rediscluster as rds
-    #     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-    #     connection = rds.RedisCluster(connection_pool=pool)
-    #     v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-    #     p.vehicles_get = v 
+    # btkread_car_to_cache_back(p)
+    if p.vehicles_get is None:
+        pass
     # else:
         await read_car_to_cache_async(p)
 
+# 同步
+def read_car_to_cache_back(p):
+    pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+    connection = rds.RedisCluster(connection_pool=pool)
+    v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+    p.vehicles_get = v 
 # set data in element
 def set_data(dictionary, key, data):
     # 增加输入校验
