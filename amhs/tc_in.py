@@ -418,7 +418,6 @@ async def read_car_to_cache_async(p):
         p.vehicles_get = values
     finally:
         await redis.close()
-        await redis.wait_closed()
 async def read_car_to_cach(p):
     # 同步读取
     # if p.vehicles_get is None:
