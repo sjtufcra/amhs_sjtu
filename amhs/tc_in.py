@@ -315,6 +315,7 @@ def path_search(p, start, end, entrance, f_path, bayA, out):
     return path1 + path2[1:-1] + path3
 
 def search_point(p,bay,start,status,direction=1):
+    log.warning(f'bay:{bay},point:{start},status:{status}')
     pointA,pointB = p.internal_paths[bay][status]
     path = p.internal_paths[bay]['path']
     if direction:
