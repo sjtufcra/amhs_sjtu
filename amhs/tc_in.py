@@ -552,14 +552,13 @@ def near_bay_search(bay0, p, cars):
             return None
 
 async def read_car_to_cache_async(p):
-    pool = await rds.ConnectionPool.from_url(f'redis://{p.rds_connection}:{p.rds_port}/', decode_responses=True)
+    pool = await rds.from_url(f'redis://{p.rds_connection}:{p.rds_port}/', decode_responses=True)
     try:
-        redis = await pool
-        keys = await redis.keys(pattern=p.rds_search_pattern)
-        values = await redis.mget(keys)
+        keys = await pool.keys(pattern=p.rds_search_pattern)
+        values = await pool.mget(keys)
         p.vehicles_get = values
     finally:
-        pool.close()
+        await pool.close()
         await pool.wait_closed()
 async def read_car_to_cach(p):
     # 同步读取
