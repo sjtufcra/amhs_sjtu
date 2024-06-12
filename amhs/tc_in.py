@@ -298,24 +298,27 @@ def drop_car_task(x, i):
 
 
 def path_search(p, start, end, entrance, f_path, bayA, out):
+    bayB = end.split('-')[0]
     # path1
     # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
     path1_end = search_point(p,bayA,start,out)  # 精确选取位置
-    path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
-
     # path2
-    bayB = end.split('-')[0]
     # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
     path2_start = search_point(p,bayB,entrance,end)  # 精确选取位置
     # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
-    path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
+    if path1_end is None or path2_start is None:
+        return None
 
-    # path3
+    path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
+    path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
     path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
     return path1 + path2[1:-1] + path3
 
 def search_point(p,bay,start,status,direction=1):
     log.warning(f'bay:{bay},point:{start},status:{status}')
+    txt = p.internal_paths[bay][status]
+    if len(txt)==0:
+        return None
     pointA,pointB = p.internal_paths[bay][status]
     path = p.internal_paths[bay]['path']
     if direction:
@@ -412,6 +415,8 @@ def vehicle_load_static(p):
                     end = p.all_stations[order.start_location]
                     taynum = p.stations_name[order.end_location]
                     path = path_search(p, start, end, entrance, f_path, bayA, out)
+                    if path is None:
+                        continue
                     path.append(taynum)
                     order.vehicle_assigned = value
                     order.delivery_route = path
