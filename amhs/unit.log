@@ -284,3 +284,12 @@
 2024-06-09 18:09:10.651 | INFO     | tc_in:read_instructions_static:478 - this is the task count:4
 2024-06-09 18:09:10.651 | INFO     | tc_optimize:epoch_static:83 - 本轮读取任务时长:0.06259417533874512
 2024-06-09 18:09:10.818 | INFO     | tc_in:vehicle_load_static:290 - 开始分配任务
+2024-06-12 15:17:25.955 | INFO     | tc_in:map_divided:183 - time cost of internal routes:2.3397560119628906
+2024-06-12 15:20:44.789 | INFO     | tc_in:map_divided:183 - time cost of internal routes:2.306741714477539
+2024-06-12 15:23:47.375 | INFO     | tc_in:map_divided:183 - time cost of internal routes:1.2700698375701904
+2024-06-12 15:23:55.019 | INFO     | tc_in:map_divided:204 - block A completed
+2024-06-12 15:24:30.595 | INFO     | tc_in:map_divided:204 - block B completed
+2024-06-12 15:24:53.191 | INFO     | tc_in:map_divided:204 - block C completed
+2024-06-12 15:24:55.825 | INFO     | tc_in:map_divided:204 - block D completed
+2024-06-12 15:24:56.809 | INFO     | tc_in:map_divided:204 - block E completed
+2024-06-12 15:24:56.809 | INFO     | tc_in:map_divided:205 - time cost of internal routes:69.43445444107056

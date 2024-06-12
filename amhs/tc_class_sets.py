@@ -60,6 +60,9 @@ class Dataset:
         self.all_bays = None
         self.max_search = 3
 
+        # added in 240612
+        self.block = dict()
+
     class Control:
         def __init__(self,task_num=10):
             self.num_vehicle = 0

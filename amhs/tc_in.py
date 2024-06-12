@@ -80,33 +80,55 @@ def generating(p):
 
 
 def erect_map(p):
-    if p.Control().build_map:
-        # read form db
-        with p.db_pool.get_connection() as db_conn:
-            cursor = db_conn.cursor()
-            cursor.execute('SELECT * FROM OHTC_MAP')
-            df = pd.DataFrame(cursor.fetchall())
-            p.original_map_info = df
-            p.Astart = AStart()
-            db_conn.commit()
-            cursor.close()
-        # load all stations' information, but an old version
-        if not p.debug_on:            
-            track_generate_station(p, df)
-        # added in 240603 by lby
-        # a new model used to divide map into two pieces,
-        # one for internal (within bays, nodes name started with 'W'),
-        # another for external (high-ways, nodes name started with 'I'),
-        # and there are links between two parts, including entrances('W-I') and outlets('I-W')
-        p = map_divided(p)
+    # split the map to 5 blocks, from A to E
+    # each block contains 2 or 3 part of highways and several bays
+    p = initiate_block(p)
+    # read form the oracle database and build the graph of map
+    p, tmp = map_build(p)
+    # added in 240603 by lby
+    # a new model used to divide map into two pieces,
+    # one for internal (within bays, nodes name started with 'W'),
+    # another for external (high-ways, nodes name started with 'I'),
+    # and there are links between two parts, including entrances('W-I') and outlets('I-W')
+    p = map_divided(p, tmp)
+    # load all stations' information, but an old version
+    if not p.debug_on:
+        track_generate_station(p)
     return p
 
 
-def map_divided(p):
-    # this function is used to calculate paths in two parts of the map
-    # input: map info from 'p'
-    # output: routes in two parts
-    df = p.original_map_info
+def initiate_block(p):
+    t = p.block
+    j = [('A', ['I001', 'I002'], [range(1, 35)]),
+         ('B', ['I003', 'I004'], [range(35, 72), 133, 134, 135]),
+         ('C', ['I004', 'I005'], [range(72, 106)]),
+         ('D', ['I006', 'I007'], [range(106, 131)]),
+         ('E', ['I003', 'I004', 'I005'], [131, 132])]
+    for i in j:
+        bays = []
+        for k in i[2]:
+            if isinstance(k, range):
+                for k0 in k:
+                    s = 'W' + str(k0).zfill(3)
+                    bays.append(s)
+            else:
+                s = 'W' + str(k).zfill(3)
+                bays.append(s)
+        t[i[0]] = {'internal': dict(), 'external': dict(), 'neighbor': dict(),
+                   'bays': bays, 'highways': i[1]}
+    return p
+
+
+def map_build(p):
+    # read form db
+    with p.db_pool.get_connection() as db_conn:
+        cursor = db_conn.cursor()
+        cursor.execute('SELECT * FROM OHTC_MAP')
+        df = pd.DataFrame(cursor.fetchall())
+        p.original_map_info = df
+        p.Astart = AStart()
+        db_conn.commit()
+        cursor.close()
     tmp = dict()
     tmp3, tmp4, all_bays = [], [], df[16].unique()
     p.all_bays = all_bays
@@ -121,21 +143,31 @@ def map_divided(p):
         length = df[8][i]  # end point
         bay0 = sp.split('-')[0]
         bay1 = ep.split('-')[0]
-        if sp.startswith('W') and ep.startswith('W') and (bay0 == bay1):
+        # if sp.startswith('W') and ep.startswith('W') and (bay0 == bay1):
+        #     tmp[bay0]['internal'].update({(sp, ep): length})
+        # elif sp.startswith('W') or ep.startswith('W'):
+        #     if sp.startswith('W'):
+        #         tmp[bay0]['outlet'].append(sp)
+        #         tmp3.append(sp)
+        #     if ep.startswith('W'):
+        #         tmp[bay1]['entrance'].append(ep)
+        #         tmp4.append(sp)
+        if bay0 == bay1:
             tmp[bay0]['internal'].update({(sp, ep): length})
-        elif sp.startswith('W') or ep.startswith('W'):
-            if sp.startswith('W'):
-                tmp[bay0]['outlet'].append(sp)
-                tmp3.append(sp)
-            if ep.startswith('W'):
-                tmp[bay1]['entrance'].append(ep)
-                tmp4.append(sp)
-        p.map_info_unchanged.add_node_from(sp, ep, length)
+        else:
+            tmp[bay0]['outlet'].append((sp, ep))
+            tmp[bay1]['entrance'].append((sp, ep))
+        # p.map_info_unchanged.add_node_from(sp, ep, length)
         p.map_info_unchanged.add_weighted_edges_from([(sp, ep, length)])
-        # flyd(p.map_info_unchanged)
+    return p, tmp
 
-    t0 = time.time()
+
+def map_divided(p, tmp):
     # figuring out the shortest paths in every part
+    # indexed by a bay name and then by nodes both in this bay
+    # example: r = p.block['A']['internal'][@bay_name][(@node1, @node2)]
+    # r is a list containing a series of nodes, which is a viable route
+    t0 = time.time()
     paths_in_bays = dict()
     for k, v in tmp.items():
         pic = DiGraph(p.status)
@@ -143,29 +175,48 @@ def map_divided(p):
             pic.add_weighted_edges_from([(k2[0], k2[1], v2)])
         pathA = dict(nx.all_pairs_dijkstra(pic, weight='weight'))
         paths_in_bays[k] = dict({"path": dict(pathA), "entrance": v['entrance'], "outlet": v['outlet']})
-    p.internal_paths = paths_in_bays
+        for k0, v0 in p.block.items():
+            if k in v0['bays'] or k in v0['highways']:
+                p.block[k0]['internal'].update({k: paths_in_bays[k]})
+                break
+    # p.internal_paths = paths_in_bays
     log.info(f'time cost of internal routes:{time.time() - t0}')
+
+    # route within the different bays
+    # indexed by 2 bay names and then by nodes in bays respectively
+    # example: r = p.block['A']['external'][(@bay_name, @bay_name][(@node1, @node2)]
     t0 = time.time()
-    # paths_between_bays = dict()
-    tmp5 = pd.DataFrame(data=math.inf, columns=all_bays, index=all_bays)
-    for start in tmp3:
-        for end in tmp4:
-            if start != end:
-                sb, eb = start.split('-')[0], end.split('-')[0]
-                # A*
-                # starting = p.map_info_unchanged.get_node_by_id(start)
-                # ending = p.map_info_unchanged.get_node_by_id(end)
-                # p.map_info_unchanged.set_start_and_goal(starting, ending)
-                # path0 = p.Astart.a_star_search(p.map_info_unchanged)
-                # nx
-                # tmp6 = nx.dijkstra_path_length(p.map_info_unchanged, source=start, target=end)
-                tmp6 = nx.shortest_path_length(p.map_info_unchanged, source=start, target=end)
-                if tmp6 < tmp5[eb][sb]:
-                    tmp5[eb][sb] = tmp6
-                # paths_between_bays.update({(starting, ending): tmp5})
-    log.info(f'time cost of external routes:{time.time() - t0}')
-    # p.external_paths = paths_between_bays
-    p.length_between_bays = tmp5
+    e_matrix = pd.DataFrame(data=math.inf, columns=p.all_bays, index=p.all_bays)
+    for k0, v0 in p.block.items():
+        for i in v0['bays']:
+            for j in v0['bays']:
+                if i != j:
+                    sp = v0['internal'][i]['outlet']
+                    ep = v0['internal'][j]['entrance']
+                    value0, path0 = math.inf, []
+                    if sp and ep:
+                        for i0 in sp:
+                            for j0 in ep:
+                                value, path = nx.bidirectional_dijkstra(p.map_info_unchanged, i0[0], j0[1])
+                                if value < value0:
+                                    path0 = path
+                                    value0 = value
+                    p.block[k0]['external'].update({(i, j): (value0, path0)})
+                    e_matrix[j][i] = value0
+        log.info(f'block {k0} completed')
+    p.length_between_bays = e_matrix
+    log.info(f'time cost of internal routes:{time.time() - t0}')
+
+    # routes between highways and nodes inside bays
+    # indexed by a bay name as well as a highway name, and then by nodes in this bay
+    # example: r = p.block['A']['external'][(@highway, @bay_name][(@node1, @node2)]
+    pass
+    # sp in I001, ep in W001, both of them are in block 'A'
+    # find the outlet track between them, which connected W001 with I001
+    # assigning it to tmp, it's a tuple (outlet of W001, entrance of I001)
+    # route0 = p.block['A']['internal'][W001][sp, tmp[0]]
+    # route1 = p.block['A']['internal'][I001][tmp[1], ep]
+    # the final route is equal to route0 + route1, and vise versa
     return p
 
 
@@ -268,13 +319,13 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     end = p.all_stations[order.start_location]
     # path1
     # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
-    path1_end = search_point(p,bayA,start,out)  # 精确选取位置
+    path1_end = search_point(p, bayA, start, out)  # 精确选取位置
     path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
 
     # path2
     bayB = end.split('-')[0]
     # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
-    path2_start = search_point(p,bayB,end,entrance,direction=0)  # 精确选取位置
+    path2_start = search_point(p, bayB, end, entrance, direction=0)  # 精确选取位置
     # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
     path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
 
@@ -282,8 +333,9 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
     return path1 + path2[1:-1] + path3
 
-def search_point(p,bay,start,status,direction=1):
-    pointA,pointB = p.internal_paths[bay][status]
+
+def search_point(p, bay, start, status, direction=1):
+    pointA, pointB = p.internal_paths[bay][status]
     path = p.internal_paths[bay]['path']
     if direction:
         # 出口
@@ -294,6 +346,7 @@ def search_point(p,bay,start,status,direction=1):
         tagA = path[pointA][0][start]
         tagB = path[pointB][0][start]
     return pointB if tagA >= tagB else pointA
+
 
 # static select car
 def vehicle_load_static(p):
@@ -306,7 +359,7 @@ def vehicle_load_static(p):
         pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         connection = rds.RedisCluster(connection_pool=pool)
         v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-        log.info(f'取车数辆:{len(v)}, 取车时间:{time.time()-t_start}')
+        log.info(f'取车数辆:{len(v)}, 取车时间:{time.time() - t_start}')
         if v is None:
             return None
         all_vehicles_num = 0
@@ -326,8 +379,8 @@ def vehicle_load_static(p):
                 assign_same_bay(p, bay, i, flag, temp_cars)
             if len(p.taskList) == 0:
                 return None
-        log.info(f'phase 1 cost:{time.time()-t1}')
-        
+        log.info(f'phase 1 cost:{time.time() - t1}')
+
         t2 = time.time()
         log.info(f'本轮可用车辆数:{all_vehicles_num}')
         if all_vehicles_num == 0:
@@ -379,6 +432,7 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
         drop_car_task(task, task[0])
     return 0
 
+
 def near_bay_search(bay0, p, cars):
     g = 0
     while 1:
@@ -416,9 +470,8 @@ def clear_dict():
     return dict()
 
 
-def track_generate_station(p, df):
-    if p.all_stations is not None:
-        return p
+def track_generate_station(p):
+    df = p.original_map_info
     with p.db_pool.get_connection() as db_conn:
         cursor = db_conn.cursor()
         cursor.execute('SELECT * FROM OHTC_POSITION')
@@ -437,6 +490,7 @@ def track_generate_station(p, df):
         cursor.close()
     return p
 
+
 def track_generate_station_mulit(p, df):
     if p.all_stations is not None:
         return p
@@ -446,10 +500,10 @@ def track_generate_station_mulit(p, df):
     station_location = dict()
     station_name = dict()
 
-    num_threads = multiprocessing.cpu_count() # type: ignore
+    num_threads = multiprocessing.cpu_count()  # type: ignore
     newdata = split_data(df2, num_threads)
 
-    set_station = partial(create_map_form_pd, orgine=df, start=station_location, end=station_name) # type: ignore
+    set_station = partial(create_map_form_pd, orgine=df, start=station_location, end=station_name)  # type: ignore
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as pross:
         results = pross.map(set_station, newdata)
 
@@ -462,8 +516,9 @@ def track_generate_station_mulit(p, df):
 
     return p
 
+
 # 多进程处理台位数据
-def create_map_form_pd(iteram, orgine,start,end):
+def create_map_form_pd(iteram, orgine, start, end):
     for i in iteram.index:
         num = iteram[1][i]
         loc = iteram[3][i]
@@ -471,13 +526,15 @@ def create_map_form_pd(iteram, orgine,start,end):
         if not dft.empty:
             start[num] = dft[1].values[0]
             end[num] = str(dft[3].values[0])
-    return start,end
+    return start, end
+
 
 # 台位数据分割
-def split_data(data,num_processes):
+def split_data(data, num_processes):
     size = len(data)
-    split_size = size//num_processes
-    return [data[i:i+split_size]for i in range(0,size,split_size)]
+    split_size = size // num_processes
+    return [data[i:i + split_size] for i in range(0, size, split_size)]
+
 
 # 读取数据库数据
 def get_station_data(p):
@@ -488,6 +545,8 @@ def get_station_data(p):
         cursor.close()
         db_conn.commit()
     return df2
+
+
 def read_instructions(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
@@ -537,4 +596,3 @@ def read_instructions_static(p):
             break
     log.info(f'this is the task count:{n}')
     return p
-
