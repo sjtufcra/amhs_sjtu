@@ -2,7 +2,8 @@ import time
 from collections import defaultdict
 import pandas as pd
 import oracledb
-import aioredis as rds
+import redis as rds
+# import aioredis as rds
 import asyncio
 
 import math
