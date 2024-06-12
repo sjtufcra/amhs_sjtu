@@ -3,6 +3,7 @@ import pandas as pd
 import oracledb
 import aioredis as rds
 import asyncio
+from fastapi import BackgroundTasks as btk
 
 import math
 import networkx as nx
@@ -341,11 +342,12 @@ def vehicle_load_static(p):
     if p.mode == 1:
         t0 = time.process_time()
         # 同步调用
+        btk(read_car_to_cache_back,p)
         # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         # connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         # 异步调用
-        asyncio.run(read_car_to_cach(p))
+        # asyncio.run(read_car_to_cach(p))
         log.info(f'cars number:{len(p.vehicles_get)}, time:{time.process_time()-t0}')
         if p.vehicles_get is None:
             return order_list
@@ -550,7 +552,7 @@ def near_bay_search(bay0, p, cars):
             g += 1
         if g > p.max_search:
             return None
-
+# 异步线程
 async def read_car_to_cache_async(p):
     pool = await rds.from_url(f'redis://{p.rds_connection}:{p.rds_port}/', decode_responses=True)
     try:
@@ -562,14 +564,18 @@ async def read_car_to_cache_async(p):
         await pool.wait_closed()
 async def read_car_to_cach(p):
     # 同步读取
-    # if p.vehicles_get is None:
-    # import rediscluster as rds
-    #     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-    #     connection = rds.RedisCluster(connection_pool=pool)
-    #     v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-    #     p.vehicles_get = v 
+    # btkread_car_to_cache_back(p)
+    if p.vehicles_get is None:
+        pass
     # else:
-        await read_car_to_cache_async(p)
+        # await read_car_to_cache_async(p)
+
+# 异步函数
+def read_car_to_cache_back(p):
+    pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+    connection = rds.RedisCluster(connection_pool=pool)
+    v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+    p.vehicles_get = v 
 # static select car
 def vehicle_load_static_fast(p):
     orederlist = []
