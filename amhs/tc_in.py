@@ -315,13 +315,12 @@ def vehicle_load_static(p):
     if p.mode == 1:
         t0 = time.time()
         # 同步调用
-        asyncio.run(read_car_to_cache_back(p))
         # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         # connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         # 异步调用
-        # asyncio.run(read_car_to_cach(p))
-        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.process_time()-t0}')
+        asyncio.run(read_car_to_cach(p))
+        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.time()-t0}')
         if p.vehicles_get is None:
             return None
         all_vehicles_num = 0
@@ -421,12 +420,13 @@ async def read_car_to_cache_async(p):
     finally:
         await redis.close()
 async def read_car_to_cach(p):
-    # 同步读取
-    # btkread_car_to_cache_back(p)
-    if p.vehicles_get is None:
-        pass
-    # else:
-        await read_car_to_cache_async(p)
+    # 异步读取
+    await read_car_to_cache_back(p)
+    # # btkread_car_to_cache_back(p)
+    # if p.vehicles_get is None:
+    #     pass
+    # # else:
+    #     await read_car_to_cache_async(p)
 
 # 异步
 async def read_car_to_cache_back(p):
