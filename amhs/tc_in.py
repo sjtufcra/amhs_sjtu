@@ -319,7 +319,8 @@ def vehicle_load_static(p):
         # connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         # 异步调用
-        asyncio.run(read_car_to_cach(p))
+        # asyncio.run(read_car_to_cach(p)) #等待完成
+        asyncio.create_task(read_car_to_cach(p))#忽略等待
         log.info(f'cars number:{len(p.vehicles_get)}, time:{time.time()-t0}')
         if p.vehicles_get is None:
             return None
