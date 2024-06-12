@@ -315,7 +315,7 @@ def vehicle_load_static(p):
     if p.mode == 1:
         t0 = time.time()
         # 同步调用
-        btk(read_car_to_cache_back,p)
+        btk.add_task(read_car_to_cache_back,p)
         # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         # connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
