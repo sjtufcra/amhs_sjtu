@@ -1,7 +1,10 @@
 from collections import defaultdict
 import pandas as pd
 import oracledb
-import rediscluster as rds
+# import rediscluster as rds
+import aioredis as rds
+import asyncio
+
 import math
 import networkx as nx
 import threading
@@ -334,14 +337,17 @@ def vehicle_load_static(p):
     number_task = len(p.taskList)
     if p.mode == 1:
         t0 = time.process_time()
-        pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-        connection = rds.RedisCluster(connection_pool=pool)
-        v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-        log.info(f'cars number:{len(v)}, time:{time.process_time()-t0}')
-        if v is None:
+        # 同步调用
+        # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        # connection = rds.RedisCluster(connection_pool=pool)
+        # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+        # 异步调用
+        asyncio.run(read_car_to_cach(p))
+        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.process_time()-t0}')
+        if p.vehicles_get is None:
             return order_list
         all_vehicles_num = 0
-        for value in v:
+        for value in p.vehicles_get:
             tmp = vehicles_continue(p, value)
             if tmp[0]:
                 continue
@@ -540,7 +546,29 @@ def near_bay_search(bay0, p, cars):
         if g > p.max_search:
             return None
 
-
+async def read_car_to_cache_async(p):
+    # 创建异步Redis连接池
+    pool = rds.ConnectionPool.from_url(f'redis://{p.rds_connection}:{p.rds_port}/', decode_responses=True)
+    
+    # 建立异步Redis连接
+    redis = rds.Redis(connection_pool=pool)
+    
+    # 异步获取所有匹配的键
+    keys = await redis.keys(pattern=p.rds_search_pattern)
+    
+    # 批量异步获取键对应的值
+    values = await redis.mget(keys)
+    
+    # 将值列表赋值给对象属性
+    p.vehicles_get = values
+async def read_car_to_cach(p):
+    if p.vehicles_get is None:
+        pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        connection = rds.RedisCluster(connection_pool=pool)
+        v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+        p.vehicles_get = v 
+    else:
+        await read_car_to_cache_async(p)
 # static select car
 def vehicle_load_static_fast(p):
     orederlist = []
