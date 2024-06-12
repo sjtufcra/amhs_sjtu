@@ -2,7 +2,7 @@ import time
 from collections import defaultdict
 import pandas as pd
 import oracledb
-import redis as rds
+import rediscluster as rds
 # import aioredis as rds
 import asyncio
 
