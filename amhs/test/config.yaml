@@ -1,5 +1,5 @@
 # mode's parameter
-runing_mode: 0 # 0: local mode, 1: server mode
+runing_mode: 1 # 0: local mode, 1: server mode
 
 # server's parameter
 httpServer:
