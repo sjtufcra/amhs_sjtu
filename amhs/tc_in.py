@@ -100,10 +100,11 @@ def erect_map(p):
 def initiate_block(p):
     t = p.block
     j = [('A', ['I001', 'I002'], [range(1, 35)]),
-         ('B', ['I003', 'I004'], [range(35, 72), 133, 134, 135]),
+         ('B', ['I003', 'I004'], [range(35, 72)]),
          ('C', ['I004', 'I005'], [range(72, 106)]),
          ('D', ['I006', 'I007'], [range(106, 131)]),
-         ('E', ['I003', 'I004', 'I005'], [131, 132])]
+         ('E', ['I003', 'I004', 'I005'], [131, 132]),
+         ('F', ['W054', 'W055', 'W056'], [133, 134, 135])]
     for i in j:
         bays = []
         for k in i[2]:
@@ -181,6 +182,10 @@ def map_divided(p, tmp):
                 break
     # p.internal_paths = paths_in_bays
     log.info(f'time cost of internal routes:{time.time() - t0}')
+
+    j = 1
+    if j == 1:
+        return p
 
     # route within the different bays
     # indexed by 2 bay names and then by nodes in bays respectively

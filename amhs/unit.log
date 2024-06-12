@@ -293,3 +293,5 @@
 2024-06-12 15:24:55.825 | INFO     | tc_in:map_divided:204 - block D completed
 2024-06-12 15:24:56.809 | INFO     | tc_in:map_divided:204 - block E completed
 2024-06-12 15:24:56.809 | INFO     | tc_in:map_divided:205 - time cost of internal routes:69.43445444107056
+2024-06-12 17:38:15.474 | INFO     | tc_in:map_divided:183 - time cost of internal routes:3.2836806774139404
+2024-06-12 17:38:39.073 | INFO     | tc_in:map_divided:206 - block A completed
