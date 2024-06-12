@@ -2,7 +2,9 @@ import time
 from collections import defaultdict
 import pandas as pd
 import oracledb
-import rediscluster as rds
+import aioredis as rds
+import asyncio
+
 import math
 import networkx as nx
 import threading
@@ -269,20 +271,27 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     # path1
     # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
     path1_end = search_point(p,bayA,start,out)  # 精确选取位置
-    path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
-
     # path2
     bayB = end.split('-')[0]
     # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
     path2_start = search_point(p,bayB,end,entrance,direction=0)  # 精确选取位置
     # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
+    if path1_end is None or path2_start is None:
+        return None
+
+    path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
     path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
 
-    # path3
+    path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
+    path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
     path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
     return path1 + path2[1:-1] + path3
 
 def search_point(p,bay,start,status,direction=1):
+    log.warning(f'bay:{bay},point:{start},status:{status}')
+    txt = p.internal_paths[bay][status]
+    if len(txt)==0:
+        return None
     pointA,pointB = p.internal_paths[bay][status]
     path = p.internal_paths[bay]['path']
     if direction:
@@ -303,15 +312,19 @@ def vehicle_load_static(p):
     for i in p.all_bays:
         temp_cars[i] = []
     if p.mode == 1:
-        pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-        connection = rds.RedisCluster(connection_pool=pool)
-        v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-        log.info(f'取车数辆:{len(v)}, 取车时间:{time.time()-t_start}')
-        if v is None:
+        t0 = time.time()
+        # 同步调用
+        # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        # connection = rds.RedisCluster(connection_pool=pool)
+        # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+        # 异步调用
+        asyncio.run(read_car_to_cach(p))
+        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.time()-t0}')
+        if p.vehicles_get is None:
             return None
         all_vehicles_num = 0
         t1 = time.time()
-        for value in v:
+        for value in p.vehicles_get:
             tmp = vehicles_continue(p, value)
             if tmp[0]:
                 continue
@@ -393,6 +406,26 @@ def near_bay_search(bay0, p, cars):
         if g > p.max_search:
             return None
 
+async def read_car_to_cache_async(p):
+    pool = await rds.ConnectionPool.from_url(f'redis://{p.rds_connection}:{p.rds_port}/', decode_responses=True)
+    try:
+        redis = await pool
+        keys = await redis.keys(pattern=p.rds_search_pattern)
+        values = await redis.mget(keys)
+        p.vehicles_get = values
+    finally:
+        pool.close()
+        await pool.wait_closed()
+async def read_car_to_cach(p):
+    # 同步读取
+    # if p.vehicles_get is None:
+    # import rediscluster as rds
+    #     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+    #     connection = rds.RedisCluster(connection_pool=pool)
+    #     v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+    #     p.vehicles_get = v 
+    # else:
+        await read_car_to_cache_async(p)
 
 # set data in element
 def set_data(dictionary, key, data):
