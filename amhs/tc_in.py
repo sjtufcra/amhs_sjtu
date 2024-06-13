@@ -186,7 +186,7 @@ def map_divided(p):
                 # tmp6 = nx.dijkstra_path_length(p.map_info_unchanged, source=start, target=end)
                 tmp6 = nx.shortest_path_length(p.map_info_unchanged, source=start, target=end)
                 if tmp6 < tmp5[eb][sb]:
-                    tmp5[eb][sb] = tmp6
+                    tmp5.loc[eb,sb] = tmp6
                 # paths_between_bays.update({(starting, ending): tmp5})
     log.info(f'time cost of external routes:{time.time() - t0}')
     # p.external_paths = paths_between_bays
@@ -310,21 +310,26 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     return path1 + path2[1:-1] + path3
 
 def search_point(p,bay,start,status,direction=1):
-    log.warning(f'bay:{bay},point:{start},status:{status}')
+    
     txt = p.internal_paths[bay][status]
     if len(txt)==0:
+        log.warning(f'bay:{bay},point:{start},status:{status},data:{p.internal_paths[bay]}')
         return None
-    pointA,pointB = p.internal_paths[bay][status]
-    path = p.internal_paths[bay]['path']
-    if direction:
-        # 出口
-        tagA = path[start][0][pointA]
-        tagB = path[start][0][pointB]
-    else:
-        # 入口
-        tagA = path[pointA][0][start]
-        tagB = path[pointB][0][start]
-    return pointB if tagA >= tagB else pointA
+    try:
+        pointA,pointB = p.internal_paths[bay][status]
+        path = p.internal_paths[bay]['path']
+        if direction:
+            # 出口
+            tagA = path[start][0][pointA]
+            tagB = path[start][0][pointB]
+        else:
+            # 入口
+            tagA = path[pointA][0][start]
+            tagB = path[pointB][0][start]
+        return pointB if tagA >= tagB else pointA
+    except ValueError as e:
+        log.error(f"error:{e},value:{p.internal_paths[bay]}")
+        return None
 
 # static select car
 async def vehicle_load_static(p):
