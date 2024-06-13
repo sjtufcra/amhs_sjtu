@@ -671,7 +671,7 @@ def read_instructions(p):
     return p
 
 
-async def read_instructions_static(p):
+def read_instructions_static(p):
     log.info(f"开始读取任务")
     # oracle
     with p.db_pool.get_connection() as db_conn:
