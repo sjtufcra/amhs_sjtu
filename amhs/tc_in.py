@@ -72,9 +72,10 @@ class MysqlConnectionPool:
                 self.connections.append(conn)
 
 class RedisConnectionPool:
-    def __init__(self, user, port, password=None, max_connections=5):
+    def __init__(self, user, port, password=None, cachekey='',max_connections=5):
         self.host = user
         self.port = port
+        self.cache_key = cachekey
         self.password = password
         self.max_connections = max_connections
         self.connections = []
@@ -93,7 +94,7 @@ def generating(p):
     t0 = time.time()
     if p.mode == 1:
         p.db_pool = OracleConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
-        p.db_redis = RedisConnectionPool(user=p.rds_connection, port=p.rds_port)
+        p.db_redis = RedisConnectionPool(user=p.rds_connection, port=p.rds_port,cachekey=p.cache_key)
     else:
         p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,
                                         database=p.database)
@@ -339,7 +340,7 @@ async def vehicle_load_static(p):
         # 异步调用
         asyncio.create_task(read_car_to_cache_back(p))
         cache = p.db_redis.get_cache()
-        v = await cache.get('care_data')
+        v = await cache.get(p.db_redis.cache_key)
         if v is None:
             return None
         log.info(f'cars number:{len(v)}, time:{time.time()-t0}')
@@ -433,7 +434,7 @@ def near_bay_search(bay0, p, cars):
 async def read_car_to_cache_back(p):
     data = await cache_redis(p)
     cache = p.db_redis.get_cache()
-    await cache.set('car_data',data)
+    await cache.set(p.db_redis.cache_key,data)
 # 异步读取redis缓存
 async def cache_redis(p):
   redis = p.db_redis.get_connection()

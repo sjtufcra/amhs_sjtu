@@ -43,6 +43,7 @@ class Dataset:
         # control on-off
         self.pattern = out_config['circulating_on']  # 1:circulating; 0:just one time
         self.debug_on = out_config['debug_on']  # 1:circulating; 0:just one time
+        self.cache_key = out_config['cache_key']  # 1:circulating; 0:just one time
 
         # loop-bool
         self.runBool = True
