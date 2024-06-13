@@ -410,16 +410,19 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
         end_station = order.start_location
         start = flag.split('_')[1]
         end = p.all_stations.get(end_station)
-        path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
-        path.append(p.stations_name.get(end_station))
+        try:
+            path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+            path.append(p.stations_name.get(end_station))
 
-        order.vehicle_assigned = tmp_id
-        order.delivery_route = path
-        output_new(p, order)
-        # drop car and task
-        drop_car_task(temp_cars.get(bay), i)
-        drop_car_task(task, task[0])
-    return 0
+            order.vehicle_assigned = tmp_id
+            order.delivery_route = path
+            output_new(p, order)
+            # drop car and task
+            drop_car_task(temp_cars.get(bay), i)
+            drop_car_task(task, task[0])
+        except IndexError as e:
+            log.error(f'error:{e},bay:{bay},start:{start},end:{end}')
+    return None
 
 def near_bay_search(bay0, p, cars):
     g = 0
