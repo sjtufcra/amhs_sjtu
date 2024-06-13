@@ -20,7 +20,7 @@ def output_new(p, v):
     # checking if tasks are assigned successfully
     time.sleep(0.1)
     idx = "Car:monitor:128.168.11.142_1" + v.vehicle_assigned[1:]
-    tmp = json.loads(p.redis_link.get(idx))['ohtStatus_Idle']
+    tmp = json.loads(p.dp_redis.get(idx))['ohtStatus_Idle']
     log.info(f'vehicle[{v.vehicle_assigned}],status[{tmp}],1:false/0:true')
     return None
 
