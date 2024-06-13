@@ -11,7 +11,8 @@ dependencies = [
     'pandas',
     'networkx',
     'oracledb',
-    "redis = 5.0.5",  
+    "redis==5.0.5",  
+    "aiocache"
     "redis-py-cluster",
     "pyyaml",
     "loguru"
