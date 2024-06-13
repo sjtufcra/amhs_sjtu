@@ -1,7 +1,9 @@
 from collections import defaultdict
 import pandas as pd
 import oracledb
-import aioredis as rds
+import redis.asyncio as rds
+from aiocache import Cache
+from aiocache.serializers import JsonSerializer
 import asyncio
 from fastapi import BackgroundTasks as btk
 
@@ -11,6 +13,7 @@ import threading
 import json
 import random
 import copy
+
 
 from mysql import connector
 from loguru import logger as log
@@ -66,10 +69,25 @@ class MysqlConnectionPool:
             with self.lock:
                 self.connections.append(conn)
 
+class RedisConnectionPool:
+    def __init__(self, host, port, password=None, max_connections=5):
+        self.host = host
+        self.port = port
+        self.password = password
+        self.max_connections = max_connections
+        self.connections = []
+        self.lock = threading.Lock()
+        self.reds = rds.from_url(f'redis://{self.host}:{self.port}',decode_responses=True)
+        self.cache = Cache(Cache.MEMORY,serializer=JsonSerializer())
+    def get_connection(self):
+        return self.reds 
+    def get_cache(self):
+        return self.cache 
 
 def generating(p):
     if p.mode == 1:
         p.db_pool = OracleConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
+        p.db_redis = RedisConnectionPool(user=p.rds_connection, port=p.rds_port)
     else:
         p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,
                                         database=p.database)
@@ -333,7 +351,7 @@ def search_point(p,bay,start,status,direction=1):
     return pointB if tagA >= tagB else pointA
 
 # static select car
-def vehicle_load_static(p):
+async def vehicle_load_static(p):
     order_list = []
     temp_cars = dict()
     for i in p.all_bays:
@@ -342,17 +360,18 @@ def vehicle_load_static(p):
     if p.mode == 1:
         t0 = time.process_time()
         # 同步调用
-        btk(read_car_to_cache_back,p)
         # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         # connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         # 异步调用
-        # asyncio.run(read_car_to_cach(p))
-        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.process_time()-t0}')
-        if p.vehicles_get is None:
+        asyncio.run(read_car_to_cache_back(p))
+        cache = p.db_redis.get_cache()
+        v = await cache.get('care_data')
+        log.info(f'cars number:{len(v)}, time:{time.process_time()-t0}')
+        if v is None:
             return order_list
         all_vehicles_num = 0
-        for value in p.vehicles_get:
+        for value in v:
             tmp = vehicles_continue(p, value)
             if tmp[0]:
                 continue
@@ -562,20 +581,22 @@ async def read_car_to_cache_async(p):
     finally:
         await pool.close()
         await pool.wait_closed()
-async def read_car_to_cach(p):
-    # 同步读取
-    # btkread_car_to_cache_back(p)
-    if p.vehicles_get is None:
-        pass
-    # else:
-        # await read_car_to_cache_async(p)
 
-# 异步函数
-def read_car_to_cache_back(p):
-    pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-    connection = rds.RedisCluster(connection_pool=pool)
-    v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-    p.vehicles_get = v 
+# 异步设置缓存函数
+async def read_car_to_cache_back(p):
+    data = await cache_redis(p)
+    cache = p.db_redis.get_cache()
+    await cache.set('car_data',data)
+
+# 异步读取redis缓存
+async def cache_redis(p):
+  redis = p.db_redis.get_connection()
+  keys = await redis.keys(pattern=p.rds_search_pattern)
+  values = list()
+  for key in keys:
+   value = await redis.get(key)
+   values.append(value)
+  return values
 # static select car
 def vehicle_load_static_fast(p):
     orederlist = []

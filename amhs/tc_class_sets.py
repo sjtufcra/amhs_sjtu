@@ -35,6 +35,7 @@ class Dataset:
         self.db_connection = None
         self.db_cursor = None
         self.db_pool = None
+        self.db_redis = None
         # not used
         self.task_data = None
         self.machine_location = None

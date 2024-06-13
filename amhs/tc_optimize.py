@@ -78,12 +78,12 @@ def task_assign(p, use_multiprocessing=True):
                         car += 1
             log.info(f"model:{p.algorithm_on},task_time:{time.time()-start_time}")
 # new_function_static
-def task_assign_static(p, use_multiprocessing=True):
+async def task_assign_static(p, use_multiprocessing=True):
         while p.runBool:
             start_time = time.time()
             p.map_info = p.map_info_unchanged
             p = read_instructions_static(p)
-            orederlist = vehicle_load_static(p)
+            orederlist = await vehicle_load_static(p)
             log.info(f"algorithm:{p.algorithm_on},task:{len(p.orders)}")
             log.info(f"algorithm,task_time:{time.time()-start_time}")
             if use_multiprocessing:
