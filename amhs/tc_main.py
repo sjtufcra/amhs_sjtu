@@ -18,7 +18,7 @@ class Amhs():
         d = Dataset(self.config)
         self.Node = d
         d = generating(d)
-        asyncio.run(epoch_static(d))
+        d = epoch_static(d)
     
     def over(self):
         output_close_connection(self.d)

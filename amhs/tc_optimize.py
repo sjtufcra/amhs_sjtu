@@ -71,7 +71,11 @@ def task_assign(p, use_multiprocessing=True):
 
 
 # new_function_static
-async def epoch_static(p):
+def epoch_static(p):
+    asyncio.run(runtime(p))
+    return p
+# 异步执行
+async def runtime(p):
     while p.runBool:
         log.info(f"开始运行算法")
         start_time = time.time()
@@ -87,7 +91,7 @@ async def epoch_static(p):
         asyncio.create_task(vehicle_load_static(p))
         log.info(f"本轮分配任务时长:{time.time() - t1}")
         log.info(f"本轮算法执行时长:{time.time() - start_time}")
-    return 0
+    return None
 
 
 def track_generate_station_new(p):
