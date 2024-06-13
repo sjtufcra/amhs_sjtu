@@ -72,11 +72,11 @@ def task_assign(p, use_multiprocessing=True):
 
 # new_function_static
 def epoch_static(p):
-    # asyncio.run(runtime(p))
-    runtime(p)
+    asyncio.run(runtime(p))
     return p
 # 异步执行
 async def runtime(p):
+    await p.db_redis.initialize_redis()
     while p.runBool:
         log.info(f"开始运行算法")
         start_time = time.time()
@@ -89,18 +89,10 @@ async def runtime(p):
         if p.debug_on:
             p = track_generate_station_new(p)
         t1 = time.time()
-        # asyncio.create_task(vehicle_load_static(p))
-        throd(p)
+        asyncio.create_task(vehicle_load_static(p))
         log.info(f"本轮分配任务时长:{time.time() - t1}")
         log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return None
-
-def throd(p):
-    loop = asyncio.new_event_loop()
-# 在新线程中运行 asyncio 代码
-    t = Thread(target=run_in_thread, args=(loop, vehicle_load_static(p)))
-    t.start()
-    t.join()
 
 def track_generate_station_new(p):
     tasks = p.taskList
