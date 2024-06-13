@@ -82,11 +82,11 @@ async def runtime(p):
         p.map_info = p.map_info_unchanged
         # load less than 10 tasks
         t0 = time.time()
-        p = read_instructions_static(p)
+        p = await read_instructions_static(p)
         log.info(f"本轮读取任务时长:{time.time() - t0}")
         # added in 20240607, only select stations used instead of all
         if p.debug_on:
-            p = track_generate_station_new(p)
+            p = await track_generate_station_new(p)
         t1 = time.time()
         asyncio.create_task(vehicle_load_static(p))
         log.info(f"本轮分配任务时长:{time.time() - t1}")
@@ -94,7 +94,7 @@ async def runtime(p):
     return None
 
 
-def track_generate_station_new(p):
+async def track_generate_station_new(p):
     tasks = p.taskList
     station_location = dict()
     station_name = dict()
