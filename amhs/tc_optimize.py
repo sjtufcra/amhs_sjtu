@@ -1,5 +1,5 @@
 import networkx as nx
-import math
+from threading import Thread
 import time
 import random
 import concurrent.futures
@@ -72,7 +72,8 @@ def task_assign(p, use_multiprocessing=True):
 
 # new_function_static
 def epoch_static(p):
-    asyncio.run(runtime(p))
+    # asyncio.run(runtime(p))
+    runtime(p)
     return p
 # 异步执行
 async def runtime(p):
@@ -82,19 +83,26 @@ async def runtime(p):
         p.map_info = p.map_info_unchanged
         # load less than 10 tasks
         t0 = time.time()
-        p = await read_instructions_static(p)
+        p = read_instructions_static(p)
         log.info(f"本轮读取任务时长:{time.time() - t0}")
         # added in 20240607, only select stations used instead of all
         if p.debug_on:
-            p = await track_generate_station_new(p)
+            p = track_generate_station_new(p)
         t1 = time.time()
-        asyncio.create_task(vehicle_load_static(p))
+        # asyncio.create_task(vehicle_load_static(p))
+        throd(p)
         log.info(f"本轮分配任务时长:{time.time() - t1}")
         log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return None
 
+def throd(p):
+    loop = asyncio.new_event_loop()
+# 在新线程中运行 asyncio 代码
+    t = Thread(target=run_in_thread, args=(loop, vehicle_load_static(p)))
+    t.start()
+    t.join()
 
-async def track_generate_station_new(p):
+def track_generate_station_new(p):
     tasks = p.taskList
     station_location = dict()
     station_name = dict()

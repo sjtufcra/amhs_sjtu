@@ -426,6 +426,10 @@ def near_bay_search(bay0, p, cars):
         if g > p.max_search:
             return None
 
+# 线程管理
+def run_in_thread(loop, coro):
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(coro)
 # 异步设置缓存函数
 async def read_car_to_cache_back(p):
     data = await cache_redis(p)
@@ -667,7 +671,7 @@ def read_instructions(p):
     return p
 
 
-async def read_instructions_static(p):
+def read_instructions_static(p):
     log.info(f"开始读取任务")
     # oracle
     with p.db_pool.get_connection() as db_conn:
