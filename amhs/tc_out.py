@@ -4,9 +4,9 @@ import json
 
 
 def output_new(p, v):
-    sql0 = (f"UPDATE TRANSFER_TABLE "
-            f"SET VEHICLE = \'{v.vehicle_assigned}\', POSPATH = \'{','.join(v.delivery_route)} \'"
-            f"WHERE COMMANDID = \'{v.id}\'")
+#     sql0 = (f"UPDATE TRANSFER_TABLE "
+#             f"SET VEHICLE = \'{v.vehicle_assigned}\', POSPATH = \'{','.join(v.delivery_route)} \'"
+#             f"WHERE COMMANDID = \'{v.id}\'")
     s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
     s1 = "' WHERE COMMANDID = '" + v.id + "'"
     sql = "UPDATE TRANSFER_TABLE " + s0 + s1

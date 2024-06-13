@@ -388,6 +388,8 @@ async def vehicle_load_static(p):
                 bayA = tay[0].split('-')[0]
                 start = tay[1]
                 path = path_search(p, start, entrance, f_path, bayA, out, order)
+                if path is None:
+                    continue
                 order.vehicle_assigned = value
                 order.delivery_route = path
                 output_new(p, order)
