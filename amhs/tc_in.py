@@ -334,7 +334,7 @@ async def vehicle_load_static(p):
         # connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         # 异步调用
-        asyncio.run(read_car_to_cache_back(p))
+        asyncio.create_task(read_car_to_cache_back(p))
         cache = p.db_redis.get_cache()
         v = await cache.get('care_data')
 
