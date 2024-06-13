@@ -1,3 +1,4 @@
+import asyncio
 # online
 import time
 from .tc_class_sets import *
@@ -17,7 +18,7 @@ class Amhs():
         d = Dataset(self.config)
         self.Node = d
         d = generating(d)
-        d = epoch_static(d)
+        asyncio.run(epoch_static(d))
     
     def over(self):
         output_close_connection(self.d)

@@ -2,8 +2,9 @@ import time
 from collections import defaultdict
 import pandas as pd
 import oracledb
-import rediscluster as rds
-# import aioredis as rds
+import redis.asyncio as rds
+from aiocache import Cache
+from aiocache.serializers import JsonSerializer
 import asyncio
 
 import math
@@ -12,6 +13,7 @@ import threading
 import json
 import random
 import copy
+
 
 from mysql import connector
 from loguru import logger as log
@@ -69,11 +71,26 @@ class MysqlConnectionPool:
             with self.lock:
                 self.connections.append(conn)
 
+class RedisConnectionPool:
+    def __init__(self, host, port, password=None, max_connections=5):
+        self.host = host
+        self.port = port
+        self.password = password
+        self.max_connections = max_connections
+        self.connections = []
+        self.lock = threading.Lock()
+        self.reds = rds.from_url(f'redis://{self.host}:{self.port}',decode_responses=True)
+        self.cache = Cache(Cache.MEMORY,serializer=JsonSerializer())
+    def get_connection(self):
+        return self.reds 
+    def get_cache(self):
+        return self.cache 
 
 def generating(p):
     t0 = time.time()
     if p.mode == 1:
         p.db_pool = OracleConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
+        p.db_redis = RedisConnectionPool(user=p.rds_connection, port=p.rds_port)
     else:
         p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,
                                         database=p.database)
@@ -306,9 +323,7 @@ def search_point(p,bay,start,status,direction=1):
     return pointB if tagA >= tagB else pointA
 
 # static select car
-def vehicle_load_static(p):
-    t_start = time.time()
-    log.info(f"开始分配任务")
+async def vehicle_load_static(p):
     temp_cars = dict()
     for i in p.all_bays:
         temp_cars[i] = []
@@ -319,14 +334,16 @@ def vehicle_load_static(p):
         # connection = rds.RedisCluster(connection_pool=pool)
         # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
         # 异步调用
-        # asyncio.run(read_car_to_cach(p)) #等待完成
-        asyncio.create_task(read_car_to_cach(p))#忽略等待
-        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.time()-t0}')
-        if p.vehicles_get is None:
+        asyncio.run(read_car_to_cache_back(p))
+        cache = p.db_redis.get_cache()
+        v = await cache.get('care_data')
+
+        log.info(f'cars number:{len(v)}, time:{time.time()-t0}')
+        if v is None:
             return None
-        all_vehicles_num = 0
         t1 = time.time()
-        for value in p.vehicles_get:
+        all_vehicles_num = 0
+        for value in v:
             tmp = vehicles_continue(p, value)
             if tmp[0]:
                 continue
@@ -408,33 +425,134 @@ def near_bay_search(bay0, p, cars):
             g += 1
         if g > p.max_search:
             return None
-# 异步线程
-async def read_car_to_cache_async(p):
-    redis = rds.from_url(
-        f'redis://{p.rds_connection}:{p.rds_port}/',
-        decode_responses=True
-    )
-    try:
-        keys = await redis.keys(pattern=p.rds_search_pattern)
-        values = await redis.mget(keys)
-        p.vehicles_get = values
-    finally:
-        await redis.close()
-async def read_car_to_cach(p):
-    # 异步读取
-    await read_car_to_cache_back(p)
-    # # btkread_car_to_cache_back(p)
-    # if p.vehicles_get is None:
-    #     pass
-    # # else:
-    #     await read_car_to_cache_async(p)
 
-# 异步
+# 异步设置缓存函数
 async def read_car_to_cache_back(p):
-    pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-    connection = rds.RedisCluster(connection_pool=pool)
-    v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-    p.vehicles_get = v 
+    data = await cache_redis(p)
+    cache = p.db_redis.get_cache()
+    await cache.set('car_data',data)
+# 异步读取redis缓存
+async def cache_redis(p):
+  redis = p.db_redis.get_connection()
+  keys = await redis.keys(pattern=p.rds_search_pattern)
+  values = list()
+  for key in keys:
+    value = await redis.get(key)
+    values.append(value)
+  return values
+# 异步函数
+# def read_car_to_cache_back(p):
+#     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+#     connection = rds.RedisCluster(connection_pool=pool)
+#     v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+#     p.vehicles_get = v 
+# static select car
+def vehicle_load_static_fast(p):
+    orederlist = []
+    temcar = []
+    if p.mode == 1:
+        redis_pattern = """
+                    WHERE ohtID IS NOT NULL
+                    AND (
+                        (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
+                        OR (ohtStatus_Roaming = '1'
+                            OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Idle = '1')
+                            OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncalling = '1')
+                            OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncall = '1'))
+                        OR (ohtStatus_IsHaveFoup = '1'
+                            AND ohtStatus_MoveEnable = '1'
+                            AND ohtStatus_Idle = '1')
+                    )
+        """
+
+        pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        connection = rds.RedisCluster(connection_pool=pool)
+        v = connection.mget(keys=connection.keys(pattern=f'{p.rds_search_pattern}{redis_pattern}*'))
+        log.info('start a car search')
+
+        for i in v:
+            if len(orederlist) > 10:
+                return orederlist
+            if not i:
+                continue
+            ii = json.loads(i)
+            bay = ii['bay']
+            if bay in p.bays_relation:
+                task = p.bays_relation[bay]
+                if len(task) > 0:
+                    start = ii['mapId'].split('_')[1]
+                    orederlist.append(task[0])
+                    task.pop(0)
+            else:
+                temcar.append(ii)
+                pass
+    else:
+        with p.db_pool.get_connection() as db_conn:
+            cursor = db_conn.cursor()
+            cursor.execute('''SELECT *
+                FROM OHTC_CAR
+                WHERE ohtID IS NOT NULL 
+                AND (
+                    (ohtStatus_OnlineControl <> '1' OR ohtStatus_ErrSet <> '0')
+                    OR (ohtStatus_Roaming = '1' 
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Idle = '1') 
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncalling = '1')
+                        OR (ohtStatus_MoveEnable = '1' AND ohtStatus_Oncall = '1'))
+                    OR (ohtStatus_IsHaveFoup = '1' 
+                        AND ohtStatus_MoveEnable = '1'
+                        AND ohtStatus_Idle = '1')
+                )
+            ''')
+        v = cursor.fetchall()
+        for i in v:
+            if len(orederlist) > 10:
+                return orederlist
+            if not i:
+                continue
+            bay = i[1]
+            if bay in p.bays_relation:
+                task = p.bays_relation[bay]
+                if len(task) > 0:
+                    order = task[0]
+                    computeCarPath(order, i, p, orederlist, 1, 10, 11, True)
+            else:
+                temcar.append(i)
+                pass
+        if len(orederlist) < 10:
+            for ty in p.taskList:
+                till = True
+                while till:
+                    car = random.choice(temcar)
+                    computeCarPath(ty, car, p, orederlist, 1, 10, 11, till)
+
+    return orederlist
+
+
+def computeCarPath(ty, car, p, orderlist, inx, flag, mapid, plist=False, boll=False, ):
+    bay = car[inx]
+    order = ty
+    loaction = car[flag]
+    ts = (p.original_map_info[p.original_map_info[0] == loaction][4] - int(car[43])) / int(car[2]).values[0]
+    if ts < p.tts:
+        boll = True
+        pass
+    else:
+        start = car[flag].split('_')[1]
+        end = p.all_stations[bay]
+        taynum = p.stations_name[bay]
+        path = p.internal_paths[bay][start][end].append(taynum)
+
+        if plist:
+            p.taskList.pop(p.taskList.index(order))
+
+        order.vehicle_assigned = car[mapid]
+        order.delivery_route = path
+        orderlist.append(order)
+        ty.pop(0)
+
+        boll = False
+
+
 # set data in element
 def set_data(dictionary, key, data):
     # 增加输入校验

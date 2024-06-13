@@ -71,7 +71,7 @@ def task_assign(p, use_multiprocessing=True):
 
 
 # new_function_static
-def epoch_static(p):
+async def epoch_static(p):
     while p.runBool:
         log.info(f"开始运行算法")
         start_time = time.time()
@@ -84,7 +84,7 @@ def epoch_static(p):
         if p.debug_on:
             p = track_generate_station_new(p)
         t1 = time.time()
-        vehicle_load_static(p)
+        await vehicle_load_static(p)
         log.info(f"本轮分配任务时长:{time.time() - t1}")
         log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return 0
@@ -116,7 +116,6 @@ def track_generate_station_new(p):
     p.all_stations.update(station_location)
     p.stations_name.update(station_name)
     return p
-
 
 def process_order(v, p):
     start_time = time.time()
