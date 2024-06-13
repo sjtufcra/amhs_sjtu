@@ -85,7 +85,8 @@ def epoch_static(p):
         if p.debug_on:
             p = track_generate_station_new(p)
         t1 = time.time()
-        vehicle_load_static(p)
+        if len(p.taskList) > 0:
+            vehicle_load_static(p)
         log.info(f"本轮分配任务时长:{time.time() - t1}")
         log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return 0

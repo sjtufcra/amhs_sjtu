@@ -17,55 +17,6 @@ from contextlib import contextmanager
 from algorithm.A_start.graph.srccode import *
 
 
-# server config
-class OracleConnectionPool:
-    def __init__(self, dsn, user, password, max_connections=5):
-        self.dsn = dsn
-        self.user = user
-        self.password = password
-        self.max_connections = max_connections
-        self.connections = []
-        self.lock = threading.Lock()
-
-    @contextmanager
-    def get_connection(self):
-        with self.lock:
-            while len(self.connections) < self.max_connections:
-                conn = oracledb.connect(user=self.user, password=self.password, dsn=self.dsn)
-                self.connections.append(conn)
-            conn = self.connections.pop(0)
-        try:
-            yield conn
-        finally:
-            with self.lock:
-                self.connections.append(conn)
-
-
-# local config
-class MysqlConnectionPool:
-    def __init__(self, dsn, user, password, database, max_connections=5):
-        self.host = dsn
-        self.user = user
-        self.database = database
-        self.password = password
-        self.max_connections = max_connections
-        self.connections = []
-        self.lock = threading.Lock()
-
-    @contextmanager
-    def get_connection(self):
-        with self.lock:
-            while len(self.connections) < self.max_connections:
-                conn = connector.connect(user=self.user, password=self.password, host=self.host, database=self.database)
-                self.connections.append(conn)
-            conn = self.connections.pop(0)
-        try:
-            yield conn
-        finally:
-            with self.lock:
-                self.connections.append(conn)
-
-
 def generating(p):
     t0 = time.time()
     if p.mode == 1:
@@ -73,13 +24,7 @@ def generating(p):
     else:
         p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,
                                         database=p.database)
-    # extracting local json documentation
-    p = erect_map(p)
-    log.info(f'generating success, time cost:{time.time() - t0}')
-    return p
-
-
-def erect_map(p):
+    # from (erect_map)
     # split the map to 5 blocks, from A to E
     # each block contains 2 or 3 part of highways and several bays
     p = initiate_block(p)
@@ -94,6 +39,7 @@ def erect_map(p):
     # load all stations' information, but an old version
     if not p.debug_on:
         track_generate_station(p)
+    log.info(f'generating success, time cost:{time.time() - t0}')
     return p
 
 
@@ -225,6 +171,72 @@ def map_divided(p, tmp):
     return p
 
 
+def vehicle_load_static(p):
+    t_start = time.time()
+    log.info(f"开始分配任务")
+    temp_cars = dict()
+    for i in p.all_bays:
+        temp_cars[i] = []
+    if p.mode == 1:
+        pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        connection = rds.RedisCluster(connection_pool=pool)
+        v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+        log.info(f'取车数辆:{len(v)}, 取车时间:{time.time() - t_start}')
+        if v is None:
+            return None
+        all_vehicles_num = 0
+        t1 = time.time()
+        c = [0, 0, 0, 0, 0]
+        for value in v:
+            tmp = vehicles_continue(p, value, c)
+            if tmp[0]:
+                continue
+            i = json.loads(value)
+            flag = p.original_map_info[0][tmp[1]].values[0]
+            bay = flag.split('-')[0]
+            i['bay'] = bay
+            i['mapId'] = flag
+            temp_cars[bay].append(i)
+            all_vehicles_num += 1
+            if bay in p.bays_relation:
+                assign_same_bay(p, bay, i, flag, temp_cars)
+            if len(p.taskList) == 0:
+                return None
+        log.info(f'phase 1 cost:{time.time() - t1}')
+
+        t2 = time.time()
+        log.info(f'本轮可用车辆数:{all_vehicles_num}，'
+                 f'空信息：{c[0]}，车故障{c[1]}，未空闲{c[2]}，车速为0：{c[3]}，离节点过近{c[4]}')
+        if all_vehicles_num == 0:
+            return None
+        try:
+            for order in p.taskList:
+                car = near_bay_search(order.task_bay, p, temp_cars)
+                # car = near_bay_search_new(order, p, temp_cars)
+                if not car:
+                    continue
+                value = car.get('ohtID')
+                log.info(f"任务:{order.id}+车辆:{value}")
+                flag = car.get('mapId')
+                # temp_cars.pop(temp_cars.index(car))
+                out = 'outlet'
+                entrance = 'entrance'
+                f_path = 'path'
+                tay = flag.split('_')
+                bayA = tay[0].split('-')[0]
+                start = tay[1]
+                path = path_search(p, start, entrance, f_path, bayA, out, order)
+                # path = path_search_new(p, start, entrance, f_path, bayA, out, order)
+                order.vehicle_assigned = value
+                order.delivery_route = path
+                # output_new(p, order)
+        except IndexError as e:
+            log.error(e)
+        log.info(f'phase 2 cost:{time.time() - t2}')
+        log.info(f'phase 1 and 2 cost:{time.time() - t1}')
+    return None
+
+
 def vehicle_load(p):
     # load from 'redis'
     # 初始化
@@ -298,18 +310,26 @@ def vehicle_load(p):
     return p
 
 
-def vehicles_continue(p, i):
+def vehicles_continue(p, i, c):
     if i is None:
+        c[0] += 1
         return True, None
     i = json.loads(i)
+    if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0':
+        c[1] += 1
+        return True, None
+    if i.get('ohtStatus_Idle') == '0':
+        c[2] += 1
+        return True, None
     speed = int(i.get('currentSpeed'))
-    if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0' or i.get(
-            'ohtStatus_Idle') == '0' or speed == 0:
+    if speed == 0:
+        c[3] += 1
         return True, None
     # 无法分配指令的车辆
     s = int(i['position'])
     idx = (p.original_map_info[3] < s) & (p.original_map_info[4] > s)
     if float(p.original_map_info[4][idx].values[0] - s) / speed < p.tts:
+        c[4] += 1
         return True, None
     else:
         return False, idx
@@ -318,6 +338,28 @@ def vehicles_continue(p, i):
 def drop_car_task(x, i):
     x.pop(x.index(i))
     return 0
+
+
+def path_search_new(p, start, entrance, f_path, bayA, out, order):
+    tmp = p.block[order.block_location]['internal']
+    end = p.all_stations[order.start_location]
+    # path1
+    # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
+    # path1_end = search_point(p, bayA, start, out)  # 精确选取位置
+    path1_end = search_point_new(tmp, bayA, start, out)  # 精确选取位置
+    path1 = copy.deepcopy(tmp[bayA][f_path][start][1][path1_end])
+
+    # path2
+    bayB = end.split('-')[0]
+    # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
+    # path2_start = search_point(p, bayB, end, entrance, direction=0)  # 精确选取位置
+    path2_start = search_point_new(tmp, bayB, end, entrance, direction=0)  # 精确选取位置
+    # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
+    path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
+
+    # path3
+    path3 = copy.deepcopy(tmp[bayB][f_path][path2_start][1][end])
+    return path1 + path2[1:-1] + path3
 
 
 def path_search(p, start, entrance, f_path, bayA, out, order):
@@ -339,6 +381,20 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     return path1 + path2[1:-1] + path3
 
 
+def search_point_new(tmp0, bay, start, status, direction=1):
+    pointA, pointB = tmp0[bay][status]
+    path = tmp0[bay]['path']
+    if direction:
+        # 出口
+        tagA = path[start][0][pointA]
+        tagB = path[start][0][pointB]
+    else:
+        # 入口
+        tagA = path[pointA][0][start]
+        tagB = path[pointB][0][start]
+    return pointB if tagA >= tagB else pointA
+
+
 def search_point(p, bay, start, status, direction=1):
     pointA, pointB = p.internal_paths[bay][status]
     path = p.internal_paths[bay]['path']
@@ -353,69 +409,6 @@ def search_point(p, bay, start, status, direction=1):
     return pointB if tagA >= tagB else pointA
 
 
-# static select car
-def vehicle_load_static(p):
-    t_start = time.time()
-    log.info(f"开始分配任务")
-    temp_cars = dict()
-    for i in p.all_bays:
-        temp_cars[i] = []
-    if p.mode == 1:
-        pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-        connection = rds.RedisCluster(connection_pool=pool)
-        v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-        log.info(f'取车数辆:{len(v)}, 取车时间:{time.time() - t_start}')
-        if v is None:
-            return None
-        all_vehicles_num = 0
-        t1 = time.time()
-        for value in v:
-            tmp = vehicles_continue(p, value)
-            if tmp[0]:
-                continue
-            i = json.loads(value)
-            flag = p.original_map_info[0][tmp[1]].values[0]
-            bay = flag.split('-')[0]
-            i['bay'] = bay
-            i['mapId'] = flag
-            temp_cars[bay].append(i)
-            all_vehicles_num += 1
-            if bay in p.bays_relation:
-                assign_same_bay(p, bay, i, flag, temp_cars)
-            if len(p.taskList) == 0:
-                return None
-        log.info(f'phase 1 cost:{time.time() - t1}')
-
-        t2 = time.time()
-        log.info(f'本轮可用车辆数:{all_vehicles_num}')
-        if all_vehicles_num == 0:
-            return None
-        try:
-            for order in p.taskList:
-                car = near_bay_search(order.task_bay, p, temp_cars)
-                if not car:
-                    continue
-                value = car.get('ohtID')
-                log.info(f"任务:{order.id}+车辆:{value}")
-                flag = car.get('mapId')
-                # temp_cars.pop(temp_cars.index(car))
-                out = 'outlet'
-                entrance = 'entrance'
-                f_path = 'path'
-                tay = flag.split('_')
-                bayA = tay[0].split('-')[0]
-                start = tay[1]
-                path = path_search(p, start, entrance, f_path, bayA, out, order)
-                order.vehicle_assigned = value
-                order.delivery_route = path
-                # output_new(p, order)
-        except IndexError as e:
-            log.error(e)
-        log.info(f'phase 2 cost:{time.time() - t2}')
-        log.info(f'phase 1 and 2 cost:{time.time() - t1}')
-    return None
-
-
 def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
     tmp_id = i.get('ohtID')
@@ -426,7 +419,8 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
         end_station = order.start_location
         start = flag.split('_')[1]
         end = p.all_stations[end_station]
-        path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+        # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+        path = internal_path_search(start, end, bay, p)
         path.append(p.stations_name[end_station])
 
         order.vehicle_assigned = tmp_id
@@ -435,6 +429,41 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
         # drop car and task
         drop_car_task(temp_cars.get(bay), i)
         drop_car_task(task, task[0])
+    return 0
+
+
+def internal_path_search(start, end, bay, p):
+    for k, v in p.block.items():
+        if bay in v['bays']:
+            path = v['internal'][bay]['path'][start][1][end]
+            return path
+
+
+# return a car located in a nearby bay
+def near_bay_search_new(order, p, cars):
+    # search the left and right bay, sometimes only one bay can be searched
+    block_tmp = order.block_location
+    bay0 = int(order.task_bay[1:])
+    bay1 = 'W'+str(bay0+1)
+    bay2 = 'W'+str(bay0-1)
+    candidate_bay = []
+    if bay1 in p.block[block_tmp]['bays']:
+        candidate_bay.append(bay1)
+    if bay2 in p.block[block_tmp]['bays']:
+        candidate_bay.append(bay2)
+    for i in candidate_bay:
+        car_tmp = cars.get(i)
+        if car_tmp:
+            car = random.choice(car_tmp)
+            drop_car_task(car_tmp, car)
+            return car
+    # if no cars nearby can be used, searching the cars on highways randomly
+    for i in p.block[block_tmp]['highways']:
+        car_tmp = cars.get(i)
+        if car_tmp:
+            car = random.choice(car_tmp)
+            drop_car_task(car_tmp, car)
+            return car
     return 0
 
 
@@ -594,6 +623,11 @@ def read_instructions_static(p):
         tmp.start_location = df[4][i]
         tmp.end_location = df[5][i]
         tmp.task_bay = tmp.start_location.split('_')[1]
+        # added in 240612 by zq
+        for k, v in p.block.items():
+            if tmp.task_bay in v['bays']:
+                tmp.block_location = k
+                break
         set_data(p.bays_relation, tmp.task_bay, tmp)
         p.taskList.append(tmp)
         n += 1
@@ -601,3 +635,52 @@ def read_instructions_static(p):
             break
     log.info(f'this is the task count:{n}')
     return p
+
+
+# server config
+class OracleConnectionPool:
+    def __init__(self, dsn, user, password, max_connections=5):
+        self.dsn = dsn
+        self.user = user
+        self.password = password
+        self.max_connections = max_connections
+        self.connections = []
+        self.lock = threading.Lock()
+
+    @contextmanager
+    def get_connection(self):
+        with self.lock:
+            while len(self.connections) < self.max_connections:
+                conn = oracledb.connect(user=self.user, password=self.password, dsn=self.dsn)
+                self.connections.append(conn)
+            conn = self.connections.pop(0)
+        try:
+            yield conn
+        finally:
+            with self.lock:
+                self.connections.append(conn)
+
+
+# local config
+class MysqlConnectionPool:
+    def __init__(self, dsn, user, password, database, max_connections=5):
+        self.host = dsn
+        self.user = user
+        self.database = database
+        self.password = password
+        self.max_connections = max_connections
+        self.connections = []
+        self.lock = threading.Lock()
+
+    @contextmanager
+    def get_connection(self):
+        with self.lock:
+            while len(self.connections) < self.max_connections:
+                conn = connector.connect(user=self.user, password=self.password, host=self.host, database=self.database)
+                self.connections.append(conn)
+            conn = self.connections.pop(0)
+        try:
+            yield conn
+        finally:
+            with self.lock:
+                self.connections.append(conn)
