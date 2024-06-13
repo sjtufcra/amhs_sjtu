@@ -340,10 +340,9 @@ async def vehicle_load_static(p):
         asyncio.create_task(read_car_to_cache_back(p))
         cache = p.db_redis.get_cache()
         v = await cache.get('care_data')
-
-        log.info(f'cars number:{len(v)}, time:{time.time()-t0}')
         if v is None:
             return None
+        log.info(f'cars number:{len(v)}, time:{time.time()-t0}')
         t1 = time.time()
         all_vehicles_num = 0
         for value in v:
