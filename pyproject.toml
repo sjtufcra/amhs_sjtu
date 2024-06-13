@@ -12,7 +12,7 @@ dependencies = [
     'networkx',
     'oracledb',
     "redis==5.0.5",  
-    "aiocache"
+    "aiocache",
     "redis-py-cluster",
     "pyyaml",
     "loguru"
