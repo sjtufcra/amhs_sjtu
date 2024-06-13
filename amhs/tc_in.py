@@ -342,6 +342,7 @@ async def vehicle_load_static(p):
         log.info(f'cars number:{len(v)}, time:{time.time()-t0}')
         if v is None:
             return None
+        t1 = time.time()
         all_vehicles_num = 0
         for value in v:
             tmp = vehicles_continue(p, value)
@@ -424,19 +425,6 @@ def near_bay_search(bay0, p, cars):
             g += 1
         if g > p.max_search:
             return None
-# 异步线程
-async def read_car_to_cache_async(p):
-    redis = rds.from_url(
-        f'redis://{p.rds_connection}:{p.rds_port}/',
-        decode_responses=True
-    )
-    try:
-        keys = await redis.keys(pattern=p.rds_search_pattern)
-        values = await redis.mget(keys)
-        p.vehicles_get = values
-    finally:
-        await pool.close()
-        await pool.wait_closed()
 
 # 异步设置缓存函数
 async def read_car_to_cache_back(p):
@@ -445,11 +433,11 @@ async def read_car_to_cache_back(p):
     await cache.set('car_data',data)
 
 # 异步函数
-def read_car_to_cache_back(p):
-    pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-    connection = rds.RedisCluster(connection_pool=pool)
-    v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-    p.vehicles_get = v 
+# def read_car_to_cache_back(p):
+#     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+#     connection = rds.RedisCluster(connection_pool=pool)
+#     v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+#     p.vehicles_get = v 
 # static select car
 def vehicle_load_static_fast(p):
     orederlist = []
