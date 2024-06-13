@@ -431,7 +431,15 @@ async def read_car_to_cache_back(p):
     data = await cache_redis(p)
     cache = p.db_redis.get_cache()
     await cache.set('car_data',data)
-
+# 异步读取redis缓存
+async def cache_redis(p):
+  redis = p.db_redis.get_connection()
+  keys = await redis.keys(pattern=p.rds_search_pattern)
+  values = list()
+  for key in keys:
+    value = await redis.get(key)
+    values.append(value)
+  return values
 # 异步函数
 # def read_car_to_cache_back(p):
 #     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
