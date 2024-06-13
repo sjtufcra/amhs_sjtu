@@ -358,7 +358,7 @@ async def vehicle_load_static(p):
         temp_cars[i] = []
     number_task = len(p.taskList)
     if p.mode == 1:
-        t0 = time.process_time()
+        t0 = time.time()
         # 同步调用
         # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         # connection = rds.RedisCluster(connection_pool=pool)
@@ -367,7 +367,8 @@ async def vehicle_load_static(p):
         asyncio.run(read_car_to_cache_back(p))
         cache = p.db_redis.get_cache()
         v = await cache.get('care_data')
-        log.info(f'cars number:{len(v)}, time:{time.process_time()-t0}')
+
+        log.info(f'cars number:{len(v)}, time:{time.time()-t0}')
         if v is None:
             return order_list
         all_vehicles_num = 0
