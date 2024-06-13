@@ -72,8 +72,8 @@ class MysqlConnectionPool:
                 self.connections.append(conn)
 
 class RedisConnectionPool:
-    def __init__(self, host, port, password=None, max_connections=5):
-        self.host = host
+    def __init__(self, user, port, password=None, max_connections=5):
+        self.host = user
         self.port = port
         self.password = password
         self.max_connections = max_connections
