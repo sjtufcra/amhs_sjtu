@@ -381,7 +381,7 @@ def path_search_new(p, start, entrance, f_path, bayA, out, order):
         path3 = copy.deepcopy(tmp[bayB][f_path][path2_start][1][end])
         return path1 + path2[1:-1] + path3
     except Exception as e:
-        log.error(f'path_search_new error:{e},path1_end:{path1_end},path2_start:{path2_start}')
+        log.error(f'path_search_new error:{e}')
         return None
 
 # old
@@ -454,14 +454,15 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
     tmp_id = i.get('ohtID')
     if len(task) > 0:
-        order = task[0]
-        log.info(f"任务:{order.id},车辆:{tmp_id}")
-        p.taskList.pop(p.taskList.index(order))
-        end_station = order.start_location
-        start = flag.split('_')[1]
-        end = p.all_stations.get(end_station)
-        # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
         try:
+            order = task[0]
+            log.info(f"任务:{order.id},车辆:{tmp_id}")
+            p.taskList.pop(p.taskList.index(order))
+            end_station = order.start_location
+            start = flag.split('_')[1]
+            end = p.all_stations.get(end_station)
+            # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+        
             path = internal_path_search(start, end, bay, p)
             path.append(p.stations_name.get(end_station))
 
@@ -472,7 +473,7 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
             drop_car_task(temp_cars.get(bay), i)
             drop_car_task(task, task[0])
         except Exception as e:
-            log.error(f"error:{e},value:{p.internal_paths[bay]},path:{path},start:{start},end:{end},bay:{bay}")
+            log.error(f"error:{e}")
             return 1
     return 0
 
