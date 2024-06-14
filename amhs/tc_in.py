@@ -233,7 +233,8 @@ async def vehicle_load_static(p):
                 tay = flag.split('_')
                 bayA = tay[0].split('-')[0]
                 start = tay[1]
-                path = path_search(p, start, entrance, f_path, bayA, out, order)
+                # path = path_search(p, start, entrance, f_path, bayA, out, order)
+                path = path_search_new(p, start, entrance, f_path, bayA, out, order)
                 order.vehicle_assigned = value
                 order.delivery_route = path
                 output_new(p, order)
@@ -389,12 +390,12 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     return path1 + path2[1:-1] + path3
 
 def search_point(p,bay,start,status,direction=1):
-    
-    txt = p.internal_paths[bay][status]
-    if len(txt)==0:
-        log.warning(f'bay:{bay},point:{start},status:{status},data:{p.internal_paths[bay]}')
-        return None
     try:
+        txt = p.internal_paths[bay][status]
+        if len(txt)==0:
+            log.warning(f'bay:{bay},point:{start},status:{status},data:{p.internal_paths[bay]}')
+            return None
+        
         pointA,pointB = p.internal_paths[bay][status]
         path = p.internal_paths[bay]['path']
         if direction:
@@ -413,18 +414,21 @@ def search_point(p,bay,start,status,direction=1):
 
 
 def search_point_new(tmp0, bay, start, status, direction=1):
-    pointA, pointB = tmp0[bay][status]
-    path = tmp0[bay]['path']
-    if direction:
-        # 出口
-        tagA = path[start][0][pointA]
-        tagB = path[start][0][pointB]
-    else:
-        # 入口
-        tagA = path[pointA][0][start]
-        tagB = path[pointB][0][start]
-    return pointB if tagA >= tagB else pointA
-
+    try:
+        pointA, pointB = tmp0[bay][status]
+        path = tmp0[bay]['path']
+        if direction:
+            # 出口
+            tagA = path[start][0][pointA]
+            tagB = path[start][0][pointB]
+        else:
+            # 入口
+            tagA = path[pointA][0][start]
+            tagB = path[pointB][0][start]
+        return pointB if tagA >= tagB else pointA
+    except ValueError as e:
+        log.error(f"error:{e},value:{tmp0[bay]},status:{status}")
+        return None
 
 
 
