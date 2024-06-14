@@ -202,6 +202,7 @@ async def vehicle_load_static(p):
                 continue
             i = json.loads(value)
             flag = p.original_map_info[0][tmp[1]].values[0]
+            
             bay = flag.split('-')[0]
             i['bay'] = bay
             i['mapId'] = flag
@@ -333,12 +334,19 @@ def vehicles_continue(p, i, c):
         return True, None
     # 无法分配指令的车辆
     s = int(i['position'])
-    idx = (p.original_map_info[3] < s) & (p.original_map_info[4] > s)
-    if float(p.original_map_info[4][idx].values[0] - s) / speed < p.tts:
-        c[4] += 1
-        return True, None
-    else:
+    try:
+        idx = (p.original_map_info[3] < s) & (p.original_map_info[4] > s)
         return False, idx
+    
+        # todo: 判断是否过近
+        # if float(p.original_map_info[4][idx].values[0] - s) / speed < p.tts:
+        #     c[4] += 1
+        #     return True, None
+        # else:
+        #     return False, idx
+    except Exception as e:
+        log.error(f'erro:{e},value:{p.original_map_info[4]},data:{p.original_map_info[4][idx]}')
+        return True, None
 
 
 def drop_car_task(x, i):
