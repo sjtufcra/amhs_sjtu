@@ -456,18 +456,21 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
 def near_bay_search(bay0, p, cars):
     g = 0
     while 1:
-        c = p.length_between_bays[bay0].sort_values()
-        bay1 = c.index[0]
-        car_tmp = cars.get(bay1)
-        if car_tmp:
-            car = random.choice(car_tmp)
-            drop_car_task(car_tmp, car)
-            return car
-        else:
-            g += 1
-        if g > p.max_search:
+        try:
+            c = p.length_between_bays[bay0].sort_values()
+            bay1 = c.index[0]
+            car_tmp = cars.get(bay1)
+            if car_tmp:
+                car = random.choice(car_tmp)
+                drop_car_task(car_tmp, car)
+                return car
+            else:
+                g += 1
+            if g > p.max_search:
+                return None
+        except Exception as e:
+            log.error(f"error:{e},bay:{bay0},p:{p.length_between_bays}")
             return None
-
 
 # 异步设置缓存函数
 async def read_car_to_cache_back(p):
