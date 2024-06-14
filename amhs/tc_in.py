@@ -452,15 +452,19 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
         start = flag.split('_')[1]
         end = p.all_stations.get(end_station)
         # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
-        path = internal_path_search(start, end, bay, p)
-        path.append(p.stations_name.get(end_station))
+        try:
+            path = internal_path_search(start, end, bay, p)
+            path.append(p.stations_name.get(end_station))
 
-        order.vehicle_assigned = tmp_id
-        order.delivery_route = path
-        output_new(p, order)
-        # drop car and task
-        drop_car_task(temp_cars.get(bay), i)
-        drop_car_task(task, task[0])
+            order.vehicle_assigned = tmp_id
+            order.delivery_route = path
+            output_new(p, order)
+            # drop car and task
+            drop_car_task(temp_cars.get(bay), i)
+            drop_car_task(task, task[0])
+        except Exception as e:
+            log.error(f"error:{e},value:{p.internal_paths[bay]},path:{path},start:{start},end:{end},bay:{bay}")
+            return 1
     return 0
 
 def internal_path_search(start, end, bay, p):
