@@ -196,8 +196,9 @@ async def vehicle_load_static(p):
         log.info(f'cars number:{len(v)}, time:{time.time()-t0}')
         t1 = time.time()
         all_vehicles_num = 0
+        c = [0, 0, 0, 0, 0]
         for value in v:
-            tmp = vehicles_continue(p, value)
+            tmp = vehicles_continue(p, value,c)
             if tmp[0]:
                 continue
             i = json.loads(value)
@@ -214,7 +215,8 @@ async def vehicle_load_static(p):
         log.info(f'phase 1 cost:{time.time()-t1}')
         
         t2 = time.time()
-        log.info(f'本轮可用车辆数:{all_vehicles_num}')
+        log.info(f'本轮可用车辆数:{all_vehicles_num},'
+                 f'空信息:{c[0]},车故障:{c[1]},未空闲:{c[2]},车速为0:{c[3]},离节点过近:{c[4]}')
         if all_vehicles_num == 0:
             return None
         try:
