@@ -135,8 +135,7 @@ def map_divided(p, tmp):
     # p.internal_paths = paths_in_bays
     log.info(f'time cost of internal routes:{time.time() - t0}')
 
-    j = 1
-    if j == 1:
+    if p.debug_on:
         return p
 
     # route within the different bays
@@ -324,7 +323,7 @@ def vehicles_continue(p, i, c):
     if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0':
         c[1] += 1
         return True, None
-    if i.get('ohtStatus_Idle') == '0':
+    if i.get('ohtStatus_Idle') == '1':
         c[2] += 1
         return True, None
     speed = int(i.get('currentSpeed'))
