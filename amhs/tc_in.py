@@ -451,6 +451,37 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
         drop_car_task(task, task[0])
     return 0
 
+def internal_path_search(start, end, bay, p):
+    for k, v in p.block.items():
+        if bay in v['bays']:
+            path = v['internal'][bay]['path'][start][1][end]
+            return path
+
+def near_bay_search_new(order, p, cars):
+    # search the left and right bay, sometimes only one bay can be searched
+    block_tmp = order.block_location
+    bay0 = int(order.task_bay[1:])
+    bay1 = 'W'+str(bay0+1)
+    bay2 = 'W'+str(bay0-1)
+    candidate_bay = []
+    if bay1 in p.block[block_tmp]['bays']:
+        candidate_bay.append(bay1)
+    if bay2 in p.block[block_tmp]['bays']:
+        candidate_bay.append(bay2)
+    for i in candidate_bay:
+        car_tmp = cars.get(i)
+        if car_tmp:
+            car = random.choice(car_tmp)
+            drop_car_task(car_tmp, car)
+            return car
+    # if no cars nearby can be used, searching the cars on highways randomly
+    for i in p.block[block_tmp]['highways']:
+        car_tmp = cars.get(i)
+        if car_tmp:
+            car = random.choice(car_tmp)
+            drop_car_task(car_tmp, car)
+            return car
+    return 0
 
 def near_bay_search(bay0, p, cars):
     g = 0
