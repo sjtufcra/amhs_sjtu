@@ -239,6 +239,8 @@ async def vehicle_load_static(p):
                 start = tay[1]
                 # path = path_search(p, start, entrance, f_path, bayA, out, order)
                 path = path_search_new(p, start, entrance, f_path, bayA, out, order)
+                if path is None:
+                    continue
                 order.vehicle_assigned = value
                 order.delivery_route = path
                 output_new(p, order)
@@ -358,25 +360,29 @@ def drop_car_task(x, i):
 
 # new
 def path_search_new(p, start, entrance, f_path, bayA, out, order):
-    tmp = p.block[order.block_location]['internal']
-    end = p.all_stations[order.start_location]
-    # path1
-    # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
-    # path1_end = search_point(p, bayA, start, out)  # 精确选取位置
-    path1_end = search_point_new(tmp, bayA, start, out)  # 精确选取位置
-    path1 = copy.deepcopy(tmp[bayA][f_path][start][1][path1_end])
+    try:
+        tmp = p.block[order.block_location]['internal']
+        end = p.all_stations[order.start_location]
+        # path1
+        # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
+        # path1_end = search_point(p, bayA, start, out)  # 精确选取位置
+        path1_end = search_point_new(tmp, bayA, start, out)  # 精确选取位置
+        path1 = copy.deepcopy(tmp[bayA][f_path][start][1][path1_end])
 
-    # path2
-    bayB = end.split('-')[0]
-    # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
-    # path2_start = search_point(p, bayB, end, entrance, direction=0)  # 精确选取位置
-    path2_start = search_point_new(tmp, bayB, end, entrance, direction=0)  # 精确选取位置
-    # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
-    path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
+        # path2
+        bayB = end.split('-')[0]
+        # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
+        # path2_start = search_point(p, bayB, end, entrance, direction=0)  # 精确选取位置
+        path2_start = search_point_new(tmp, bayB, end, entrance, direction=0)  # 精确选取位置
+        # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
+        path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
 
-    # path3
-    path3 = copy.deepcopy(tmp[bayB][f_path][path2_start][1][end])
-    return path1 + path2[1:-1] + path3
+        # path3
+        path3 = copy.deepcopy(tmp[bayB][f_path][path2_start][1][end])
+        return path1 + path2[1:-1] + path3
+    except Exception as e:
+        log.error(f'path_search_new error:{e},path1_end:{path1_end},path2_start:{path2_start}')
+        return None
 
 # old
 def path_search(p, start, entrance, f_path, bayA, out, order):
