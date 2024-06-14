@@ -201,17 +201,20 @@ async def vehicle_load_static(p):
             if tmp[0]:
                 continue
             i = json.loads(value)
-            flag = p.original_map_info[0][tmp[1]].values[0]
-            
-            bay = flag.split('-')[0]
-            i['bay'] = bay
-            i['mapId'] = flag
-            temp_cars[bay].append(i)
-            all_vehicles_num += 1
-            if bay in p.bays_relation:
-                assign_same_bay(p, bay, i, flag, temp_cars)
-            if len(p.taskList) == 0:
-                return None
+            try:
+                flag = p.original_map_info[0][tmp[1]].values[0]
+                bay = flag.split('-')[0]
+                i['bay'] = bay
+                i['mapId'] = flag
+                temp_cars[bay].append(i)
+                all_vehicles_num += 1
+                if bay in p.bays_relation:
+                    assign_same_bay(p, bay, i, flag, temp_cars)
+                if len(p.taskList) == 0:
+                    return None
+            except IndexError as e:
+                log.error(f'error:{e},value:{tmp[1]},bay:{bay}')
+                continue
         log.info(f'phase 1 cost:{time.time()-t1}')
         
         t2 = time.time()
