@@ -91,7 +91,7 @@ async def runtime(p):
         t1 = time.time()
         if len(p.taskList) > 0:
             # asyncio.create_task(vehicle_load_static(p))
-        await vehicle_load_static(p)
+            await vehicle_load_static(p)
         log.info(f"本轮分配任务时长:{time.time() - t1}")
         log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return None
