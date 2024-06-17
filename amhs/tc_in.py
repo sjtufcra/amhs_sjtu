@@ -2,7 +2,9 @@ import time
 from collections import defaultdict
 import pandas as pd
 import oracledb
-import aioredis as rds
+import redis.asyncio as rds
+from aiocache import Cache
+from aiocache.serializers import JsonSerializer
 import asyncio
 
 import math
@@ -12,103 +14,74 @@ import json
 import random
 import copy
 
-from tc_out import *
+
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-from algorithm.A_start.graph.srccode import *
-
-
-# server config
-class OracleConnectionPool:
-    def __init__(self, dsn, user, password, max_connections=5):
-        self.dsn = dsn
-        self.user = user
-        self.password = password
-        self.max_connections = max_connections
-        self.connections = []
-        self.lock = threading.Lock()
-
-    @contextmanager
-    def get_connection(self):
-        with self.lock:
-            while len(self.connections) < self.max_connections:
-                conn = oracledb.connect(user=self.user, password=self.password, dsn=self.dsn)
-                self.connections.append(conn)
-            conn = self.connections.pop(0)
-        try:
-            yield conn
-        finally:
-            with self.lock:
-                self.connections.append(conn)
-
-
-# local config
-class MysqlConnectionPool:
-    def __init__(self, dsn, user, password, database, max_connections=5):
-        self.host = dsn
-        self.user = user
-        self.database = database
-        self.password = password
-        self.max_connections = max_connections
-        self.connections = []
-        self.lock = threading.Lock()
-
-    @contextmanager
-    def get_connection(self):
-        with self.lock:
-            while len(self.connections) < self.max_connections:
-                conn = connector.connect(user=self.user, password=self.password, host=self.host, database=self.database)
-                self.connections.append(conn)
-            conn = self.connections.pop(0)
-        try:
-            yield conn
-        finally:
-            with self.lock:
-                self.connections.append(conn)
+from .tc_out import *
+from .algorithm.A_start.graph.srccode import *
 
 
 def generating(p):
     t0 = time.time()
     if p.mode == 1:
         p.db_pool = OracleConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
+        p.db_redis = RedisConnectionPool(user=p.rds_connection, port=p.rds_port,cachekey=p.cache_key)
     else:
         p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,
                                         database=p.database)
-    # extracting local json documentation
-    p = erect_map(p)
+    # from (erect_map)
+    # split the map to 5 blocks, from A to E
+    # each block contains 2 or 3 part of highways and several bays
+    p = initiate_block(p)
+    # read form the oracle database and build the graph of map
+    p, tmp = map_build(p)
+    # added in 240603 by lby
+    # a new model used to divide map into two pieces,
+    # one for internal (within bays, nodes name started with 'W'),
+    # another for external (high-ways, nodes name started with 'I'),
+    # and there are links between two parts, including entrances('W-I') and outlets('I-W')
+    p = map_divided(p, tmp)
+    # load all stations' information, but an old version
+    if not p.debug_on:
+        track_generate_station(p)
     log.info(f'generating success, time cost:{time.time() - t0}')
     return p
 
 
-def erect_map(p):
-    if p.Control().build_map:
-        # read form db
-        with p.db_pool.get_connection() as db_conn:
-            cursor = db_conn.cursor()
-            cursor.execute('SELECT * FROM OHTC_MAP')
-            df = pd.DataFrame(cursor.fetchall())
-            p.original_map_info = df
-            p.Astart = AStart()
-            db_conn.commit()
-            cursor.close()
-        # load all stations' information, but an old version
-        if not p.debug_on:            
-            track_generate_station(p, df)
-        # added in 240603 by lby
-        # a new model used to divide map into two pieces,
-        # one for internal (within bays, nodes name started with 'W'),
-        # another for external (high-ways, nodes name started with 'I'),
-        # and there are links between two parts, including entrances('W-I') and outlets('I-W')
-        p = map_divided(p)
+def initiate_block(p):
+    t = p.block
+    j = [('A', ['I001', 'I002'], [range(1, 35)]),
+         ('B', ['I003', 'I004'], [range(35, 72)]),
+         ('C', ['I004', 'I005'], [range(72, 106)]),
+         ('D', ['I006', 'I007'], [range(106, 131)]),
+         ('E', ['I003', 'I004', 'I005'], [131, 132]),
+         ('F', ['W054', 'W055', 'W056'], [133, 134, 135])]
+    for i in j:
+        bays = []
+        for k in i[2]:
+            if isinstance(k, range):
+                for k0 in k:
+                    s = 'W' + str(k0).zfill(3)
+                    bays.append(s)
+            else:
+                s = 'W' + str(k).zfill(3)
+                bays.append(s)
+        t[i[0]] = {'internal': dict(), 'external': dict(), 'neighbor': dict(),
+                   'bays': bays, 'highways': i[1]}
     return p
 
 
-def map_divided(p):
-    # this function is used to calculate paths in two parts of the map
-    # input: map info from 'p'
-    # output: routes in two parts
-    df = p.original_map_info
+def map_build(p):
+    # read form db
+    with p.db_pool.get_connection() as db_conn:
+        cursor = db_conn.cursor()
+        cursor.execute('SELECT * FROM OHTC_MAP')
+        df = pd.DataFrame(cursor.fetchall())
+        p.original_map_info = df
+        p.Astart = AStart()
+        db_conn.commit()
+        cursor.close()
     tmp = dict()
     tmp3, tmp4, all_bays = [], [], df[16].unique()
     p.all_bays = all_bays
@@ -123,21 +96,31 @@ def map_divided(p):
         length = df[8][i]  # end point
         bay0 = sp.split('-')[0]
         bay1 = ep.split('-')[0]
-        if sp.startswith('W') and ep.startswith('W') and (bay0 == bay1):
+        # if sp.startswith('W') and ep.startswith('W') and (bay0 == bay1):
+        #     tmp[bay0]['internal'].update({(sp, ep): length})
+        # elif sp.startswith('W') or ep.startswith('W'):
+        #     if sp.startswith('W'):
+        #         tmp[bay0]['outlet'].append(sp)
+        #         tmp3.append(sp)
+        #     if ep.startswith('W'):
+        #         tmp[bay1]['entrance'].append(ep)
+        #         tmp4.append(sp)
+        if bay0 == bay1:
             tmp[bay0]['internal'].update({(sp, ep): length})
-        elif sp.startswith('W') or ep.startswith('W'):
-            if sp.startswith('W'):
-                tmp[bay0]['outlet'].append(sp)
-                tmp3.append(sp)
-            if ep.startswith('W'):
-                tmp[bay1]['entrance'].append(ep)
-                tmp4.append(sp)
-        p.map_info_unchanged.add_node_from(sp, ep, length)
+        else:
+            tmp[bay0]['outlet'].append((sp, ep))
+            tmp[bay1]['entrance'].append((sp, ep))
+        # p.map_info_unchanged.add_node_from(sp, ep, length)
         p.map_info_unchanged.add_weighted_edges_from([(sp, ep, length)])
-        # flyd(p.map_info_unchanged)
+    return p, tmp
 
-    t0 = time.time()
+
+def map_divided(p, tmp):
     # figuring out the shortest paths in every part
+    # indexed by a bay name and then by nodes both in this bay
+    # example: r = p.block['A']['internal'][@bay_name][(@node1, @node2)]
+    # r is a list containing a series of nodes, which is a viable route
+    t0 = time.time()
     paths_in_bays = dict()
     for k, v in tmp.items():
         pic = DiGraph(p.status)
@@ -145,31 +128,127 @@ def map_divided(p):
             pic.add_weighted_edges_from([(k2[0], k2[1], v2)])
         pathA = dict(nx.all_pairs_dijkstra(pic, weight='weight'))
         paths_in_bays[k] = dict({"path": dict(pathA), "entrance": v['entrance'], "outlet": v['outlet']})
-    p.internal_paths = paths_in_bays
+        for k0, v0 in p.block.items():
+            if k in v0['bays'] or k in v0['highways']:
+                p.block[k0]['internal'].update({k: paths_in_bays[k]})
+                break
+    # p.internal_paths = paths_in_bays
     log.info(f'time cost of internal routes:{time.time() - t0}')
+
+    if p.debug_on:
+        return p
+
+    # route within the different bays
+    # indexed by 2 bay names and then by nodes in bays respectively
+    # example: r = p.block['A']['external'][(@bay_name, @bay_name][(@node1, @node2)]
     t0 = time.time()
-    # paths_between_bays = dict()
-    tmp5 = pd.DataFrame(data=math.inf, columns=all_bays, index=all_bays)
-    for start in tmp3:
-        for end in tmp4:
-            if start != end:
-                sb, eb = start.split('-')[0], end.split('-')[0]
-                # A*
-                # starting = p.map_info_unchanged.get_node_by_id(start)
-                # ending = p.map_info_unchanged.get_node_by_id(end)
-                # p.map_info_unchanged.set_start_and_goal(starting, ending)
-                # path0 = p.Astart.a_star_search(p.map_info_unchanged)
-                # nx
-                # tmp6 = nx.dijkstra_path_length(p.map_info_unchanged, source=start, target=end)
-                tmp6 = nx.shortest_path_length(p.map_info_unchanged, source=start, target=end)
-                if tmp6 < tmp5[eb][sb]:
-                    tmp5[eb][sb] = tmp6
-                # paths_between_bays.update({(starting, ending): tmp5})
-    log.info(f'time cost of external routes:{time.time() - t0}')
-    # p.external_paths = paths_between_bays
-    p.length_between_bays = tmp5
+    e_matrix = pd.DataFrame(data=math.inf, columns=p.all_bays, index=p.all_bays)
+    for k0, v0 in p.block.items():
+        for i in v0['bays']:
+            for j in v0['bays']:
+                if i != j:
+                    sp = v0['internal'][i]['outlet']
+                    ep = v0['internal'][j]['entrance']
+                    value0, path0 = math.inf, []
+                    if sp and ep:
+                        for i0 in sp:
+                            for j0 in ep:
+                                value, path = nx.bidirectional_dijkstra(p.map_info_unchanged, i0[0], j0[1])
+                                if value < value0:
+                                    path0 = path
+                                    value0 = value
+                    p.block[k0]['external'].update({(i, j): (value0, path0)})
+                    e_matrix[j][i] = value0
+        log.info(f'block {k0} completed')
+    p.length_between_bays = e_matrix
+    log.info(f'time cost of internal routes:{time.time() - t0}')
+
+    # routes between highways and nodes inside bays
+    # indexed by a bay name as well as a highway name, and then by nodes in this bay
+    # example: r = p.block['A']['external'][(@highway, @bay_name][(@node1, @node2)]
+    pass
+    # sp in I001, ep in W001, both of them are in block 'A'
+    # find the outlet track between them, which connected W001 with I001
+    # assigning it to tmp, it's a tuple (outlet of W001, entrance of I001)
+    # route0 = p.block['A']['internal'][W001][sp, tmp[0]]
+    # route1 = p.block['A']['internal'][I001][tmp[1], ep]
+    # the final route is equal to route0 + route1, and vise versa
     return p
 
+# static select car
+async def vehicle_load_static(p):
+    temp_cars = dict()
+    for i in p.all_bays:
+        temp_cars[i] = []
+    if p.mode == 1:
+        t0 = time.time()
+        # 同步调用
+        # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        # connection = rds.RedisCluster(connection_pool=pool)
+        # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+        # 异步调用
+        asyncio.create_task(read_car_to_cache_back(p))
+        cache = p.db_redis.get_cache()
+        v = await cache.get(p.db_redis.cache_key)
+        if v is None:
+            return None
+        log.info(f'cars number:{len(v)}, time:{time.time()-t0}')
+        t1 = time.time()
+        all_vehicles_num = 0
+        c = [0, 0, 0, 0, 0]
+        for value in v:
+            tmp = vehicles_continue(p, value,c)
+            if tmp[0]:
+                continue
+            i = json.loads(value)
+            try:
+                flag = p.original_map_info[0][tmp[1]].values[0]
+                bay = flag.split('-')[0]
+                i['bay'] = bay
+                i['mapId'] = flag
+                temp_cars[bay].append(i)
+                all_vehicles_num += 1
+                if bay in p.bays_relation:
+                    assign_same_bay(p, bay, i, flag, temp_cars)
+                if len(p.taskList) == 0:
+                    return None
+            except IndexError as e:
+                log.error(f'error:{e},value:{tmp[1]},bay:{bay}')
+                continue
+        log.info(f'phase 1 cost:{time.time()-t1}')
+        
+        t2 = time.time()
+        log.info(f'本轮可用车辆数:{all_vehicles_num},'
+                 f'空信息:{c[0]},车故障:{c[1]},未空闲:{c[2]},车速为0:{c[3]},离节点过近:{c[4]}')
+        if all_vehicles_num == 0:
+            return None
+        try:
+            for order in p.taskList:
+                car = near_bay_search(order.task_bay, p, temp_cars)
+                if not car:
+                    continue
+                value = car.get('ohtID')
+                log.info(f"任务:{order.id}+车辆:{value}")
+                flag = car.get('mapId')
+                # temp_cars.pop(temp_cars.index(car))
+                out = 'outlet'
+                entrance = 'entrance'
+                f_path = 'path'
+                tay = flag.split('_')
+                bayA = tay[0].split('-')[0]
+                start = tay[1]
+                # path = path_search(p, start, entrance, f_path, bayA, out, order)
+                path = path_search_new(p, start, entrance, f_path, bayA, out, order)
+                if path is None:
+                    continue
+                order.vehicle_assigned = value
+                order.delivery_route = path
+                output_new(p, order)
+        except IndexError as e:
+            log.error(e)
+        log.info(f'phase 2 cost:{time.time() - t2}')
+        log.info(f'phase 1 and 2 cost:{time.time() - t1}')
+    return None
 
 def vehicle_load(p):
     # load from 'redis'
@@ -182,7 +261,6 @@ def vehicle_load(p):
         pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
         connection = rds.RedisCluster(connection_pool=pool)
         v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-        p.redis_link = connection
         # vehicles = dict()
         log.info('start a car search')
         for i in v:
@@ -244,28 +322,69 @@ def vehicle_load(p):
     return p
 
 
-def vehicles_continue(p, i):
+def vehicles_continue(p, i, c):
     if i is None:
+        c[0] += 1
         return True, None
     i = json.loads(i)
+    if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0':
+        c[1] += 1
+        return True, None
+    if i.get('ohtStatus_Idle') == '1':
+        c[2] += 1
+        return True, None
     speed = int(i.get('currentSpeed'))
-    if i.get('ohtStatus_OnlineControl') != '1' or i.get('ohtStatus_ErrSet') != '0' or i.get(
-            'ohtStatus_Idle') == '0' or speed == 0:
+    if speed == 0:
+        c[3] += 1
         return True, None
     # 无法分配指令的车辆
     s = int(i['position'])
-    idx = (p.original_map_info[3] < s) & (p.original_map_info[4] > s)
-    if float(p.original_map_info[4][idx].values[0] - s) / speed < p.tts:
-        return True, None
-    else:
+    try:
+        idx = (p.original_map_info[3] < s) & (p.original_map_info[4] > s)
         return False, idx
+    
+        # todo: 判断是否过近
+        # if float(p.original_map_info[4][idx].values[0] - s) / speed < p.tts:
+        #     c[4] += 1
+        #     return True, None
+        # else:
+        #     return False, idx
+    except Exception as e:
+        log.error(f'erro:{e},value:{p.original_map_info[4]},data:{p.original_map_info[4][idx]}')
+        return True, None
 
 
 def drop_car_task(x, i):
     x.pop(x.index(i))
     return 0
 
+# new
+def path_search_new(p, start, entrance, f_path, bayA, out, order):
+    try:
+        tmp = p.block[order.block_location]['internal']
+        end = p.all_stations[order.start_location]
+        # path1
+        # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
+        # path1_end = search_point(p, bayA, start, out)  # 精确选取位置
+        path1_end = search_point_new(tmp, bayA, start, out)  # 精确选取位置
+        path1 = copy.deepcopy(tmp[bayA][f_path][start][1][path1_end])
 
+        # path2
+        bayB = end.split('-')[0]
+        # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
+        # path2_start = search_point(p, bayB, end, entrance, direction=0)  # 精确选取位置
+        path2_start = search_point_new(tmp, bayB, end, entrance, direction=0)  # 精确选取位置
+        # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
+        path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
+
+        # path3
+        path3 = copy.deepcopy(tmp[bayB][f_path][path2_start][1][end])
+        return path1 + path2[1:-1] + path3
+    except Exception as e:
+        log.error(f'path_search_new error:{e}')
+        return None
+
+# old
 def path_search(p, start, entrance, f_path, bayA, out, order):
     end = p.all_stations[order.start_location]
     # path1
@@ -274,7 +393,7 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     # path2
     bayB = end.split('-')[0]
     # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
-    path2_start = search_point(p,bayB,end,entrance,direction=0)  # 精确选取位置
+    path2_start = search_point(p, bayB, end, entrance, direction=0)  # 精确选取位置
     # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
     if path1_end is None or path2_start is None:
         return None
@@ -288,145 +407,172 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     return path1 + path2[1:-1] + path3
 
 def search_point(p,bay,start,status,direction=1):
-    log.warning(f'bay:{bay},point:{start},status:{status}')
-    txt = p.internal_paths[bay][status]
-    if len(txt)==0:
-        return None
-    pointA,pointB = p.internal_paths[bay][status]
-    path = p.internal_paths[bay]['path']
-    if direction:
-        # 出口
-        tagA = path[start][0][pointA]
-        tagB = path[start][0][pointB]
-    else:
-        # 入口
-        tagA = path[pointA][0][start]
-        tagB = path[pointB][0][start]
-    return pointB if tagA >= tagB else pointA
-
-# static select car
-def vehicle_load_static(p):
-    t_start = time.time()
-    log.info(f"开始分配任务")
-    temp_cars = dict()
-    for i in p.all_bays:
-        temp_cars[i] = []
-    if p.mode == 1:
-        t0 = time.time()
-        # 同步调用
-        # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-        # connection = rds.RedisCluster(connection_pool=pool)
-        # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-        # 异步调用
-        asyncio.run(read_car_to_cach(p))
-        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.time()-t0}')
-        if p.vehicles_get is None:
+    try:
+        txt = p.internal_paths[bay][status]
+        if len(txt)==0:
+            log.warning(f'bay:{bay},point:{start},status:{status},data:{p.internal_paths[bay]}')
             return None
-        all_vehicles_num = 0
-        t1 = time.time()
-        for value in p.vehicles_get:
-            tmp = vehicles_continue(p, value)
-            if tmp[0]:
-                continue
-            i = json.loads(value)
-            flag = p.original_map_info[0][tmp[1]].values[0]
-            bay = flag.split('-')[0]
-            i['bay'] = bay
-            i['mapId'] = flag
-            temp_cars[bay].append(i)
-            all_vehicles_num += 1
-            if bay in p.bays_relation:
-                assign_same_bay(p, bay, i, flag, temp_cars)
-            if len(p.taskList) == 0:
-                return None
-        log.info(f'phase 1 cost:{time.time()-t1}')
         
-        t2 = time.time()
-        log.info(f'本轮可用车辆数:{all_vehicles_num}')
-        if all_vehicles_num == 0:
-            return None
-        try:
-            for order in p.taskList:
-                car = near_bay_search(order.task_bay, p, temp_cars)
-                if not car:
-                    continue
-                value = car.get('ohtID')
-                log.info(f"任务:{order.id}+车辆:{value}")
-                flag = car.get('mapId')
-                # temp_cars.pop(temp_cars.index(car))
-                out = 'outlet'
-                entrance = 'entrance'
-                f_path = 'path'
-                tay = flag.split('_')
-                bayA = tay[0].split('-')[0]
-                start = tay[1]
-                path = path_search(p, start, entrance, f_path, bayA, out, order)
-                order.vehicle_assigned = value
-                order.delivery_route = path
-                # output_new(p, order)
-        except IndexError as e:
-            log.error(e)
-        log.info(f'phase 2 cost:{time.time() - t2}')
-        log.info(f'phase 1 and 2 cost:{time.time() - t1}')
-    return None
+        pointA,pointB = p.internal_paths[bay][status]
+        path = p.internal_paths[bay]['path']
+        if direction:
+            # 出口
+            tagA = path[start][0][pointA]
+            tagB = path[start][0][pointB]
+        else:
+            # 入口
+            tagA = path[pointA][0][start]
+            tagB = path[pointB][0][start]
+        return pointB if tagA >= tagB else pointA
+    except ValueError as e:
+        log.error(f"error:{e},value:{p.internal_paths[bay]}")
+        return None
+
+
+
+def search_point_new(tmp0, bay, start, status, direction=1):
+    try:
+        pointA, pointB = tmp0[bay][status]
+        path = tmp0[bay]['path']
+        if direction:
+            # 出口
+            tagA = path[start][0][pointA]
+            tagB = path[start][0][pointB]
+        else:
+            # 入口
+            tagA = path[pointA][0][start]
+            tagB = path[pointB][0][start]
+        return pointB if tagA >= tagB else pointA
+    except ValueError as e:
+        log.error(f"error:{e},value:{tmp0[bay]},status:{status}")
+        return None
+
+
 
 
 def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
     tmp_id = i.get('ohtID')
     if len(task) > 0:
-        order = task[0]
-        p.taskList.pop(p.taskList.index(order))
-        end_station = order.start_location
-        start = flag.split('_')[1]
-        end = p.all_stations[end_station]
-        path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
-        path.append(p.stations_name[end_station])
+        try:
+            order = task[0]
+            log.info(f"任务:{order.id},车辆:{tmp_id}")
+            p.taskList.pop(p.taskList.index(order))
+            end_station = order.start_location
+            start = flag.split('_')[1]
+            end = p.all_stations.get(end_station)
+            # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
+        
+            path = internal_path_search(start, end, bay, p)
+            path.append(p.stations_name.get(end_station))
 
-        order.vehicle_assigned = tmp_id
-        order.delivery_route = path
-        # output_new(p, order)
-        # drop car and task
-        drop_car_task(temp_cars.get(bay), i)
-        drop_car_task(task, task[0])
+            order.vehicle_assigned = tmp_id
+            order.delivery_route = path
+            output_new(p, order)
+            # drop car and task
+            drop_car_task(temp_cars.get(bay), i)
+            drop_car_task(task, task[0])
+        except Exception as e:
+            log.error(f"error:{e}")
+            return 1
+    return 0
+
+def internal_path_search(start, end, bay, p):
+    for k, v in p.block.items():
+        if bay in v['bays']:
+            path = v['internal'][bay]['path'][start][1][end]
+            return path
+
+def near_bay_search_new(order, p, cars):
+    # search the left and right bay, sometimes only one bay can be searched
+    block_tmp = order.block_location
+    bay0 = int(order.task_bay[1:])
+    bay1 = 'W'+str(bay0+1)
+    bay2 = 'W'+str(bay0-1)
+    candidate_bay = []
+    if bay1 in p.block[block_tmp]['bays']:
+        candidate_bay.append(bay1)
+    if bay2 in p.block[block_tmp]['bays']:
+        candidate_bay.append(bay2)
+    for i in candidate_bay:
+        car_tmp = cars.get(i)
+        if car_tmp:
+            car = random.choice(car_tmp)
+            drop_car_task(car_tmp, car)
+            return car
+    # if no cars nearby can be used, searching the cars on highways randomly
+    for i in p.block[block_tmp]['highways']:
+        car_tmp = cars.get(i)
+        if car_tmp:
+            car = random.choice(car_tmp)
+            drop_car_task(car_tmp, car)
+            return car
     return 0
 
 def near_bay_search(bay0, p, cars):
     g = 0
     while 1:
-        c = p.length_between_bays[bay0].sort_values()
-        bay1 = c.index[0]
-        car_tmp = cars.get(bay1)
-        if car_tmp:
-            car = random.choice(car_tmp)
-            drop_car_task(car_tmp, car)
-            return car
-        else:
-            g += 1
-        if g > p.max_search:
+        try:
+            c = p.length_between_bays[bay0].sort_values()
+            bay1 = c.index[0]
+            car_tmp = cars.get(bay1)
+            if car_tmp:
+                car = random.choice(car_tmp)
+                drop_car_task(car_tmp, car)
+                return car
+            else:
+                g += 1
+            if g > p.max_search:
+                return None
+        except Exception as e:
+            log.error(f"error:{e},bay:{bay0},p:{p.length_between_bays}")
             return None
 
-async def read_car_to_cache_async(p):
-    redis = rds.from_url(
-        f'redis://{p.rds_connection}:{p.rds_port}/',
-        decode_responses=True
-    )
-    try:
-        keys = await redis.keys(pattern=p.rds_search_pattern)
-        values = await redis.mget(keys)
-        p.vehicles_get = values
-    finally:
-        await redis.close()
-async def read_car_to_cach(p):
-    # 同步读取
-    # if p.vehicles_get is None:
-    # import rediscluster as rds
-    #     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-    #     connection = rds.RedisCluster(connection_pool=pool)
-    #     v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-    #     p.vehicles_get = v 
-    # else:
-        await read_car_to_cache_async(p)
+# 异步设置缓存函数
+async def read_car_to_cache_back(p):
+    data = await cache_redis(p)
+    cache = p.db_redis.get_cache()
+    await cache.set(p.db_redis.cache_key,data)
+# 异步读取redis缓存
+async def cache_redis(p):
+  redis = p.db_redis.get_connection()
+  keys = await redis.keys(pattern=p.rds_search_pattern)
+  values = list()
+  for key in keys:
+    value = await redis.get(key)
+    values.append(value)
+  return values
+# 异步函数
+# def read_car_to_cache_back(p):
+#     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+#     connection = rds.RedisCluster(connection_pool=pool)
+#     v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+#     p.vehicles_get = v 
+
+def computeCarPath(ty, car, p, orderlist, inx, flag, mapid, plist=False, boll=False, ):
+    bay = car[inx]
+    order = ty
+    loaction = car[flag]
+    ts = (p.original_map_info[p.original_map_info[0] == loaction][4] - int(car[43])) / int(car[2]).values[0]
+    if ts < p.tts:
+        boll = True
+        pass
+    else:
+        start = car[flag].split('_')[1]
+        end = p.all_stations[bay]
+        taynum = p.stations_name[bay]
+        path = p.internal_paths[bay][start][end].append(taynum)
+
+        if plist:
+            p.taskList.pop(p.taskList.index(order))
+
+        order.vehicle_assigned = car[mapid]
+        order.delivery_route = path
+        orderlist.append(order)
+        ty.pop(0)
+
+        boll = False
+
 
 # set data in element
 def set_data(dictionary, key, data):
@@ -449,9 +595,8 @@ def clear_dict():
     return dict()
 
 
-def track_generate_station(p, df):
-    if p.all_stations is not None:
-        return p
+def track_generate_station(p):
+    df = p.original_map_info
     with p.db_pool.get_connection() as db_conn:
         cursor = db_conn.cursor()
         cursor.execute('SELECT * FROM OHTC_POSITION')
@@ -464,11 +609,12 @@ def track_generate_station(p, df):
             dft = df[(df[3] <= loc) & (df[4] >= loc)]
             station_location[num] = dft[1].values[0] #台位所在的轨道起点编号
             station_name[num] = df2[2][i]#台位所在轨道的台位编号
-        p.all_stations = p.all_stations.update(station_location)
-        p.stations_name = p.stations_name.update(station_name)
+        p.all_stations.update(station_location)
+        p.stations_name.update(station_name)
         db_conn.commit()
         cursor.close()
     return p
+
 
 def track_generate_station_mulit(p, df):
     if p.all_stations is not None:
@@ -479,10 +625,10 @@ def track_generate_station_mulit(p, df):
     station_location = dict()
     station_name = dict()
 
-    num_threads = multiprocessing.cpu_count() # type: ignore
+    num_threads = multiprocessing.cpu_count()  # type: ignore
     newdata = split_data(df2, num_threads)
 
-    set_station = partial(create_map_form_pd, orgine=df, start=station_location, end=station_name) # type: ignore
+    set_station = partial(create_map_form_pd, orgine=df, start=station_location, end=station_name)  # type: ignore
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as pross:
         results = pross.map(set_station, newdata)
 
@@ -495,8 +641,9 @@ def track_generate_station_mulit(p, df):
 
     return p
 
+
 # 多进程处理台位数据
-def create_map_form_pd(iteram, orgine,start,end):
+def create_map_form_pd(iteram, orgine, start, end):
     for i in iteram.index:
         num = iteram[1][i]
         loc = iteram[3][i]
@@ -504,13 +651,15 @@ def create_map_form_pd(iteram, orgine,start,end):
         if not dft.empty:
             start[num] = dft[1].values[0]
             end[num] = str(dft[3].values[0])
-    return start,end
+    return start, end
+
 
 # 台位数据分割
-def split_data(data,num_processes):
+def split_data(data, num_processes):
     size = len(data)
-    split_size = size//num_processes
-    return [data[i:i+split_size]for i in range(0,size,split_size)]
+    split_size = size // num_processes
+    return [data[i:i + split_size] for i in range(0, size, split_size)]
+
 
 # 读取数据库数据
 def get_station_data(p):
@@ -521,6 +670,8 @@ def get_station_data(p):
         cursor.close()
         db_conn.commit()
     return df2
+
+
 def read_instructions(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
@@ -563,6 +714,11 @@ def read_instructions_static(p):
         tmp.start_location = df[4][i]
         tmp.end_location = df[5][i]
         tmp.task_bay = tmp.start_location.split('_')[1]
+        # added in 240612 by zq
+        for k, v in p.block.items():
+            if tmp.task_bay in v['bays']:
+                tmp.block_location = k
+                break
         set_data(p.bays_relation, tmp.task_bay, tmp)
         p.taskList.append(tmp)
         n += 1
@@ -570,4 +726,74 @@ def read_instructions_static(p):
             break
     log.info(f'this is the task count:{n}')
     return p
+
+
+# server config
+
+
+# server config
+class OracleConnectionPool:
+    def __init__(self, dsn, user, password, max_connections=5):
+        self.dsn = dsn
+        self.user = user
+        self.password = password
+        self.max_connections = max_connections
+        self.connections = []
+        self.lock = threading.Lock()
+
+    @contextmanager
+    def get_connection(self):
+        with self.lock:
+            while len(self.connections) < self.max_connections:
+                conn = oracledb.connect(user=self.user, password=self.password, dsn=self.dsn)
+                self.connections.append(conn)
+            conn = self.connections.pop(0)
+        try:
+            yield conn
+        finally:
+            with self.lock:
+                self.connections.append(conn)
+
+
+# local config
+class MysqlConnectionPool:
+    def __init__(self, dsn, user, password, database, max_connections=5):
+        self.host = dsn
+        self.user = user
+        self.database = database
+        self.password = password
+        self.max_connections = max_connections
+        self.connections = []
+        self.lock = threading.Lock()
+
+    @contextmanager
+    def get_connection(self):
+        with self.lock:
+            while len(self.connections) < self.max_connections:
+                conn = connector.connect(user=self.user, password=self.password, host=self.host, database=self.database)
+                self.connections.append(conn)
+            conn = self.connections.pop(0)
+        try:
+            yield conn
+        finally:
+            with self.lock:
+                self.connections.append(conn)
+
+class RedisConnectionPool:
+    def __init__(self, user, port, password=None, cachekey='',max_connections=5):
+        self.host = user
+        self.port = port
+        self.cache_key = cachekey
+        self.password = password
+        self.max_connections = max_connections
+        self.connections = []
+        self.lock = threading.Lock()
+        self.reds = None
+        self.cache = Cache(Cache.MEMORY,serializer=JsonSerializer())
+    def get_connection(self):
+        return self.reds 
+    def get_cache(self):
+        return self.cache 
+    async def initialize_redis(self):
+        self.reds = rds.from_url(f'redis://{self.host}:{self.port}',decode_responses=True)
 

@@ -1,6 +1,6 @@
 [project]
 name = "amhs-sjtu"
-version = "1.0.2"
+version = "1.0.3.1"
 description = "A simple python package for AMHS"
 authors = [
     { name = "cflab", email = "" },
@@ -11,7 +11,8 @@ dependencies = [
     'pandas',
     'networkx',
     'oracledb',
-    "redis",  
+    "redis==5.0.5",  
+    "aiocache",
     "redis-py-cluster",
     "pyyaml",
     "loguru"

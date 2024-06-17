@@ -15,6 +15,7 @@ httpServer:
     rds_connection: '10.34.58.42'
     rds_port: 6379
     rds_search_pattern: "Car:monitor:*"
+    cache_key: "car_data"
 
     # controlling_on-off
     # if it is equal to 1, this programme will run constantly until being forced to stop

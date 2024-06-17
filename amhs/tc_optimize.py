@@ -1,15 +1,14 @@
 import networkx as nx
-import math
+from threading import Thread
 import time
 import random
 import concurrent.futures
 import multiprocessing
 from loguru import logger as log
 
-from tc_out import *
-from tc_in import *
-from algorithm.A_start.graph.srccode import *
-
+from .tc_out import *
+from .tc_in import *
+from .algorithm.A_start.graph.srccode import *
 
 def task_assign(p, use_multiprocessing=True):
     g = 0
@@ -73,6 +72,11 @@ def task_assign(p, use_multiprocessing=True):
 
 # new_function_static
 def epoch_static(p):
+    asyncio.run(runtime(p))
+    return p
+# 异步执行
+async def runtime(p):
+    await p.db_redis.initialize_redis()
     while p.runBool:
         log.info(f"开始运行算法")
         start_time = time.time()
@@ -85,11 +89,13 @@ def epoch_static(p):
         if p.debug_on:
             p = track_generate_station_new(p)
         t1 = time.time()
-        vehicle_load_static(p)
+        if len(p.taskList) > 0:
+            # asyncio.create_task(vehicle_load_static(p))
+            await vehicle_load_static(p)
+            
         log.info(f"本轮分配任务时长:{time.time() - t1}")
         log.info(f"本轮算法执行时长:{time.time() - start_time}")
-    return 0
-
+    return None
 
 def track_generate_station_new(p):
     tasks = p.taskList
@@ -114,10 +120,9 @@ def track_generate_station_new(p):
         
             db_conn.commit()
             cursor.close()
-    p.all_stations = p.all_stations.update(station_location)
-    p.stations_name = p.stations_name.update(station_name)
+    p.all_stations.update(station_location)
+    p.stations_name.update(station_name)
     return p
-
 
 def process_order(v, p):
     start_time = time.time()

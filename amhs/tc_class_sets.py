@@ -8,8 +8,8 @@ class Dataset:
         self.map_info_unchanged = None
         self.original_map_info = None
         self.all_routes = None
-        self.all_stations = None
-        self.stations_name = None
+        self.all_stations = dict()
+        self.stations_name = dict()
         self.adjacent_matrix = None
         self.valued_adjacent_matrix = None
         self.bays_relation = None
@@ -35,6 +35,7 @@ class Dataset:
         self.db_connection = None
         self.db_cursor = None
         self.db_pool = None
+        self.db_redis = None
         # not used
         self.task_data = None
         self.machine_location = None
@@ -42,6 +43,7 @@ class Dataset:
         # control on-off
         self.pattern = out_config['circulating_on']  # 1:circulating; 0:just one time
         self.debug_on = out_config['debug_on']  # 1:circulating; 0:just one time
+        self.cache_key = out_config['cache_key']  # 1:circulating; 0:just one time
 
         # loop-bool
         self.runBool = True
@@ -59,6 +61,9 @@ class Dataset:
         self.length_between_bays = None
         self.all_bays = None
         self.max_search = 3
+
+        # added in 240612
+        self.block = dict()
 
     class Control:
         def __init__(self,task_num=10):
