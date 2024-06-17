@@ -4,6 +4,8 @@ import json
 
 
 def output_new(p, v):
+    if p.debug_on:
+        return None
 #     sql0 = (f"UPDATE TRANSFER_TABLE "
 #             f"SET VEHICLE = \'{v.vehicle_assigned}\', POSPATH = \'{','.join(v.delivery_route)} \'"
 #             f"WHERE COMMANDID = \'{v.id}\'")

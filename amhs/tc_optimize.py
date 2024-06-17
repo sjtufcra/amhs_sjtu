@@ -6,9 +6,9 @@ import concurrent.futures
 import multiprocessing
 from loguru import logger as log
 
-from .tc_out import *
-from .tc_in import *
-from .algorithm.A_start.graph.srccode import *
+from tc_out import *
+from tc_in import *
+from algorithm.A_start.graph.srccode import *
 
 def task_assign(p, use_multiprocessing=True):
     g = 0
@@ -78,23 +78,23 @@ def epoch_static(p):
 async def runtime(p):
     await p.db_redis.initialize_redis()
     while p.runBool:
-        log.info(f"开始运行算法")
+        # log.info(f"开始运行算法")
         start_time = time.time()
         p.map_info = p.map_info_unchanged
         # load less than 10 tasks
         t0 = time.time()
         p = read_instructions_static(p)
-        log.info(f"本轮读取任务时长:{time.time() - t0}")
+        # log.info(f"本轮读取任务时长:{time.time() - t0}")
         # added in 20240607, only select stations used instead of all
         if p.debug_on:
             p = track_generate_station_new(p)
         t1 = time.time()
-        if len(p.taskList) > 0:
+        if len(p.taskList) >= 0:
             # asyncio.create_task(vehicle_load_static(p))
             await vehicle_load_static(p)
             
-        log.info(f"本轮分配任务时长:{time.time() - t1}")
-        log.info(f"本轮算法执行时长:{time.time() - start_time}")
+        # log.info(f"本轮分配任务时长:{time.time() - t1}")
+        # log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return None
 
 def track_generate_station_new(p):
