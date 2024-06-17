@@ -501,7 +501,7 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
             path = nx.shortest_path(p.map_info, start, end)
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order)
+            await output_new(p, order)
             # todo:部分数据不在p.block['C']['internal'][bay]['path'][start][1]
             log.warning(f"warning:{e},this a computing path")
             return 
