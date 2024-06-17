@@ -366,7 +366,7 @@ def drop_car_task(x, i):
 def path_search_new(p, start, entrance, f_path, bayA, out, order):
     try:
         tmp = p.block[order.block_location]['internal']
-        end = p.all_stations[order.start_location]
+        end = p.all_stations.get(order.start_location)
         # path1
         # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
         # path1_end = search_point(p, bayA, start, out)  # 精确选取位置
@@ -388,8 +388,10 @@ def path_search_new(p, start, entrance, f_path, bayA, out, order):
         return path1 + path2[1:-1] + path3
     except Exception as e:
         # log.error(f'path_search_new error:{e}')
+        end = p.all_stations.get(order.start_location)
+        path = nx.shortest_path(p.map_info, start, end)
         log.warning(f'path_search_new error:{e},continue this task')
-        return None
+        return path
 
 def get_path_from_bay(p,tmp,bay,f_path,start,end):
     try:
@@ -475,8 +477,8 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
     tmp_id = i.get('ohtID')
     if len(task) > 0:
+        order = task[0]
         try:
-            order = task[0]
             # log.info(f"任务:{order.id},车辆:{tmp_id}")
             p.taskList.pop(p.taskList.index(order))
             end_station = order.start_location
@@ -494,9 +496,15 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
             drop_car_task(temp_cars.get(bay), i)
             drop_car_task(task, task[0])
         except Exception as e:
-            log.error(f"error:{e}")
+            start = flag.split('_')[1]
+            end = p.all_stations.get(end_station)
+            path = nx.shortest_path(p.map_info, start, end)
+            order.vehicle_assigned = tmp_id
+            order.delivery_route = path
+            output_new(p, order)
             # todo:部分数据不在p.block['C']['internal'][bay]['path'][start][1]
-            return 1
+            log.warning(f"warning:{e},this a computing path")
+            return 
     return 0
 
 
