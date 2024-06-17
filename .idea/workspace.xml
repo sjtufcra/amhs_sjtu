@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="89c6d321-c1cf-41b4-942b-d32bcac867bf" name="Changes" comment="增加指派后的车辆状态读取" />
+    <list default="true" id="89c6d321-c1cf-41b4-942b-d32bcac867bf" name="Changes" comment="增加指派后的车辆状态读取">
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -44,7 +47,8 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Python.unit.executor": "Debug",
+    "Python.tc_in.executor": "Run",
+    "Python.unit.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main__dev",
@@ -60,9 +64,13 @@
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="amhs_sjtu_dev" />
 <<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -82,12 +90,38 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="unit" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="original_code" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/amhs" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/amhs/unit.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration default="true" type="Tox" factoryName="Tox">
       <module name="amhs_sjtu_dev" />
+<<<<<<< HEAD
 <<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
@@ -100,9 +134,13 @@
     <configuration default="true" type="docs" factoryName="Docutils task">
       <module name="amhs_sjtu_dev" />
 <<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
@@ -120,9 +158,13 @@
     <configuration default="true" type="docs" factoryName="Sphinx task">
       <module name="amhs_sjtu_dev" />
 <<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
@@ -140,9 +182,13 @@
     <configuration default="true" type="tests" factoryName="Doctests">
       <module name="amhs_sjtu_dev" />
 <<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
@@ -159,6 +205,11 @@
       <option name="USE_PATTERN" value="false" />
       <method v="2" />
     </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.unit" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>

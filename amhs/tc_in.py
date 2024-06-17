@@ -2,7 +2,9 @@ import time
 from collections import defaultdict
 import pandas as pd
 import oracledb
-import rediscluster as rds
+import aioredis as rds
+import asyncio
+
 import math
 import networkx as nx
 import threading
@@ -366,20 +368,30 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     end = p.all_stations[order.start_location]
     # path1
     # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
+<<<<<<< HEAD
     path1_end = search_point(p, bayA, start, out)  # 精确选取位置
     path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
 
+=======
+    path1_end = search_point(p,bayA,start,out)  # 精确选取位置
+>>>>>>> main_dev
     # path2
     bayB = end.split('-')[0]
     # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
     path2_start = search_point(p, bayB, end, entrance, direction=0)  # 精确选取位置
     # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
+    if path1_end is None or path2_start is None:
+        return None
+
+    path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
     path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
 
-    # path3
+    path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
+    path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
     path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
     return path1 + path2[1:-1] + path3
 
+<<<<<<< HEAD
 
 def search_point_new(tmp0, bay, start, status, direction=1):
     pointA, pointB = tmp0[bay][status]
@@ -397,6 +409,14 @@ def search_point_new(tmp0, bay, start, status, direction=1):
 
 def search_point(p, bay, start, status, direction=1):
     pointA, pointB = p.internal_paths[bay][status]
+=======
+def search_point(p,bay,start,status,direction=1):
+    log.warning(f'bay:{bay},point:{start},status:{status}')
+    txt = p.internal_paths[bay][status]
+    if len(txt)==0:
+        return None
+    pointA,pointB = p.internal_paths[bay][status]
+>>>>>>> main_dev
     path = p.internal_paths[bay]['path']
     if direction:
         # 出口
@@ -408,6 +428,75 @@ def search_point(p, bay, start, status, direction=1):
         tagB = path[pointB][0][start]
     return pointB if tagA >= tagB else pointA
 
+<<<<<<< HEAD
+=======
+# static select car
+def vehicle_load_static(p):
+    t_start = time.time()
+    log.info(f"开始分配任务")
+    temp_cars = dict()
+    for i in p.all_bays:
+        temp_cars[i] = []
+    if p.mode == 1:
+        t0 = time.time()
+        # 同步调用
+        # pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+        # connection = rds.RedisCluster(connection_pool=pool)
+        # v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+        # 异步调用
+        asyncio.run(read_car_to_cach(p))
+        log.info(f'cars number:{len(p.vehicles_get)}, time:{time.time()-t0}')
+        if p.vehicles_get is None:
+            return None
+        all_vehicles_num = 0
+        t1 = time.time()
+        for value in p.vehicles_get:
+            tmp = vehicles_continue(p, value)
+            if tmp[0]:
+                continue
+            i = json.loads(value)
+            flag = p.original_map_info[0][tmp[1]].values[0]
+            bay = flag.split('-')[0]
+            i['bay'] = bay
+            i['mapId'] = flag
+            temp_cars[bay].append(i)
+            all_vehicles_num += 1
+            if bay in p.bays_relation:
+                assign_same_bay(p, bay, i, flag, temp_cars)
+            if len(p.taskList) == 0:
+                return None
+        log.info(f'phase 1 cost:{time.time()-t1}')
+        
+        t2 = time.time()
+        log.info(f'本轮可用车辆数:{all_vehicles_num}')
+        if all_vehicles_num == 0:
+            return None
+        try:
+            for order in p.taskList:
+                car = near_bay_search(order.task_bay, p, temp_cars)
+                if not car:
+                    continue
+                value = car.get('ohtID')
+                log.info(f"任务:{order.id}+车辆:{value}")
+                flag = car.get('mapId')
+                # temp_cars.pop(temp_cars.index(car))
+                out = 'outlet'
+                entrance = 'entrance'
+                f_path = 'path'
+                tay = flag.split('_')
+                bayA = tay[0].split('-')[0]
+                start = tay[1]
+                path = path_search(p, start, entrance, f_path, bayA, out, order)
+                order.vehicle_assigned = value
+                order.delivery_route = path
+                # output_new(p, order)
+        except IndexError as e:
+            log.error(e)
+        log.info(f'phase 2 cost:{time.time() - t2}')
+        log.info(f'phase 1 and 2 cost:{time.time() - t1}')
+    return None
+
+>>>>>>> main_dev
 
 def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
@@ -482,6 +571,27 @@ def near_bay_search(bay0, p, cars):
         if g > p.max_search:
             return None
 
+async def read_car_to_cache_async(p):
+    redis = rds.from_url(
+        f'redis://{p.rds_connection}:{p.rds_port}/',
+        decode_responses=True
+    )
+    try:
+        keys = await redis.keys(pattern=p.rds_search_pattern)
+        values = await redis.mget(keys)
+        p.vehicles_get = values
+    finally:
+        await redis.close()
+async def read_car_to_cach(p):
+    # 同步读取
+    # if p.vehicles_get is None:
+    # import rediscluster as rds
+    #     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+    #     connection = rds.RedisCluster(connection_pool=pool)
+    #     v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+    #     p.vehicles_get = v 
+    # else:
+        await read_car_to_cache_async(p)
 
 # set data in element
 def set_data(dictionary, key, data):
@@ -516,10 +626,10 @@ def track_generate_station(p):
             num = df2[1][i]
             loc = df2[3][i]
             dft = df[(df[3] <= loc) & (df[4] >= loc)]
-            station_location[num] = dft[1].values[0]
-            station_name[num] = str(dft[3].values[0])
+            station_location[num] = dft[1].values[0] #台位所在的轨道起点编号
+            station_name[num] = df2[2][i]#台位所在轨道的台位编号
         p.all_stations = p.all_stations.update(station_location)
-        p.stations_name = station_name
+        p.stations_name = p.stations_name.update(station_name)
         db_conn.commit()
         cursor.close()
     return p
