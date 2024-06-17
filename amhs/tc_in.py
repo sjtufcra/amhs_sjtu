@@ -368,13 +368,9 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     end = p.all_stations[order.start_location]
     # path1
     # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
-<<<<<<< HEAD
     path1_end = search_point(p, bayA, start, out)  # 精确选取位置
     path1 = copy.deepcopy(p.internal_paths[bayA][f_path][start][1][path1_end])
-
-=======
-    path1_end = search_point(p,bayA,start,out)  # 精确选取位置
->>>>>>> main_dev
+    # path1_end = search_point(p,bayA,start,out)  # 精确选取位置
     # path2
     bayB = end.split('-')[0]
     # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
@@ -391,7 +387,6 @@ def path_search(p, start, entrance, f_path, bayA, out, order):
     path3 = copy.deepcopy(p.internal_paths[bayB][f_path][path2_start][1][end])
     return path1 + path2[1:-1] + path3
 
-<<<<<<< HEAD
 
 def search_point_new(tmp0, bay, start, status, direction=1):
     pointA, pointB = tmp0[bay][status]
@@ -407,16 +402,12 @@ def search_point_new(tmp0, bay, start, status, direction=1):
     return pointB if tagA >= tagB else pointA
 
 
-def search_point(p, bay, start, status, direction=1):
-    pointA, pointB = p.internal_paths[bay][status]
-=======
 def search_point(p,bay,start,status,direction=1):
     log.warning(f'bay:{bay},point:{start},status:{status}')
     txt = p.internal_paths[bay][status]
     if len(txt)==0:
         return None
     pointA,pointB = p.internal_paths[bay][status]
->>>>>>> main_dev
     path = p.internal_paths[bay]['path']
     if direction:
         # 出口
@@ -428,8 +419,7 @@ def search_point(p,bay,start,status,direction=1):
         tagB = path[pointB][0][start]
     return pointB if tagA >= tagB else pointA
 
-<<<<<<< HEAD
-=======
+
 # static select car
 def vehicle_load_static(p):
     t_start = time.time()
@@ -496,7 +486,6 @@ def vehicle_load_static(p):
         log.info(f'phase 1 and 2 cost:{time.time() - t1}')
     return None
 
->>>>>>> main_dev
 
 def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
