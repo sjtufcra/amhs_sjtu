@@ -6,20 +6,9 @@ import concurrent.futures
 import multiprocessing
 from loguru import logger as log
 
-<<<<<<< HEAD
 from tc_out import *
 from tc_in import *
 from algorithm.A_start.graph.srccode import *
-=======
-# from .tc_out import *
-# from .tc_in import *
-# from .algorithm.A_start.graph.srccode import *
-
-from tc_out import *
-from tc_in import *
-from algorithm.A_start.graph.srccode import *
-
->>>>>>> e527dc02aae2f8066aed1820b8bbf1baa8905944
 
 def task_assign(p, use_multiprocessing=True):
     g = 0
