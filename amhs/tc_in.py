@@ -17,8 +17,8 @@ import copy
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-from .tc_out import *
-from .algorithm.A_start.graph.srccode import *
+from tc_out import *
+from algorithm.A_start.graph.srccode import *
 
 
 def generating(p):
@@ -489,7 +489,7 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
 
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order)
+            await output_new(p, order)
             # drop car and task
             drop_car_task(temp_cars.get(bay), i)
             drop_car_task(task, task[0])
