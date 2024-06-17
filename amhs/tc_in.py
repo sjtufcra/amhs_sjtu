@@ -207,7 +207,7 @@ async def vehicle_load_static(p):
                 temp_cars[bay].append(i)
                 all_vehicles_num += 1
                 if bay in p.bays_relation:
-                    assign_same_bay(p, bay, i, flag, temp_cars)
+                    asyncio.create_task(assign_same_bay(p, bay, i, flag, temp_cars))
                 if len(p.taskList) == 0:
                     return None
             except IndexError as e:
@@ -245,7 +245,7 @@ async def vehicle_load_static(p):
                     continue
                 order.vehicle_assigned = value
                 order.delivery_route = path
-                output_new(p, order)
+                asyncio.create_task(output_new(p, order))
         except IndexError as e:
             log.error(e)
         log.info(f'phase 2 cost:{time.time() - t2}')
@@ -471,7 +471,7 @@ def search_point_new(tmp0, bay, start, status, direction=1):
         return None
 
 
-def assign_same_bay(p, bay, i, flag, temp_cars):
+async def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
     tmp_id = i.get('ohtID')
     if len(task) > 0:

@@ -1,7 +1,7 @@
 from loguru import logger as log
 
 
-def output_new(p, v):
+async def output_new(p, v):
     if p.debug_on:
         return None
 #     sql0 = (f"UPDATE TRANSFER_TABLE "
