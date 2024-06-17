@@ -474,6 +474,7 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
             drop_car_task(task, task[0])
         except Exception as e:
             log.error(f"error:{e}")
+            # todo:部分数据不在p.block['C']['internal'][bay]['path'][start][1]
             return 1
     return 0
 
