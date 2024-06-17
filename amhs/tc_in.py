@@ -478,10 +478,10 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
     tmp_id = i.get('ohtID')
     if len(task) > 0:
         order = task[0]
+        end_station = order.start_location
         try:
             # log.info(f"任务:{order.id},车辆:{tmp_id}")
             p.taskList.pop(p.taskList.index(order))
-            end_station = order.start_location
             start = flag.split('_')[1]
             end = p.all_stations.get(end_station)
             # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
