@@ -75,6 +75,8 @@ def task_assign(p, use_multiprocessing=True):
 def epoch_static(p):
     while p.runBool:
         log.info(f"开始运行算法")
+        # todo: 新增函数识别路径下方的结果
+        fun_tmp(p)
         start_time = time.time()
         p.map_info = p.map_info_unchanged
         # load less than 10 tasks
@@ -90,6 +92,24 @@ def epoch_static(p):
         log.info(f"本轮分配任务时长:{time.time() - t1}")
         log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return 0
+
+
+def fun_tmp(p):
+    count = 0
+    if len(p.check_list) > 0:
+        for i in p.check_list:
+            q = 0
+            # i: (its destination, vehicle name)
+            # q = search vehicle's status
+            pattern = 'Car:monitor:128.168.11.142_1' + i[1][1:]
+            pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+            connection = rds.RedisCluster(connection_pool=pool)
+            v = connection.mget(keys=connection.keys(pattern=pattern))
+            if i[0] == q:
+                count += 1
+        qt = count/len(p.check_list)
+        p.check_list = []
+    return None
 
 
 def track_generate_station_new(p):
