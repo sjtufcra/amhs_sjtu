@@ -79,7 +79,6 @@ async def runtime(p):
     await p.db_redis.initialize_redis()
     while p.runBool:
         # log.info(f"开始运行算法")
-        start_time = time.time()
         p.map_info = p.map_info_unchanged
         # load less than 10 tasks
         t0 = time.time()
