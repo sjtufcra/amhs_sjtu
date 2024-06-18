@@ -5,8 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="89c6d321-c1cf-41b4-942b-d32bcac867bf" name="Changes" comment="增加指派后的车辆状态读取">
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+<<<<<<< HEAD
+      <change beforePath="$PROJECT_DIR$/amhs/unit.py" beforeDir="false" afterPath="$PROJECT_DIR$/amhs/unit.py" afterDir="false" />
+=======
+      <change beforePath="$PROJECT_DIR$/amhs/tc_in.py" beforeDir="false" afterPath="$PROJECT_DIR$/amhs/tc_in.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/amhs/tc_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/amhs/tc_main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/amhs_sjtu-1.0.2-py2.py3-none-any.whl" beforeDir="false" afterPath="$PROJECT_DIR$/dist/amhs_sjtu-1.0.2-py2.py3-none-any.whl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/amhs_sjtu-1.0.2.tar.gz" beforeDir="false" afterPath="$PROJECT_DIR$/dist/amhs_sjtu-1.0.2.tar.gz" afterDir="false" />
+>>>>>>> 56e89574940df2240966e8a256697a3d4ed1422c
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,29 +52,40 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
+<<<<<<< HEAD
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.tc_in.executor&quot;: &quot;Run&quot;,
+    &quot;Python.unit.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main__dev&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Code/cflab_amhs_pro&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+=======
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Python.tc_in.executor": "Run",
-    "Python.unit.executor": "Run",
+    "Python.unit.executor": "Debug",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main__dev",
-<<<<<<< HEAD
+    "git-widget-placeholder": "Merging main",
     "last_opened_file_path": "C:/Code/from_github/amhs_sjtu_dev",
-=======
-    "last_opened_file_path": "D:/Code/cflab_amhs_pro",
->>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+>>>>>>> 56e89574940df2240966e8a256697a3d4ed1422c
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="amhs_sjtu_dev" />
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
 =======
       <option name="ENV_FILES" value="" />
 >>>>>>> main_dev
@@ -116,9 +134,13 @@
       <module name="amhs_sjtu_dev" />
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
 =======
       <option name="ENV_FILES" value="" />
 >>>>>>> main_dev
@@ -135,9 +157,13 @@
       <module name="amhs_sjtu_dev" />
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
 =======
       <option name="ENV_FILES" value="" />
 >>>>>>> main_dev
@@ -159,9 +185,13 @@
       <module name="amhs_sjtu_dev" />
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
 =======
       <option name="ENV_FILES" value="" />
 >>>>>>> main_dev
@@ -183,9 +213,13 @@
       <module name="amhs_sjtu_dev" />
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
 =======
 >>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
 =======
       <option name="ENV_FILES" value="" />
 >>>>>>> main_dev

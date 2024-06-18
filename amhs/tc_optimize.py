@@ -1,10 +1,14 @@
 import networkx as nx
-import math
+from threading import Thread
 import time
 import random
 import concurrent.futures
 import multiprocessing
 from loguru import logger as log
+
+# from .tc_out import *
+# from .tc_in import *
+# from .algorithm.A_start.graph.srccode import *
 
 from tc_out import *
 from tc_in import *
@@ -73,6 +77,13 @@ def task_assign(p, use_multiprocessing=True):
 
 # new_function_static
 def epoch_static(p):
+    asyncio.run(runtime(p))
+    return p
+
+
+# 异步执行
+async def runtime(p):
+    await p.db_redis.initialize_redis()
     while p.runBool:
         log.info(f"开始运行算法")
         # todo: 新增函数识别路径下方的结果
@@ -82,16 +93,18 @@ def epoch_static(p):
         # load less than 10 tasks
         t0 = time.time()
         p = read_instructions_static(p)
-        log.info(f"本轮读取任务时长:{time.time() - t0}")
+        # log.info(f"本轮读取任务时长:{time.time() - t0}")
         # added in 20240607, only select stations used instead of all
         if p.debug_on:
             p = track_generate_station_new(p)
         t1 = time.time()
-        if len(p.taskList) > 0:
-            vehicle_load_static(p)
-        log.info(f"本轮分配任务时长:{time.time() - t1}")
-        log.info(f"本轮算法执行时长:{time.time() - start_time}")
-    return 0
+        if len(p.taskList) >= 0:
+            # asyncio.create_task(vehicle_load_static(p))
+            await vehicle_load_static(p)
+
+        # log.info(f"本轮分配任务时长:{time.time() - t1}")
+        # log.info(f"本轮算法执行时长:{time.time() - start_time}")
+    return None
 
 
 def fun_tmp(p):
@@ -107,7 +120,7 @@ def fun_tmp(p):
             v = connection.mget(keys=connection.keys(pattern=pattern))
             if i[0] == q:
                 count += 1
-        qt = count/len(p.check_list)
+        qt = count / len(p.check_list)
         p.check_list = []
     return None
 
@@ -130,13 +143,13 @@ def track_generate_station_new(p):
                         num = df2[1][i]
                         loc = df2[3][i]
                         dft = df[(df[3] <= loc) & (df[4] >= loc)]
-                        station_location[num] = dft[1].values[0] #台位所在的轨道起点编号
-                        station_name[num] = df2[2][i]#台位所在轨道的台位编号
-        
+                        station_location[num] = dft[1].values[0]  # 台位所在的轨道起点编号
+                        station_name[num] = df2[2][i]  # 台位所在轨道的台位编号
+
             db_conn.commit()
             cursor.close()
-    p.all_stations = p.all_stations.update(station_location)
-    p.stations_name = p.stations_name.update(station_name)
+    p.all_stations.update(station_location)
+    p.stations_name.update(station_name)
     return p
 
 
