@@ -67,6 +67,7 @@ class Dataset:
 
         # added in 240618
         self.check_list = []
+        self.algorithm_on = False
 
     class Control:
         def __init__(self,task_num=10):

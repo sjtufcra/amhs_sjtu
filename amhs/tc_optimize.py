@@ -1,9 +1,3 @@
-import json
-
-import networkx as nx
-from threading import Thread
-import time
-import random
 import concurrent.futures
 import multiprocessing
 from loguru import logger as log
@@ -80,6 +74,7 @@ def task_assign(p, use_multiprocessing=True):
 # new_function_static
 def epoch_static(p):
     asyncio.run(runtime(p))
+
     return p
 
 
