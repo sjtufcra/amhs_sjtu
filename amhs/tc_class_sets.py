@@ -65,6 +65,10 @@ class Dataset:
         # added in 240612
         self.block = dict()
 
+        # added in 240618
+        self.check_list = []
+        self.algorithm_on = False
+
     class Control:
         def __init__(self,task_num=10):
             self.num_vehicle = 0
