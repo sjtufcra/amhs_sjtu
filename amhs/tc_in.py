@@ -369,28 +369,22 @@ def path_search_new(p, start, entrance, f_path, bayA, out, order):
         tmp = p.block[order.block_location]['internal']
         end = p.all_stations.get(order.start_location)
         # path1
-        # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
-        # path1_end = search_point(p, bayA, start, out)  # 精确选取位置
         path1_end = search_point_new(tmp, bayA, start, out)  # 精确选取位置
-        # path1 = copy.deepcopy(tmp[bayA][f_path][start][1][path1_end])
         path1 = get_path_from_bay(p,tmp,bayA,f_path,start,path1_end)
 
         # path2
         bayB = end.split('-')[0]
-        # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
-        # path2_start = search_point(p, bayB, end, entrance, direction=0)  # 精确选取位置
         path2_start = search_point_new(tmp, bayB, end, entrance, direction=0)  # 精确选取位置
-        # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
         path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
 
         # path3
-        # path3 = copy.deepcopy(tmp[bayB][f_path][path2_start][1][end])
         path3 = get_path_from_bay(p,tmp,bayB,f_path,path2_start,end)
         return path1 + path2[1:-1] + path3
     except Exception as e:
         # log.error(f'path_search_new error:{e}')
         end = p.all_stations.get(order.start_location)
         path = nx.shortest_path(p.map_info, start, end)
+        path.append(p.stations_name.get(end))
         log.warning(f'path_search_new error:{e},continue this task')
         return path
 
@@ -500,6 +494,7 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
             start = flag.split('_')[1]
             end = p.all_stations.get(end_station)
             path = nx.shortest_path(p.map_info, start, end)
+            path.append(p.stations_name.get(end_station))
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
             await output_new(p, order)
