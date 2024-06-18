@@ -30,10 +30,6 @@ def generating(p):
     else:
         p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,
                                         database=p.database)
-    # load running status of algorithm
-    p = if_start(p)
-    if not p.algorithm_on:
-        return p
     # from (erect_map)
     # split the map to 5 blocks, from A to E
     # each block contains 2 or 3 part of highways and several bays
@@ -50,16 +46,6 @@ def generating(p):
     if not p.debug_on:
         track_generate_station(p)
     log.info(f'generating success, time cost:{time.time() - t0}')
-    return p
-
-
-def if_start(p):
-    with p.db_pool.get_connection() as db_conn:
-        cursor = db_conn.cursor()
-        cursor.execute(f"SELECT * FROM OHTC_PARAMATER WHERE PARAMATER_CODE='{'ASSIGN_MODEL'}'")
-        j = cursor.fetchall()
-        if j == '4':
-            p.algorithm_on = True
     return p
 
 
