@@ -1,7 +1,3 @@
-import networkx as nx
-from threading import Thread
-import time
-import random
 import concurrent.futures
 import multiprocessing
 from loguru import logger as log
@@ -73,12 +69,18 @@ def task_assign(p, use_multiprocessing=True):
 # new_function_static
 def epoch_static(p):
     asyncio.run(runtime(p))
+
     return p
+
+
 # 异步执行
 async def runtime(p):
     await p.db_redis.initialize_redis()
     while p.runBool:
-        # log.info(f"开始运行算法")
+        log.info(f"开始运行算法")
+        # todo: 新增函数识别路径下方的结果
+        fun_tmp(p)
+        start_time = time.time()
         p.map_info = p.map_info_unchanged
         # load less than 10 tasks
         t0 = time.time()
@@ -91,10 +93,29 @@ async def runtime(p):
         if len(p.taskList) >= 0:
             # asyncio.create_task(vehicle_load_static(p))
             await vehicle_load_static(p)
-            
         # log.info(f"本轮分配任务时长:{time.time() - t1}")
         # log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return None
+
+
+async def fun_tmp(p):
+    count = 0
+    n = len(p.check_list)
+    if n > 0:
+        for i in p.check_list:
+            vq = p.cache.get(i[1])
+            pattern = f"Car:monitor:{vq['othIP']}_1{vq['location'][1:]}"
+            redis = p.db_redis.get_connection()
+            key = await redis.keys(pattern=pattern)
+            value = await redis.get(key)
+            q = json.loads(value)
+            if i[0] == q['location']:
+                count += 1
+        qt = count / n
+        log.info(f"本轮任务数:{n}，实际分配成功率:{qt}")
+        p.check_list = []
+    return None
+
 
 def track_generate_station_new(p):
     tasks = p.taskList
@@ -114,14 +135,15 @@ def track_generate_station_new(p):
                         num = df2[1][i]
                         loc = df2[3][i]
                         dft = df[(df[3] <= loc) & (df[4] >= loc)]
-                        station_location[num] = dft[1].values[0] #台位所在的轨道起点编号
-                        station_name[num] = df2[2][i]#台位所在轨道的台位编号
-        
+                        station_location[num] = dft[1].values[0]  # 台位所在的轨道起点编号
+                        station_name[num] = df2[2][i]  # 台位所在轨道的台位编号
+
             db_conn.commit()
             cursor.close()
     p.all_stations.update(station_location)
     p.stations_name.update(station_name)
     return p
+
 
 def process_order(v, p):
     start_time = time.time()

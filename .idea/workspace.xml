@@ -77,7 +77,18 @@
   <component name="RunManager">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="amhs_sjtu_dev" />
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
+=======
+>>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -121,7 +132,18 @@
     </configuration>
     <configuration default="true" type="Tox" factoryName="Tox">
       <module name="amhs_sjtu_dev" />
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
+=======
+>>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
@@ -133,7 +155,18 @@
     </configuration>
     <configuration default="true" type="docs" factoryName="Docutils task">
       <module name="amhs_sjtu_dev" />
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
+=======
+>>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
@@ -150,7 +183,18 @@
     </configuration>
     <configuration default="true" type="docs" factoryName="Sphinx task">
       <module name="amhs_sjtu_dev" />
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
+=======
+>>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
@@ -167,7 +211,18 @@
     </configuration>
     <configuration default="true" type="tests" factoryName="Doctests">
       <module name="amhs_sjtu_dev" />
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
       <option name="ENV_FILES" value="" />
+=======
+>>>>>>> e6bc7959a428a82713840391ab6979d18ceb9c6a
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
+=======
+      <option name="ENV_FILES" value="" />
+>>>>>>> main_dev
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
