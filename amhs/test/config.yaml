@@ -40,8 +40,8 @@ httpServer:
     log: "./unit.log"
 
     # debug on_off
-    debug_on: False
-#    debug_on: True
+#    debug_on: False
+    debug_on: True
 
 # local server's parameter
 localServer:

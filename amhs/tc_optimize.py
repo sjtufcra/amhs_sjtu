@@ -1,3 +1,5 @@
+import json
+
 import networkx as nx
 from threading import Thread
 import time
@@ -111,14 +113,13 @@ def fun_tmp(p):
     count = 0
     if len(p.check_list) > 0:
         for i in p.check_list:
-            q = 0
-            # i: (its destination, vehicle name)
-            # q = search vehicle's status
-            pattern = 'Car:monitor:128.168.11.142_1' + i[1][1:]
+            vq = p.cache.get(i[1])
+            pattern = f"Car:monitor:{vq['othIP']}_1{vq['location'][1:]}"
             pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
             connection = rds.RedisCluster(connection_pool=pool)
             v = connection.mget(keys=connection.keys(pattern=pattern))
-            if i[0] == q:
+            q = json.loads(v)
+            if i[0] == q['location']:
                 count += 1
         qt = count / len(p.check_list)
         p.check_list = []
