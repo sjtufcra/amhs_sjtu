@@ -216,6 +216,7 @@ async def vehicle_load_static(p):
             if tmp[0]:
                 continue
             i = json.loads(value)
+            p.vehicles.update({i.get('othID'): i})
             try:
                 flag = p.original_map_info[0][tmp[1]].values[0]
                 bay = flag.split('-')[0]
@@ -262,7 +263,7 @@ async def vehicle_load_static(p):
                     continue
                 order.vehicle_assigned = value
                 order.delivery_route = path
-                output_new(p, order, car)
+                output_new(p, order)
         except IndexError as e:
             log.error(e)
         log.info(f'phase 2 cost:{time.time() - t2}')
@@ -491,7 +492,7 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
 
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order, i)
+            output_new(p, order)
             # drop car and task
             drop_car_task(temp_cars.get(bay), i)
             drop_car_task(task, task[0])
@@ -501,7 +502,7 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
             path = nx.shortest_path(p.map_info, start, end)
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order, i)
+            output_new(p, order)
             log.warning(f"warning:{e}")
     return 0
 
