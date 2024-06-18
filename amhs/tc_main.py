@@ -15,12 +15,7 @@ class Amhs():
         d = Dataset(self.config)
         self.Node = d
         d = generating(d)
-        count = 1
-        while True:
-            # count = self.if_start(count)
-            if count == 1:
-                count = 0
-                d = epoch_static(d)
+        d = epoch_static(d)
 
     
     def over(self):

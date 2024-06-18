@@ -69,7 +69,6 @@ def task_assign(p, use_multiprocessing=True):
 # new_function_static
 def epoch_static(p):
     asyncio.run(runtime(p))
-
     return p
 
 
@@ -79,11 +78,10 @@ async def runtime(p):
     while p.runBool:
         log.info(f"开始运行算法")
         # todo: 新增函数识别路径下方的结果
-        fun_tmp(p)
+        await fun_tmp(p)
         start_time = time.time()
         p.map_info = p.map_info_unchanged
         # load less than 10 tasks
-        t0 = time.time()
         p = read_instructions_static(p)
         # log.info(f"本轮读取任务时长:{time.time() - t0}")
         # added in 20240607, only select stations used instead of all
@@ -109,10 +107,11 @@ async def fun_tmp(p):
             key = await redis.keys(pattern=pattern)
             value = await redis.get(key)
             q = json.loads(value)
+            log.warning(f"车辆{q['othID']}所在位置为{q['position']}")
             if i[0] == q['location']:
                 count += 1
         qt = count / n
-        log.info(f"本轮任务数:{n}，实际分配成功率:{qt}")
+        log.warning(f"本轮任务数:{n}，实际分配成功率:{qt}")
         p.check_list = []
     return None
 
