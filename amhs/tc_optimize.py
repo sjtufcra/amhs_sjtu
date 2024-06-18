@@ -98,25 +98,26 @@ async def runtime(p):
         if len(p.taskList) >= 0:
             # asyncio.create_task(vehicle_load_static(p))
             await vehicle_load_static(p)
-
         # log.info(f"本轮分配任务时长:{time.time() - t1}")
         # log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return None
 
 
-def fun_tmp(p):
+async def fun_tmp(p):
     count = 0
-    if len(p.check_list) > 0:
+    n = len(p.check_list)
+    if n > 0:
         for i in p.check_list:
             vq = p.cache.get(i[1])
             pattern = f"Car:monitor:{vq['othIP']}_1{vq['location'][1:]}"
-            pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
-            connection = rds.RedisCluster(connection_pool=pool)
-            v = connection.mget(keys=connection.keys(pattern=pattern))
-            q = json.loads(v)
+            redis = p.db_redis.get_connection()
+            key = await redis.keys(pattern=pattern)
+            value = await redis.get(key)
+            q = json.loads(value)
             if i[0] == q['location']:
                 count += 1
-        qt = count / len(p.check_list)
+        qt = count / n
+        log.info(f"本轮任务数:{n}，实际分配成功率:{qt}")
         p.check_list = []
     return None
 
