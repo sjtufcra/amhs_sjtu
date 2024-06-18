@@ -2,6 +2,7 @@ from loguru import logger as log
 
 
 async def output_new(p, v):
+    p.check_list.append((v.delivery_route[-1], v.vehicle_assigned))
     if p.debug_on:
         return None
 #     sql0 = (f"UPDATE TRANSFER_TABLE "
