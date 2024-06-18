@@ -83,7 +83,6 @@ async def runtime(p):
         p = read_instructions_static(p)
         if p.debug_on:
             p = track_generate_station_new(p)
-        t1 = time.time()
         if len(p.taskList) >= 0:
             await vehicle_load_static(p)
     return None
@@ -94,12 +93,12 @@ async def fun_tmp(p):
     n = len(p.check_list)
     if n > 0:
         for i in p.check_list:
-            pattern = f"Car:monitor:{vq['othIP']}_1{vq['location'][1:]}"
+            pattern = f"Car:monitor:{i[3]}_1{i[1][1:]}"
             redis = p.db_redis.get_connection()
             key = await redis.keys(pattern=pattern)
             value = await redis.get(key)
             q = json.loads(value)
-            log.warning(f"车辆{q['othID']}所在位置为{q['position']}")
+            log.info(f"车辆{q['othID']}所在位置为{q['position']}")
             if i[0] == q['location']:
                 count += 1
         qt = count / n
