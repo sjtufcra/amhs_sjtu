@@ -13,10 +13,10 @@ async def output_new(p, v):
     sql = "UPDATE TRANSFER_TABLE " + s0 + s1
     log.info(f'sql is: {sql}')
     with p.db_pool.get_connection() as db_conn:
-            cursor = db_conn.cursor()
-            cursor.execute(sql)
-            db_conn.commit()
-            cursor.close()
+        cursor = db_conn.cursor()
+        cursor.execute(sql)
+        db_conn.commit()
+        cursor.close()
     return None
 
 

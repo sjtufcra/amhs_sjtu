@@ -15,13 +15,7 @@ class Amhs():
         d = Dataset(self.config)
         self.Node = d
         d = generating(d)
-        count = 1
-        while True:
-            # count = self.if_start(count)
-            if count == 1:
-                count = 0
-                d = epoch_static(d)
-
+        d = epoch_static(d)
     
     def over(self):
         output_close_connection(self.d)
@@ -43,14 +37,3 @@ class Amhs():
             return True
         else:
             return False
-
-    def if_start(self, count):
-        pool = cp(host=self.Node.rds_connection, port=self.Node.rds_port)
-        connection = rc(connection_pool=pool)
-        model = connection.mget(keys=connection.keys(pattern='Paramater:ASSIGN_MODEL'))
-        if model != '4':
-            self.Node.runBool = False
-        else:
-            self.Node.runBool = True
-            count = 1
-        return count
