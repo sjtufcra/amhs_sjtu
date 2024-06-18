@@ -493,10 +493,10 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
     tmp_id = i.get('ohtID')
     if len(task) > 0:
         order = task[0]
+        end_station = order.start_location
         try:
             # log.info(f"任务:{order.id},车辆:{tmp_id}")
             p.taskList.pop(p.taskList.index(order))
-            end_station = order.start_location
             start = flag.split('_')[1]
             end = p.all_stations.get(end_station)
             # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
@@ -506,7 +506,7 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
 
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order, i)
+            await output_new(p, order)
             # drop car and task
             drop_car_task(temp_cars.get(bay), i)
             drop_car_task(task, task[0])
@@ -516,7 +516,7 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
             path = nx.shortest_path(p.map_info, start, end)
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order)
+            await output_new(p, order)
             # todo:部分数据不在p.block['C']['internal'][bay]['path'][start][1]
             log.warning(f"warning:{e},this a computing path")
             return 
