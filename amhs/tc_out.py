@@ -3,8 +3,8 @@ import time
 import json
 
 
-def output_new(p, v):
-    p.check_list.append((v.delivery_route[-1], v.vehicle_assigned))
+def output_new(p, v, car):
+    p.check_list.append((v.delivery_route[-1], v.vehicle_assigned, v.delivery_route[0], car['othIP']))
     if p.debug_on:
         return None
 #     sql0 = (f"UPDATE TRANSFER_TABLE "
@@ -15,10 +15,10 @@ def output_new(p, v):
     sql = "UPDATE TRANSFER_TABLE " + s0 + s1
     log.info(f'sql is: {sql}')
     with p.db_pool.get_connection() as db_conn:
-            cursor = db_conn.cursor()
-            cursor.execute(sql)
-            db_conn.commit()
-            cursor.close()
+        cursor = db_conn.cursor()
+        cursor.execute(sql)
+        db_conn.commit()
+        cursor.close()
     return None
 
 

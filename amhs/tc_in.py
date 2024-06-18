@@ -25,12 +25,17 @@ from algorithm.A_start.graph.srccode import *
 
 def generating(p):
     t0 = time.time()
+
     if p.mode == 1:
         p.db_pool = OracleConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn)
         p.db_redis = RedisConnectionPool(user=p.rds_connection, port=p.rds_port, cachekey=p.cache_key)
     else:
         p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,
                                         database=p.database)
+    # load running status of algorithm
+    p = if_start(p)
+    if not p.algorithm_on:
+        return p
     # from (erect_map)
     # split the map to 5 blocks, from A to E
     # each block contains 2 or 3 part of highways and several bays
@@ -47,6 +52,16 @@ def generating(p):
     if not p.debug_on:
         track_generate_station(p)
     log.info(f'generating success, time cost:{time.time() - t0}')
+    return p
+
+
+def if_start(p):
+    with p.db_pool.get_connection() as db_conn:
+        cursor = db_conn.cursor()
+        cursor.execute(f"SELECT * FROM OHTC_PARAMATER WHERE PARAMATER_CODE='{'ASSIGN_MODEL'}'")
+        j = cursor.fetchall()
+        if j == '4':
+            p.algorithm_on = True
     return p
 
 
@@ -247,7 +262,7 @@ async def vehicle_load_static(p):
                     continue
                 order.vehicle_assigned = value
                 order.delivery_route = path
-                output_new(p, order)
+                output_new(p, order, car)
         except IndexError as e:
             log.error(e)
         log.info(f'phase 2 cost:{time.time() - t2}')
@@ -476,7 +491,7 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
 
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order)
+            output_new(p, order, i)
             # drop car and task
             drop_car_task(temp_cars.get(bay), i)
             drop_car_task(task, task[0])
@@ -486,7 +501,7 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
             path = nx.shortest_path(p.map_info, start, end)
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order)
+            output_new(p, order, i)
             log.warning(f"warning:{e}")
     return 0
 
