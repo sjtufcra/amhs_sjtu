@@ -94,7 +94,6 @@ async def fun_tmp(p):
     n = len(p.check_list)
     if n > 0:
         for i in p.check_list:
-            vq = p.cache.get(i[1])
             pattern = f"Car:monitor:{vq['othIP']}_1{vq['location'][1:]}"
             redis = p.db_redis.get_connection()
             key = await redis.keys(pattern=pattern)
