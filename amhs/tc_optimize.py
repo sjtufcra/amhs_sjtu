@@ -69,7 +69,6 @@ def task_assign(p, use_multiprocessing=True):
 # new_function_static
 def epoch_static(p):
     asyncio.run(runtime(p))
-
     return p
 
 
@@ -80,21 +79,14 @@ async def runtime(p):
         log.info(f"开始运行算法")
         # todo: 新增函数识别路径下方的结果
         await fun_tmp(p)
-        start_time = time.time()
         p.map_info = p.map_info_unchanged
-        # load less than 10 tasks
         t0 = time.time()
         p = read_instructions_static(p)
-        # log.info(f"本轮读取任务时长:{time.time() - t0}")
-        # added in 20240607, only select stations used instead of all
         if p.debug_on:
             p = track_generate_station_new(p)
         t1 = time.time()
         if len(p.taskList) >= 0:
-            # asyncio.create_task(vehicle_load_static(p))
             await vehicle_load_static(p)
-        # log.info(f"本轮分配任务时长:{time.time() - t1}")
-        # log.info(f"本轮算法执行时长:{time.time() - start_time}")
     return None
 
 
