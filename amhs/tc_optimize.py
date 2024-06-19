@@ -1,7 +1,7 @@
 import concurrent.futures
 import multiprocessing
 from loguru import logger as log
-
+import rediscluster
 # from .tc_out import *
 # from .tc_in import *
 # from .algorithm.A_start.graph.srccode import *
@@ -84,7 +84,7 @@ async def runtime(p):
     while p.runBool:
         log.info(f"开始运行算法")
         # todo: 新增函数识别路径下方的结果
-        await fun_tmp(p)
+        # await fun_tmp(p)
         start_time = time.time()
         p.map_info = p.map_info_unchanged
         # load less than 10 tasks
@@ -106,14 +106,19 @@ async def runtime(p):
 async def fun_tmp(p):
     count = 0
     n = len(p.check_list)
+    pool = rediscluster.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+    connection = rediscluster.RedisCluster(connection_pool=pool)
     if n > 0:
         for i in p.check_list:
+            # 同步
             pattern = f"Car:monitor:{i[3]}_1{i[1][1:]}"
+            value = connection.get(pattern)
+            # 异步
             redis = p.db_redis.get_connection()
             key = await redis.keys(pattern=pattern)
             value = await redis.get(key)
             q = json.loads(value)
-            log.info(f"车辆{q['othID']}所在位置为{q['position']}")
+            log.info(f"车辆{q['ohtID']}所在位置为{q['position']}")
             if i[0] == q['location']:
                 count += 1
         qt = count / n

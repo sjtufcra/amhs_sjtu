@@ -5,7 +5,7 @@ import json
 
 def output_new(p, v):
     car = p.vehicles.get(v.vehicle_assigned)
-    p.check_list.append((v.delivery_route[-1], v.vehicle_assigned, v.delivery_route[0], car.get('othIP')))
+    p.check_list.append((v.delivery_route[-1], v.vehicle_assigned, v.delivery_route[0], car.get('ohtIP')))
     if p.debug_on:
         return None
 #     sql0 = (f"UPDATE TRANSFER_TABLE "

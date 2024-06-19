@@ -33,9 +33,9 @@ def generating(p):
         p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,
                                         database=p.database)
     # load running status of algorithm
-    p = if_start(p)
-    if not p.algorithm_on:
-        return p
+    # p = if_start(p)
+    # if not p.algorithm_on:
+    #     return p
     # from (erect_map)
     # split the map to 5 blocks, from A to E
     # each block contains 2 or 3 part of highways and several bays
@@ -216,7 +216,7 @@ async def vehicle_load_static(p):
             if tmp[0]:
                 continue
             i = json.loads(value)
-            p.vehicles.update({i.get('othID'): i})
+            p.vehicles.update({i.get('ohtID'): i})
             try:
                 flag = p.original_map_info[0][tmp[1]].values[0]
                 bay = flag.split('-')[0]
@@ -598,12 +598,12 @@ async def cache_redis(p):
     return values
 
 
-# 异步函数
-# def read_car_to_cache_back(p):
+# 同步函数
+# def read_car_tmp(p):
 #     pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
 #     connection = rds.RedisCluster(connection_pool=pool)
 #     v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
-#     p.vehicles_get = v 
+#     p.vehicles_get = v
 
 def computeCarPath(ty, car, p, orderlist, inx, flag, mapid, plist=False, boll=False, ):
     bay = car[inx]
