@@ -81,7 +81,7 @@ def epoch_static(p):
 async def runtime(p):
     await p.db_redis.initialize_redis()
     while p.runBool:
-        log.info(f"开始运行算法")
+        # log.info(f"开始运行算法")
         p.map_info = p.map_info_unchanged
         p = read_instructions_static(p)
         if p.debug_on:
