@@ -249,7 +249,14 @@ async def vehicle_load_static(p):
                 # when vehicle is located in the connected track, like "I001-01, I002-33"
                 # its real bay should be the I002
                 bayA = tay[1].split('-')[0]
-                start = tay[1]
+                # 同步获取
+                ipx = car.get('ohtIP')
+                num = car.get('ohtID')[1:]
+                car_key = f'Car:location:{ipx}_1{num}'
+                start = get_redis_position(p, car_key)
+                if start is None:
+                    start = tay[1]
+                # start = tay[1]
                 # path = path_search(p, start, entrance, f_path, bayA, out, order)
                 path = path_search_new(p, start, entrance, f_path, bayA, out, order)
                 if path is None:
@@ -264,14 +271,14 @@ async def vehicle_load_static(p):
     return None
 
 
-def get_redis_position(p,key):
+def get_redis_position(p, key):
     try:
         t0 = time.time()
         redis = p.db_redis.get_redis()
         jsonData = redis.get(key)
         value = json.load(jsonData).get('mapId')
         point = value.split('_')[1]
-        end = time.time()-t0
+        end = time.time() - t0
         print(f'all_time:{end}')
         return point
     except ValueError as e:
@@ -395,7 +402,7 @@ def path_search_new(p, start, entrance, f_path, bayA, out, order):
         end = p.all_stations.get(order.start_location)
         # path1
         path1_end = search_point_new(tmp, bayA, start, out)  # 精确选取位置
-        path1 = get_path_from_bay(p,tmp,bayA,f_path,start,path1_end)
+        path1 = get_path_from_bay(p, tmp, bayA, f_path, start, path1_end)
 
         # path2
         bayB = end.split('-')[0]
@@ -403,17 +410,21 @@ def path_search_new(p, start, entrance, f_path, bayA, out, order):
         path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
 
         # path3
-        path3 = get_path_from_bay(p,tmp,bayB,f_path,path2_start,end)
-        return path1 + path2[1:-1] + path3
+        path3 = get_path_from_bay(p, tmp, bayB, f_path, path2_start, end)
+        path = path1 + path2[1:-1] + path3
+        # path.append(p.stations_name.get(end))
+        # return path
     except Exception as e:
         # log.error(f'path_search_new error:{e}')
         end = p.all_stations.get(order.start_location)
         path = nx.shortest_path(p.map_info, start, end)
-        path.append(p.stations_name.get(end))
+        # path.append(p.stations_name.get(end))
         log.warning(f'path_search_new error:{e},continue this task')
-        return path
+    path.append(p.stations_name.get(end))
+    return path
 
-def get_path_from_bay(p,tmp,bay,f_path,start,end):
+
+def get_path_from_bay(p, tmp, bay, f_path, start, end):
     try:
         plist = tmp[bay][f_path][start][1].get(end)
         path = copy.deepcopy(plist)
@@ -421,9 +432,10 @@ def get_path_from_bay(p,tmp,bay,f_path,start,end):
     except IndexError as e:
         log.warning(f'warning:{e},value is None')
         # todo: 可以重新计算
-        # path = nx.shortest_path(p.map_info,start,end)
+        # path = nx.shortest_path(p.map_info, start, end)
         # return path
         return None
+
 
 # old
 def path_search(p, start, entrance, f_path, bayA, out, order):
@@ -479,14 +491,14 @@ def search_point_new(tmp0, bay, start, status, direction=1):
             # 出口
             pointA = tmp1[0][0]
             pointB = tmp1[1][0]
-            tagA = path[start][0].get(pointA,float('inf'))
-            tagB = path[start][0].get(pointB,float('inf'))
+            tagA = path[start][0].get(pointA, float('inf'))
+            tagB = path[start][0].get(pointB, float('inf'))
         else:
             # 入口
             pointA = tmp1[0][1]
             pointB = tmp1[1][1]
-            tagA = path[pointA][0].get(start,float('inf'))
-            tagB = path[pointB][0].get(start,float('inf'))
+            tagA = path[pointA][0].get(start, float('inf'))
+            tagB = path[pointB][0].get(start, float('inf'))
         return pointB if tagA >= tagB else pointA
     except ValueError as e:
         log.error(f"error:{e},value:{tmp0[bay]},status:{status}")
