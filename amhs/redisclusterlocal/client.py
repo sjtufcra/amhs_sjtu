@@ -9,7 +9,7 @@ import string
 import time
 
 # rediscluster imports
-from .connection import (
+from connection import (
     ClusterConnection,
     ClusterConnectionPool,
     ClusterReadOnlyConnectionPool,
@@ -321,7 +321,7 @@ class RedisCluster(Redis):
             if the cluster nodes move around alot.
         :**kwargs:
             Extra arguments that will be sent into Redis instance when created
-            (See Official redis-py doc for supported kwargs
+            (See Official redislocal-py doc for supported kwargs
             [https://github.com/andymccurdy/redis-py/blob/master/redis/client.py])
             Some kwargs is not supported and will raise RedisClusterException
             - db (Redis do not support database SELECT in cluster mode)
@@ -333,7 +333,7 @@ class RedisCluster(Redis):
         if "db" in kwargs:
             raise RedisClusterException("Argument 'db' is not possible to use in cluster mode")
 
-        # Needs to be removed to avoid exception in redis Connection init
+        # Needs to be removed to avoid exception in redislocal Connection init
         if kwargs.pop('ssl', False):
             log.info("Patching connection_class to SSLClusterConnection")
             connection_class = SSLClusterConnection
@@ -392,17 +392,17 @@ class RedisCluster(Redis):
     def from_url(cls, url, db=None, skip_full_coverage_check=False, readonly_mode=False, read_from_replicas=False, **kwargs):
         """
         Return a Redis client object configured from the given URL, which must
-        use either `the ``redis://`` scheme
+        use either `the ``redislocal://`` scheme
         <http://www.iana.org/assignments/uri-schemes/prov/redis>`_ for RESP
         connections or the ``unix://`` scheme for Unix domain sockets.
         For example::
-            redis://[:password]@localhost:6379/0
+            redislocal://[:password]@localhost:6379/0
             unix://[:password]@/path/to/socket.sock?db=0
         There are several ways to specify a database number. The parse function
         will return the first specified option:
-            1. A ``db`` querystring option, e.g. redis://localhost?db=0
-            2. If using the redis:// scheme, the path argument of the url, e.g.
-               redis://localhost/0
+            1. A ``db`` querystring option, e.g. redislocal://localhost?db=0
+            2. If using the redislocal:// scheme, the path argument of the url, e.g.
+               redislocal://localhost/0
             3. The ``db`` argument to this function.
         If none of these options are specified, db=0 is used.
         Any additional querystring arguments and keyword arguments will be
@@ -729,7 +729,7 @@ class RedisCluster(Redis):
         for node in nodes:
             connection = self.connection_pool.get_connection_by_node(node)
 
-            # copy from redis-py
+            # copy from redislocal-py
             try:
                 connection.send_command(*args)
                 res[node["name"]] = self.parse_response(connection, command, **kwargs)
@@ -951,7 +951,7 @@ class RedisCluster(Redis):
 
     def _parse_scan(self, response, **options):
         """
-        Borrowed from redis-py::client.py
+        Borrowed from redislocal-py::client.py
         """
         cursor, r = response
         return long(cursor), r
@@ -1081,7 +1081,7 @@ class RedisCluster(Redis):
 
         #
         # To provide cross slot support we implement rename by doing the internal command
-        # redis server runs but in the client instead.
+        # redislocal server runs but in the client instead.
         #
         data = self.dump(src)
 

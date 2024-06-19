@@ -9,12 +9,12 @@ import socket
 import threading
 import warnings
 
-from redis._compat import (xrange, imap, unicode, long,
+from _compat import (xrange, imap, unicode, long,
                            nativestr, basestring, iteritems,
                            LifoQueue, Empty, Full, urlparse, parse_qs,
                            recv, recv_into, unquote, BlockingIOError,
                            sendall, shutdown, ssl_wrap_socket)
-from redis.exceptions import (
+from exceptions import (
     AuthenticationError,
     AuthenticationWrongNumberOfArgsError,
     BusyLoadingError,
@@ -30,7 +30,7 @@ from redis.exceptions import (
     ResponseError,
     TimeoutError,
 )
-from redis.utils import HIREDIS_AVAILABLE
+from utils import HIREDIS_AVAILABLE
 
 try:
     import ssl
@@ -73,7 +73,7 @@ if HIREDIS_AVAILABLE:
         hiredis_version >= StrictVersion('1.0.0')
 
     if not HIREDIS_SUPPORTS_BYTE_BUFFER:
-        msg = ("redis-py works best with hiredis >= 0.1.4. You're running "
+        msg = ("redislocal-py works best with hiredis >= 0.1.4. You're running "
                "hiredis %s. Please consider upgrading." % hiredis.__version__)
         warnings.warn(msg)
 
@@ -953,13 +953,13 @@ class ConnectionPool(object):
 
         For example::
 
-            redis://[[username]:[password]]@localhost:6379/0
+            redislocal://[[username]:[password]]@localhost:6379/0
             rediss://[[username]:[password]]@localhost:6379/0
             unix://[[username]:[password]]@/path/to/socket.sock?db=0
 
         Three URL schemes are supported:
 
-        - ```redis://``
+        - ```redislocal://``
           <https://www.iana.org/assignments/uri-schemes/prov/redis>`_ creates a
           normal TCP socket connection
         - ```rediss://``
@@ -969,9 +969,9 @@ class ConnectionPool(object):
 
         There are several ways to specify a database number. The parse function
         will return the first specified option:
-            1. A ``db`` querystring option, e.g. redis://localhost?db=0
-            2. If using the redis:// scheme, the path argument of the url, e.g.
-               redis://localhost/0
+            1. A ``db`` querystring option, e.g. redislocal://localhost?db=0
+            2. If using the redislocal:// scheme, the path argument of the url, e.g.
+               redislocal://localhost/0
             3. The ``db`` argument to this function.
 
         If none of these options are specified, db=0 is used.
@@ -1019,7 +1019,7 @@ class ConnectionPool(object):
             path = url.path
             hostname = url.hostname
 
-        # We only support redis://, rediss:// and unix:// schemes.
+        # We only support redislocal://, rediss:// and unix:// schemes.
         if url.scheme == 'unix':
             url_options.update({
                 'username': username,
@@ -1028,7 +1028,7 @@ class ConnectionPool(object):
                 'connection_class': UnixDomainSocketConnection,
             })
 
-        elif url.scheme in ('redis', 'rediss'):
+        elif url.scheme in ('redislocal', 'rediss'):
             url_options.update({
                 'host': hostname,
                 'port': int(url.port or 6379),
@@ -1047,7 +1047,7 @@ class ConnectionPool(object):
             if url.scheme == 'rediss':
                 url_options['connection_class'] = SSLConnection
         else:
-            valid_schemes = ', '.join(('redis://', 'rediss://', 'unix://'))
+            valid_schemes = ', '.join(('redislocal://', 'rediss://', 'unix://'))
             raise ValueError('Redis URL must specify one of the following '
                              'schemes (%s)' % valid_schemes)
 
@@ -1073,10 +1073,10 @@ class ConnectionPool(object):
                  **connection_kwargs):
         """
         Create a connection pool. If max_connections is set, then this
-        object raises redis.ConnectionError when the pool's limit is reached.
+        object raises ConnectionError when the pool's limit is reached.
 
         By default, TCP connections are created unless connection_class is
-        specified. Use redis.UnixDomainSocketConnection for unix sockets.
+        specified. Use UnixDomainSocketConnection for unix sockets.
 
         Any additional keyword arguments are passed to the constructor of
         connection_class.
@@ -1157,7 +1157,7 @@ class ConnectionPool(object):
         # to mitigate this possible deadlock, _checkpid() will only wait 5
         # seconds to acquire _fork_lock. if _fork_lock cannot be acquired in
         # that time it is assumed that the child is deadlocked and a
-        # redis.ChildDeadlockedError error is raised.
+        # ChildDeadlockedError error is raised.
         if self.pid != os.getpid():
             # python 2.7 doesn't support a timeout option to lock.acquire()
             # we have to mimic lock timeouts ourselves.
@@ -1274,18 +1274,18 @@ class BlockingConnectionPool(ConnectionPool):
     """
     Thread-safe blocking connection pool::
 
-        >>> from redis.client import Redis
+        >>> from client import Redis
         >>> client = Redis(connection_pool=BlockingConnectionPool())
 
     It performs the same function as the default
-    ``:py:class: ~redis.connection.ConnectionPool`` implementation, in that,
+    ``:py:class: ~redislocal.connection.ConnectionPool`` implementation, in that,
     it maintains a pool of reusable connections that can be shared by
-    multiple redis clients (safely across threads if required).
+    multiple redislocal clients (safely across threads if required).
 
     The difference is that, in the event that a client tries to get a
     connection from the pool when all of connections are in use, rather than
-    raising a ``:py:class: ~redis.exceptions.ConnectionError`` (as the default
-    ``:py:class: ~redis.connection.ConnectionPool`` implementation does), it
+    raising a ``:py:class: ~redislocal.exceptions.ConnectionError`` (as the default
+    ``:py:class: ~redislocal.connection.ConnectionPool`` implementation does), it
     makes the client wait ("blocks") for a specified number of seconds until
     a connection becomes available.
 
@@ -1365,7 +1365,7 @@ class BlockingConnectionPool(ConnectionPool):
         try:
             connection = self.pool.get(block=True, timeout=self.timeout)
         except Empty:
-            # Note that this is not caught by the redis client and will be
+            # Note that this is not caught by the redislocal client and will be
             # raised unless handled by application code. If you want never to
             raise ConnectionError("No connection available.")
 

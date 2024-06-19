@@ -11,9 +11,9 @@ from .exceptions import (
 from .utils import dict_merge
 
 # 3rd party imports
-from .redis import Redis
-from .redis.exceptions import ConnectionError, RedisError, TimeoutError
-from .redis._compat import imap, unicode
+from .redislocal import Redis
+from .redislocal.exceptions import ConnectionError, RedisError, TimeoutError
+from .redislocal._compat import imap, unicode
 
 
 ERRORS_ALLOW_RETRY = (ConnectionError, TimeoutError, MovedError, AskError, TryAgainError)
@@ -176,7 +176,7 @@ class ClusterPipeline(RedisCluster):
 
     def _send_cluster_commands(self, stack, raise_on_error=True, allow_redirections=True):
         """
-        Send a bunch of cluster commands to the .redis cluster.
+        Send a bunch of cluster commands to the .redislocal cluster.
 
         `allow_redirections` If the pipeline should follow `ASK` & `MOVED` responses
         automatically. If set to false it will raise RedisClusterException.
@@ -219,7 +219,7 @@ class ClusterPipeline(RedisCluster):
         for n in node_commands:
             n.read()
 
-        # release all of the .redis connections we allocated earlier back into the connection pool.
+        # release all of the .redislocal connections we allocated earlier back into the connection pool.
         # we used to do this step as part of a try/finally block, but it is really dangerous to
         # release connections back into the pool if for some reason the socket has data still left in it
         # from a previous operation. The write and read operations already have try/catch around them for
@@ -328,7 +328,7 @@ def block_pipeline_command(func):
     Prints error because some pipelined commands should be blocked when running in cluster-mode
     """
     def inner(*args, **kwargs):
-        raise RedisClusterException("ERROR: Calling pipelined function {0} is blocked when running .redis in cluster mode...".format(func.__name__))
+        raise RedisClusterException("ERROR: Calling pipelined function {0} is blocked when running .redislocal in cluster mode...".format(func.__name__))
 
     return inner
 
@@ -455,8 +455,8 @@ class NodeCommands(object):
 
             # if there is a result on this command, it means we ran into an exception
             # like a connection error. Trying to parse a response on a connection that
-            # is no longer open will result in a connection error raised by .redis-py.
-            # but .redis-py doesn't check in parse_response that the sock object is
+            # is no longer open will result in a connection error raised by .redislocal-py.
+            # but .redislocal-py doesn't check in parse_response that the sock object is
             # still set and if you try to read from a closed connection, it will
             # result in an AttributeError because it will do a readline() call on None.
             # This can have all kinds of nasty side-effects.

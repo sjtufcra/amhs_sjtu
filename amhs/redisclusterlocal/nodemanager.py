@@ -7,13 +7,13 @@ import random
 import socket
 
 # rediscluster imports
-from .crc import crc16
-from .exceptions import RedisClusterException, RedisClusterConfigError
+from crc import crc16
+from exceptions import RedisClusterException, RedisClusterConfigError
 
 # 3rd party imports
-from .redis import Redis
-from .redis.connection import Encoder
-from .redis import ConnectionError, TimeoutError, ResponseError
+from redislocal import Redis
+from redislocal.connection import Encoder
+from redislocal import ConnectionError, TimeoutError, ResponseError
 
 log = logging.getLogger(__name__)
 
@@ -228,16 +228,16 @@ class NodeManager(object):
             except (ConnectionError, TimeoutError):
                 continue
             except ResponseError as e:
-                log.exception("ReseponseError sending 'cluster slots' to redis server")
+                log.exception("ReseponseError sending 'cluster slots' to redislocal server")
 
                 # Isn't a cluster connection, so it won't parse these exceptions automatically
                 message = e.__str__()
                 if 'CLUSTERDOWN' in message or 'MASTERDOWN' in message:
                     continue
                 else:
-                    raise RedisClusterException("ERROR sending 'cluster slots' command to redis server: {0}".format(node))
+                    raise RedisClusterException("ERROR sending 'cluster slots' command to redislocal server: {0}".format(node))
             except Exception:
-                raise RedisClusterException("ERROR sending 'cluster slots' command to redis server: {0}".format(node))
+                raise RedisClusterException("ERROR sending 'cluster slots' command to redislocal server: {0}".format(node))
 
             all_slots_covered = True
 
@@ -355,7 +355,7 @@ class NodeManager(object):
 
     def cluster_require_full_coverage(self, nodes_cache):
         """
-        if exists 'cluster-require-full-coverage no' config on redis servers,
+        if exists 'cluster-require-full-coverage no' config on redislocal servers,
         then even all slots are not covered, cluster still will be able to
         respond
         """
@@ -372,7 +372,7 @@ class NodeManager(object):
             except ConnectionError:
                 return False
             except Exception:
-                raise RedisClusterException("ERROR sending 'config get cluster-require-full-coverage' command to redis server: {0}".format(node))
+                raise RedisClusterException("ERROR sending 'config get cluster-require-full-coverage' command to redislocal server: {0}".format(node))
 
         # at least one node should have cluster-require-full-coverage yes
         return any(node_require_full_coverage(node) for node in nodes.values())

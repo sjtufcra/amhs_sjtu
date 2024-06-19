@@ -1,8 +1,8 @@
 import threading
 import time as mod_time
 import uuid
-from redis.exceptions import LockError, LockNotOwnedError
-from redis.utils import dummy
+from exceptions import LockError, LockNotOwnedError
+from utils import dummy
 
 
 class Lock(object):
@@ -22,11 +22,11 @@ class Lock(object):
     # ARGV[1] - token
     # return 1 if the lock was released, otherwise 0
     LUA_RELEASE_SCRIPT = """
-        local token = redis.call('get', KEYS[1])
+        local token = call('get', KEYS[1])
         if not token or token ~= ARGV[1] then
             return 0
         end
-        redis.call('del', KEYS[1])
+        call('del', KEYS[1])
         return 1
     """
 
@@ -37,11 +37,11 @@ class Lock(object):
     #           existing ttl or "1" if the existing ttl should be replaced
     # return 1 if the locks time was extended, otherwise 0
     LUA_EXTEND_SCRIPT = """
-        local token = redis.call('get', KEYS[1])
+        local token = call('get', KEYS[1])
         if not token or token ~= ARGV[1] then
             return 0
         end
-        local expiration = redis.call('pttl', KEYS[1])
+        local expiration = call('pttl', KEYS[1])
         if not expiration then
             expiration = 0
         end
@@ -53,7 +53,7 @@ class Lock(object):
         if ARGV[3] == "0" then
             newttl = ARGV[2] + expiration
         end
-        redis.call('pexpire', KEYS[1], newttl)
+        call('pexpire', KEYS[1], newttl)
         return 1
     """
 
@@ -62,11 +62,11 @@ class Lock(object):
     # ARGV[2] - milliseconds
     # return 1 if the locks time was reacquired, otherwise 0
     LUA_REACQUIRE_SCRIPT = """
-        local token = redis.call('get', KEYS[1])
+        local token = call('get', KEYS[1])
         if not token or token ~= ARGV[1] then
             return 0
         end
-        redis.call('pexpire', KEYS[1], ARGV[2])
+        call('pexpire', KEYS[1], ARGV[2])
         return 1
     """
 
@@ -74,7 +74,7 @@ class Lock(object):
                  blocking=True, blocking_timeout=None, thread_local=True):
         """
         Create a new Lock instance named ``name`` using the Redis client
-        supplied by ``redis``.
+        supplied by ``redislocal``.
 
         ``timeout`` indicates a maximum life for the lock.
         By default, it will remain locked until release() is called.
@@ -105,7 +105,7 @@ class Lock(object):
                      thread-1 sets the token to "abc"
             time: 1, thread-2 blocks trying to acquire `my-lock` using the
                      Lock instance.
-            time: 5, thread-1 has not yet completed. redis expires the lock
+            time: 5, thread-1 has not yet completed. redislocal expires the lock
                      key.
             time: 5, thread-2 acquired `my-lock` now that it's available.
                      thread-2 sets the token to "xyz"

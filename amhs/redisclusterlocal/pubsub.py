@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # 3rd party imports
-from .redis.client import PubSub
+from .redislocal.client import PubSub
 
 
 class ClusterPubSub(PubSub):
@@ -16,7 +16,7 @@ class ClusterPubSub(PubSub):
         """
         Execute a publish/subscribe command.
 
-        Taken code from .redis-py and tweak to make it work within a cluster.
+        Taken code from .redislocal-py and tweak to make it work within a cluster.
         """
         # NOTE: don't parse the response in this function -- it could pull a
         # legitimate message off the stack if the connection is already

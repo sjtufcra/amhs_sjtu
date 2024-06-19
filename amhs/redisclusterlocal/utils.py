@@ -5,12 +5,12 @@ from socket import gethostbyaddr
 from .exceptions import RedisClusterException
 
 # 3rd party imports
-from .redis._compat import basestring, nativestr
+from .redislocal._compat import basestring, nativestr
 
 
 def bool_ok(response, *args, **kwargs):
     """
-    Borrowed from .redis._compat becuase that method to not support extra arguments
+    Borrowed from .redislocal._compat becuase that method to not support extra arguments
     when used in a cluster environment.
     """
     return nativestr(response) == 'OK'
@@ -43,7 +43,7 @@ def blocked_command(self, command):
     """
     Raises a `RedisClusterException` mentioning the command is blocked.
     """
-    raise RedisClusterException("Command: {0} is blocked in .redis cluster mode".format(command))
+    raise RedisClusterException("Command: {0} is blocked in .redislocal cluster mode".format(command))
 
 
 def merge_result(command, res):

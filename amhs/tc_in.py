@@ -3,8 +3,8 @@ from collections import defaultdict
 import pandas as pd
 import oracledb
 import redis.asyncio as rds
-# import redis as db_redis
-import redislocal as db_redis
+# import redislocal as db_redis
+import redisclusterlocal as db_redis
 from aiocache import Cache
 from aiocache.serializers import JsonSerializer
 import asyncio
@@ -292,7 +292,7 @@ def get_redis_position(p, key):
 
 
 def vehicle_load(p):
-    # load from 'redis'
+    # load from 'redislocal'
     # 初始化
     p.vehicles_bay_get = clear_data()
     p.vehicles_bay_send = clear_data()
@@ -910,7 +910,7 @@ class RedisConnectionPool:
 
     async def initialize_redis(self):
         self.reds = rds.from_url(f'redis://{self.host}:{self.port}', decode_responses=True)
-        # self.redis = db_redis.Redis(host=self.host, port=self.port, db=0)
+        # self.redislocal = db_redis.Redis(host=self.host, port=self.port, db=0)
         pool = rds.ClusterConnectionPool(host=self.host, port=self.port)
         self.redis = rds.RedisCluster(connection_pool=pool)
 

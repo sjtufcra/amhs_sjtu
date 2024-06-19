@@ -1,11 +1,11 @@
 import random
 import weakref
 
-from redis.client import Redis
-from redis.connection import ConnectionPool, Connection
-from redis.exceptions import (ConnectionError, ResponseError, ReadOnlyError,
+from client import Redis
+from connection import ConnectionPool, Connection
+from exceptions import (ConnectionError, ResponseError, ReadOnlyError,
                               TimeoutError)
-from redis._compat import iteritems, nativestr, xrange
+from _compat import iteritems, nativestr, xrange
 
 
 class MasterNotFoundError(ConnectionError):
@@ -136,7 +136,7 @@ class Sentinel(object):
     """
     Redis Sentinel cluster client
 
-    >>> from redis.sentinel import Sentinel
+    >>> from sentinel import Sentinel
     >>> sentinel = Sentinel([('localhost', 26379)], socket_timeout=0.1)
     >>> master = sentinel.master_for('mymaster', socket_timeout=0.1)
     >>> master.set('foo', 'bar')
@@ -242,7 +242,7 @@ class Sentinel(object):
     def master_for(self, service_name, redis_class=Redis,
                    connection_pool_class=SentinelConnectionPool, **kwargs):
         """
-        Returns a redis client instance for the ``service_name`` master.
+        Returns a redislocal client instance for the ``service_name`` master.
 
         A SentinelConnectionPool class is used to retrive the master's
         address before establishing a new connection.
@@ -250,7 +250,7 @@ class Sentinel(object):
         NOTE: If the master's address has changed, any cached connections to
         the old master are closed.
 
-        By default clients will be a redis.Redis instance. Specify a
+        By default clients will be a Redis instance. Specify a
         different class to the ``redis_class`` argument if you desire
         something different.
 
@@ -270,12 +270,12 @@ class Sentinel(object):
     def slave_for(self, service_name, redis_class=Redis,
                   connection_pool_class=SentinelConnectionPool, **kwargs):
         """
-        Returns redis client instance for the ``service_name`` slave(s).
+        Returns redislocal client instance for the ``service_name`` slave(s).
 
         A SentinelConnectionPool class is used to retrive the slave's
         address before establishing a new connection.
 
-        By default clients will be a redis.Redis instance. Specify a
+        By default clients will be a Redis instance. Specify a
         different class to the ``redis_class`` argument if you desire
         something different.
 

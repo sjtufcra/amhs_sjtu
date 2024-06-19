@@ -11,18 +11,18 @@ from itertools import chain
 from collections import defaultdict
 
 # rediscluster imports
-from .nodemanager import NodeManager
-from .exceptions import (
+from nodemanager import NodeManager
+from exceptions import (
     RedisClusterException, AskError, MovedError,
     TryAgainError, ClusterDownError, ClusterCrossSlotError,
     MasterDownError, SlotNotCoveredError,
 )
 
 # 3rd party imports
-from .redis._compat import nativestr, LifoQueue, Full, Empty
-from .redis.client import dict_merge
-from .redis.connection import ConnectionPool, Connection, DefaultParser, SSLConnection, UnixDomainSocketConnection
-from .redis.exceptions import ConnectionError
+from redislocal._compat import nativestr, LifoQueue, Full, Empty
+from redislocal.client import dict_merge
+from redislocal.connection import ConnectionPool, Connection, DefaultParser, SSLConnection, UnixDomainSocketConnection
+from redislocal.exceptions import ConnectionError
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class SSLClusterConnection(SSLConnection):
         log.debug(str(args) + " : " + str(kwargs))
 
         self.readonly = kwargs.pop('readonly', False)
-        # need to pop this off as the redis/connection.py SSLConnection init doesn't work with ssl passed in
+        # need to pop this off as the redislocal/connection.py SSLConnection init doesn't work with ssl passed in
         if 'ssl' in kwargs:
             kwargs.pop('ssl')
         kwargs['parser_class'] = ClusterParser
@@ -321,7 +321,7 @@ class ClusterConnectionPool(ConnectionPool):
 
     def get_random_connection(self):
         """
-        Open new connection to random redis server.
+        Open new connection to random redislocal server.
         """
         # TODO: Should this open a new random connection or should it look if there is any
         #       open available connections and return that instead?
@@ -343,7 +343,7 @@ class ClusterConnectionPool(ConnectionPool):
 
     def get_connection_by_slot(self, slot):
         """
-        Determine what server a specific slot belongs to and return a redis object that is connected
+        Determine what server a specific slot belongs to and return a redislocal object that is connected
         """
         self._checkpid()
 
@@ -394,8 +394,8 @@ class ClusterBlockingConnectionPool(ClusterConnectionPool):
 
     It performs the same function as the default
     ``:py:class: ~rediscluster.connection.ClusterConnectionPool`` implementation, in that,
-    it maintains a pool of reusable connections to a redis cluster that can be shared by
-    multiple redis clients (safely across threads if required).
+    it maintains a pool of reusable connections to a redislocal cluster that can be shared by
+    multiple redislocal clients (safely across threads if required).
 
     The difference is that, in the event that a client tries to get a
     connection from the pool when all of connections are in use, rather than
@@ -516,7 +516,7 @@ class ClusterBlockingConnectionPool(ClusterConnectionPool):
                 connection_to_clear.disconnect()
                 connection = None  # get a new connection
             else:
-                # Note that this is not caught by the redis cluster client and will be
+                # Note that this is not caught by the redislocal cluster client and will be
                 # raised unless handled by application code.
 
                 # ``ConnectionError`` is raised when timeout is hit on the queue.

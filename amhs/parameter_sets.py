@@ -4,7 +4,7 @@ httpServer = dict(
     oracle_user='wf2prodmoc',
     oracle_password='wf2moc_22FAB2',
     oracle_dsn='10.34.58.15:1521/f2wdb',
-    # redis linking
+    # redislocal linking
     rds_connection='10.34.58.42',
     rds_port=6379,
     rds_search_pattern="Car:monitor:*",

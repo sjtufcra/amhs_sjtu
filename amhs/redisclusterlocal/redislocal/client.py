@@ -7,12 +7,12 @@ import threading
 import time as mod_time
 import re
 import hashlib
-from redis._compat import (basestring, imap, iteritems, iterkeys,
+from  _compat import (basestring, imap, iteritems, iterkeys,
                            itervalues, izip, long, nativestr, safe_unicode)
-from redis.connection import (ConnectionPool, UnixDomainSocketConnection,
+from  connection import (ConnectionPool, UnixDomainSocketConnection,
                               SSLConnection)
-from redis.lock import Lock
-from redis.exceptions import (
+from  lock import Lock
+from  exceptions import (
     ConnectionError,
     DataError,
     ExecAbortError,
@@ -103,7 +103,7 @@ def parse_debug_object(response):
     response = dict(kv.split(':') for kv in response.split())
 
     # parse some expected int values from the string response
-    # note: this cmd isn't spec'd so these may not appear in all redis versions
+    # note: this cmd isn't spec'd so these may not appear in all redislocal versions
     int_fields = ('refcount', 'serializedlength', 'lru', 'lru_seconds_idle')
     for field in int_fields:
         if field in response:
@@ -545,7 +545,7 @@ class Redis(object):
             float
         ),
         string_keys_to_dict(
-            # these return OK, or int if redis-server is >=1.3.4
+            # these return OK, or int if redislocal-server is >=1.3.4
             'LPUSH RPUSH',
             lambda r: isinstance(r, (long, int)) and r or nativestr(r) == 'OK'
         ),
@@ -666,13 +666,13 @@ class Redis(object):
 
         For example::
 
-            redis://[[username]:[password]]@localhost:6379/0
+            redislocal://[[username]:[password]]@localhost:6379/0
             rediss://[[username]:[password]]@localhost:6379/0
             unix://[[username]:[password]]@/path/to/socket.sock?db=0
 
         Three URL schemes are supported:
 
-        - ```redis://``
+        - ```redislocal://``
           <http://www.iana.org/assignments/uri-schemes/prov/redis>`_ creates a
           normal TCP socket connection
         - ```rediss://``
@@ -682,9 +682,9 @@ class Redis(object):
 
         There are several ways to specify a database number. The parse function
         will return the first specified option:
-            1. A ``db`` querystring option, e.g. redis://localhost?db=0
-            2. If using the redis:// scheme, the path argument of the url, e.g.
-               redis://localhost/0
+            1. A ``db`` querystring option, e.g. redislocal://localhost?db=0
+            2. If using the redislocal:// scheme, the path argument of the url, e.g.
+               redislocal://localhost/0
             3. The ``db`` argument to this function.
 
         If none of these options are specified, db=0 is used.
@@ -838,7 +838,7 @@ class Redis(object):
                      thread-1 sets the token to "abc"
             time: 1, thread-2 blocks trying to acquire `my-lock` using the
                      Lock instance.
-            time: 5, thread-1 has not yet completed. redis expires the lock
+            time: 5, thread-1 has not yet completed. redislocal expires the lock
                      key.
             time: 5, thread-2 acquired `my-lock` now that it's available.
                      thread-2 sets the token to "xyz"
@@ -1552,7 +1552,7 @@ class Redis(object):
         the value will be initialized as 0 - ``amount``
         """
         # An alias for ``decr()``, because it is already implemented
-        # as DECRBY redis command.
+        # as DECRBY redislocal command.
         return self.decrby(name, amount)
 
     def decrby(self, name, amount=1):
@@ -1646,7 +1646,7 @@ class Redis(object):
         the value will be initialized as ``amount``
         """
         # An alias for ``incr()``, because it is already implemented
-        # as INCRBY redis command.
+        # as INCRBY redislocal command.
         return self.execute_command('INCRBY', name, amount)
 
     def incrbyfloat(self, name, amount=1.0):
@@ -3312,7 +3312,7 @@ StrictRedis = Redis
 
 class Monitor(object):
     """
-    Monitor is useful for handling the MONITOR command to the redis server.
+    Monitor is useful for handling the MONITOR command to the redislocal server.
     next_command() method returns one command from monitor
     listen() method yields commands from monitor.
     """
@@ -3383,7 +3383,7 @@ class PubSub(object):
     """
     PUBLISH_MESSAGE_TYPES = ('message', 'pmessage')
     UNSUBSCRIBE_MESSAGE_TYPES = ('unsubscribe', 'punsubscribe')
-    HEALTH_CHECK_MESSAGE = 'redis-py-health-check'
+    HEALTH_CHECK_MESSAGE = 'redislocal-py-health-check'
 
     def __init__(self, connection_pool, shard_hint=None,
                  ignore_subscribe_messages=False):
