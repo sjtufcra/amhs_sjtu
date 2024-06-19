@@ -10,7 +10,6 @@ from tc_optimize import *
 from tc_out import *
 
 
-
 class Amhs():
     def __init__(self,config) -> None:
         self.runBool = True
@@ -43,4 +42,3 @@ class Amhs():
             return True
         else:
             return False
-
