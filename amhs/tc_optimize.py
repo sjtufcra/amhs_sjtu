@@ -81,34 +81,13 @@ def epoch_static(p):
 async def runtime(p):
     await p.db_redis.initialize_redis()
     while p.runBool:
-        log.info(f"开始运行算法")
-        # todo: 新增函数识别路径下方的结果
-        await fun_tmp(p)
+        # log.info(f"开始运行算法")
         p.map_info = p.map_info_unchanged
         p = read_instructions_static(p)
         if p.debug_on:
             p = track_generate_station_new(p)
         if len(p.taskList) >= 0:
             await vehicle_load_static(p)
-    return None
-
-
-async def fun_tmp(p):
-    count = 0
-    n = len(p.check_list)
-    if n > 0:
-        for i in p.check_list:
-            pattern = f"Car:monitor:{i[3]}_1{i[1][1:]}"
-            redis = p.db_redis.get_connection()
-            key = await redis.keys(pattern=pattern)
-            value = await redis.get(key)
-            q = json.loads(value)
-            log.info(f"车辆{q['othID']}所在位置为{q['position']}")
-            if i[0] == q['location']:
-                count += 1
-        qt = count / n
-        log.warning(f"本轮任务数:{n}，实际分配成功率:{qt}")
-        p.check_list = []
     return None
 
 

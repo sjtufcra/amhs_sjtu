@@ -66,7 +66,6 @@ class Dataset:
         self.block = dict()
 
         # added in 240618
-        self.check_list = []
         self.algorithm_on = False
 
     class Control:
