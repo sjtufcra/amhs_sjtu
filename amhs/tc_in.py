@@ -3,6 +3,7 @@ from collections import defaultdict
 import pandas as pd
 import oracledb
 import redis.asyncio as rds
+import redis as db_redis
 from aiocache import Cache
 from aiocache.serializers import JsonSerializer
 import asyncio
@@ -263,6 +264,21 @@ async def vehicle_load_static(p):
     return None
 
 
+def get_redis_position(p,key):
+    try:
+        t0 = time.time()
+        redis = p.db_redis.get_redis()
+        jsonData = redis.get(key)
+        value = json.load(jsonData).get('mapId')
+        point = value.split('_')[1]
+        end = time.time()-t0
+        print(f'all_time:{end}')
+        return point
+    except ValueError as e:
+        log.error(f'error:{e},key:{key}')
+        return None
+
+
 def vehicle_load(p):
     # load from 'redis'
     # 初始化
@@ -487,6 +503,13 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
             # log.info(f"任务:{order.id},车辆:{tmp_id}")
             p.taskList.pop(p.taskList.index(order))
             start = flag.split('_')[1]
+            # 同步获取
+            idx = 'ohtIP'
+            num = i.get('ohtID')[1:]
+            car_key = f'Car:location:{i.get(idx)}_1{num}'
+            start = get_redis_position(p, car_key)
+            if start is None:
+                start = flag.split('_')[1]
             end = p.all_stations.get(end_station)
             # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
 
@@ -865,3 +888,10 @@ class RedisConnectionPool:
 
     async def initialize_redis(self):
         self.reds = rds.from_url(f'redis://{self.host}:{self.port}', decode_responses=True)
+
+    async def initialize_redis(self):
+        self.reds = rds.from_url(f'redis://{self.host}:{self.port}', decode_responses=True)
+        self.redis = db_redis.Redis(host=self.host, port=self.port, db=0)
+
+    def get_redis(self):
+        return self.redis
