@@ -244,19 +244,13 @@ async def vehicle_load_static(p):
                 out = 'outlet'
                 entrance = 'entrance'
                 f_path = 'path'
-                tay = flag.split('_')
+                # tay = flag.split('_')
                 # bayA = tay[0].split('-')[0]
                 # when vehicle is located in the connected track, like "I001-01, I002-33"
                 # its real bay should be the I002
-                bayA = tay[1].split('-')[0]
-                # 同步获取
-                ipx = car.get('ohtIP')
-                num = car.get('ohtID')[1:]
-                car_key = f'Car:location:{ipx}_1{num}'
-                start = get_redis_position(p, car_key)
-                if start is None:
-                    start = tay[1]
-                # start = tay[1]
+                bayA = flag.split('_')[1].split('-')[0]
+                start = get_start(car, p, flag)
+                # # 同步获取
                 # path = path_search(p, start, entrance, f_path, bayA, out, order)
                 path = path_search_new(p, start, entrance, f_path, bayA, out, order)
                 if path is None:
@@ -269,6 +263,18 @@ async def vehicle_load_static(p):
         log.info(f'phase 2 cost:{time.time() - t2}')
         log.info(f'phase 1 and 2 cost:{time.time() - t1}')
     return None
+
+
+def get_start(car, p, tay):
+    # 同步获取
+    ipx = car.get('ohtIP')
+    num = car.get('ohtID')[1:]
+    car_key = f'Car:location:{ipx}_1{num}'
+    try:
+        start = get_redis_position(p, car_key)
+    except ValueError as e:
+        start = tay.split('_')[1]
+    return start
 
 
 def get_redis_position(p, key):
@@ -514,14 +520,16 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
         try:
             # log.info(f"任务:{order.id},车辆:{tmp_id}")
             p.taskList.pop(p.taskList.index(order))
-            start = flag.split('_')[1]
-            # 同步获取
-            idx = 'ohtIP'
-            num = i.get('ohtID')[1:]
-            car_key = f'Car:location:{i.get(idx)}_1{num}'
-            start = get_redis_position(p, car_key)
-            if start is None:
-                start = flag.split('_')[1]
+            # tay = flag.split('_')[1]
+            start = get_start(i, p, flag)
+            # # 同步获取
+            # idx = 'ohtIP'
+            # num = i.get('ohtID')[1:]
+            # car_key = f'Car:location:{i.get(idx)}_1{num}'
+            # start = get_redis_position(p, car_key)
+            # if start is None:
+            #     start = flag.split('_')[1]
+
             end = p.all_stations.get(end_station)
             # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
 
