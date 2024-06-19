@@ -4,7 +4,7 @@ import pandas as pd
 import oracledb
 import redis.asyncio as rds
 # import redis as db_redis
-from redislocal import redis as db_redis
+import redislocal as db_redis
 from aiocache import Cache
 from aiocache.serializers import JsonSerializer
 import asyncio
@@ -910,7 +910,9 @@ class RedisConnectionPool:
 
     async def initialize_redis(self):
         self.reds = rds.from_url(f'redis://{self.host}:{self.port}', decode_responses=True)
-        self.redis = db_redis.Redis(host=self.host, port=self.port, db=0)
+        # self.redis = db_redis.Redis(host=self.host, port=self.port, db=0)
+        pool = rds.ClusterConnectionPool(host=self.host, port=self.port)
+        self.redis = rds.RedisCluster(connection_pool=pool)
 
     def get_redis(self):
         return self.redis
