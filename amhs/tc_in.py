@@ -17,10 +17,8 @@ import copy
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-# from .tc_out import *
-from tc_out import *
-# from .algorithm.A_start.graph.srccode import *
-from algorithm.A_start.graph.srccode import *
+from .tc_out import *
+from .algorithm.A_start.graph.srccode import *
 
 
 def generating(p):
@@ -32,6 +30,7 @@ def generating(p):
     else:
         p.db_pool = MysqlConnectionPool(user=p.oracle_user, password=p.oracle_password, dsn=p.oracle_dsn,
                                         database=p.database)
+
     # load running status of algorithm
     # p = if_start(p)
     # if not p.algorithm_on:
@@ -52,16 +51,6 @@ def generating(p):
     if not p.debug_on:
         track_generate_station(p)
     log.info(f'generating success, time cost:{time.time() - t0}')
-    return p
-
-
-def if_start(p):
-    with p.db_pool.get_connection() as db_conn:
-        cursor = db_conn.cursor()
-        cursor.execute(f"SELECT * FROM OHTC_PARAMATER WHERE PARAMATER_CODE='{'ASSIGN_MODEL'}'")
-        j = cursor.fetchall()
-        if j == '4':
-            p.algorithm_on = True
     return p
 
 
@@ -225,7 +214,7 @@ async def vehicle_load_static(p):
                 temp_cars[bay].append(i)
                 all_vehicles_num += 1
                 if bay in p.bays_relation:
-                    assign_same_bay(p, bay, i, flag, temp_cars)
+                    asyncio.create_task(assign_same_bay(p, bay, i, flag, temp_cars))
                 if len(p.taskList) == 0:
                     return None
             except IndexError as e:
@@ -263,7 +252,7 @@ async def vehicle_load_static(p):
                     continue
                 order.vehicle_assigned = value
                 order.delivery_route = path
-                output_new(p, order)
+                asyncio.create_task(output_new(p, order))
         except IndexError as e:
             log.error(e)
         log.info(f'phase 2 cost:{time.time() - t2}')
@@ -386,27 +375,36 @@ def path_search_new(p, start, entrance, f_path, bayA, out, order):
         tmp = p.block[order.block_location]['internal']
         end = p.all_stations.get(order.start_location)
         # path1
-        # path1_end = p.internal_paths[bayA][out][0]  # todo:应该精确选取位置，这里随机录取
-        # path1_end = search_point(p, bayA, start, out)  # 精确选取位置
         path1_end = search_point_new(tmp, bayA, start, out)  # 精确选取位置
-        path1 = copy.deepcopy(tmp[bayA][f_path][start][1][path1_end])
+        path1 = get_path_from_bay(p,tmp,bayA,f_path,start,path1_end)
 
         # path2
         bayB = end.split('-')[0]
-        # path2_start = p.internal_paths[bayB][entrance][0]  # todo:应该精确选取位置，这里随机录取
-        # path2_start = search_point(p, bayB, end, entrance, direction=0)  # 精确选取位置
         path2_start = search_point_new(tmp, bayB, end, entrance, direction=0)  # 精确选取位置
-        # path2 = nx.astar_path(p.map_info, path1_end, path2_start)
         path2 = nx.shortest_path(p.map_info, path1_end, path2_start)
 
         # path3
-        path3 = copy.deepcopy(tmp[bayB][f_path][path2_start][1][end])
+        path3 = get_path_from_bay(p,tmp,bayB,f_path,path2_start,end)
         return path1 + path2[1:-1] + path3
     except Exception as e:
-        path = nx.shortest_path(p.map_info, start, p.all_stations.get(order.start_location))
-        log.warning(f'path_search_new warning:{e}')
+        # log.error(f'path_search_new error:{e}')
+        end = p.all_stations.get(order.start_location)
+        path = nx.shortest_path(p.map_info, start, end)
+        path.append(p.stations_name.get(end))
+        log.warning(f'path_search_new error:{e},continue this task')
         return path
 
+def get_path_from_bay(p,tmp,bay,f_path,start,end):
+    try:
+        plist = tmp[bay][f_path][start][1].get(end)
+        path = copy.deepcopy(plist)
+        return path
+    except IndexError as e:
+        log.warning(f'warning:{e},value is None')
+        # todo: 可以重新计算
+        # path = nx.shortest_path(p.map_info,start,end)
+        # return path
+        return None
 
 # old
 def path_search(p, start, entrance, f_path, bayA, out, order):
@@ -436,6 +434,8 @@ def search_point(p, bay, start, status, direction=1):
         txt = p.internal_paths[bay][status]
         if len(txt) == 0:
             log.warning(f'bay:{bay},point:{start},status:{status},data:{p.internal_paths[bay]}')
+            return None
+
         pointA, pointB = p.internal_paths[bay][status]
         path = p.internal_paths[bay]['path']
         if direction:
@@ -460,29 +460,29 @@ def search_point_new(tmp0, bay, start, status, direction=1):
             # 出口
             pointA = tmp1[0][0]
             pointB = tmp1[1][0]
-            tagA = path[start][0][pointA]
-            tagB = path[start][0][pointB]
+            tagA = path[start][0].get(pointA,float('inf'))
+            tagB = path[start][0].get(pointB,float('inf'))
         else:
             # 入口
             pointA = tmp1[0][1]
             pointB = tmp1[1][1]
-            tagA = path[pointA][0][start]
-            tagB = path[pointB][0][start]
+            tagA = path[pointA][0].get(start,float('inf'))
+            tagB = path[pointB][0].get(start,float('inf'))
         return pointB if tagA >= tagB else pointA
     except ValueError as e:
         log.error(f"error:{e},value:{tmp0[bay]},status:{status}")
         return None
 
 
-def assign_same_bay(p, bay, i, flag, temp_cars):
+async def assign_same_bay(p, bay, i, flag, temp_cars):
     task = p.bays_relation[bay]
     tmp_id = i.get('ohtID')
     if len(task) > 0:
         order = task[0]
+        end_station = order.start_location
         try:
             # log.info(f"任务:{order.id},车辆:{tmp_id}")
             p.taskList.pop(p.taskList.index(order))
-            end_station = order.start_location
             start = flag.split('_')[1]
             end = p.all_stations.get(end_station)
             # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
@@ -492,18 +492,21 @@ def assign_same_bay(p, bay, i, flag, temp_cars):
 
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order)
+            await output_new(p, order)
             # drop car and task
             drop_car_task(temp_cars.get(bay), i)
             drop_car_task(task, task[0])
         except Exception as e:
             start = flag.split('_')[1]
-            end = p.all_stations.get(order.start_location)
+            end = p.all_stations.get(end_station)
             path = nx.shortest_path(p.map_info, start, end)
+            path.append(p.stations_name.get(end_station))
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
-            output_new(p, order)
-            log.warning(f"warning:{e}")
+            await output_new(p, order)
+            # todo:部分数据不在p.block['C']['internal'][bay]['path'][start][1]
+            log.warning(f"warning:{e},this a computing path")
+            return
     return 0
 
 
