@@ -3,7 +3,8 @@ from collections import defaultdict
 import pandas as pd
 import oracledb
 import redis.asyncio as rds
-import redis as db_redis
+# import redis as db_redis
+from redislocal import redis as db_redis
 from aiocache import Cache
 from aiocache.serializers import JsonSerializer
 import asyncio
