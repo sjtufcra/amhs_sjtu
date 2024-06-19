@@ -17,8 +17,11 @@ import copy
 from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
-from .tc_out import *
-from .algorithm.A_start.graph.srccode import *
+# from .tc_out import *
+# from .algorithm.A_start.graph.srccode import *
+
+from tc_out import *
+from algorithm.A_start.graph.srccode import *
 
 
 def generating(p):
