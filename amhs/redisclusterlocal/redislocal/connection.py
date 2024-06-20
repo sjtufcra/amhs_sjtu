@@ -62,7 +62,7 @@ if socket.error not in NONBLOCKING_EXCEPTION_ERROR_NUMBERS:
 NONBLOCKING_EXCEPTIONS = tuple(NONBLOCKING_EXCEPTION_ERROR_NUMBERS.keys())
 
 if HIREDIS_AVAILABLE:
-    import hiredis
+    import hiredis # type: ignore
 
     hiredis_version = StrictVersion(hiredis.__version__)
     HIREDIS_SUPPORTS_CALLABLE_ERRORS = \
