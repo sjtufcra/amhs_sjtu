@@ -25,7 +25,7 @@ class Dataset:
         self.oracle_password = out_config['oracle_password']
         self.oracle_dsn = out_config['oracle_dsn']
         self.database = out_config['database']
-        # from redis
+        # from redislocal
         self.rds_connection = out_config['rds_connection']
         self.rds_port = out_config['rds_port']
         self.rds_search_pattern = out_config['rds_search_pattern']
@@ -66,7 +66,6 @@ class Dataset:
         self.block = dict()
 
         # added in 240618
-        self.check_list = []
         self.algorithm_on = False
 
     class Control:
