@@ -3,8 +3,7 @@ from collections import defaultdict
 import pandas as pd
 import oracledb
 import redis.asyncio as rds
-# import redislocal as db_redis
-import redisclusterlocal as db_redis
+
 from aiocache import Cache
 from aiocache.serializers import JsonSerializer
 import asyncio
@@ -20,8 +19,9 @@ from mysql import connector
 from loguru import logger as log
 from contextlib import contextmanager
 
-from tc_out import *
-from algorithm.A_start.graph.srccode import *
+from .tc_out import *
+from .algorithm.A_start.graph.srccode import *
+from .redspack import redisclusterlocal as db_redis
 
 
 def generating(p):
