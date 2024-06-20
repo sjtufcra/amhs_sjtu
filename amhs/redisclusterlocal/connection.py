@@ -19,10 +19,10 @@ from .exceptions import (
 )
 
 # 3rd party imports
-from .redis._compat import nativestr, LifoQueue, Full, Empty
-from .redis.client import dict_merge
-from .redis.connection import ConnectionPool, Connection, DefaultParser, SSLConnection, UnixDomainSocketConnection
-from .redis.exceptions import ConnectionError
+from .redisloca._compat import nativestr, LifoQueue, Full, Empty
+from .redisloca.client import dict_merge
+from .redisloca.connection import ConnectionPool, Connection, DefaultParser, SSLConnection, UnixDomainSocketConnection
+from .redisloca.exceptions import ConnectionError
 
 log = logging.getLogger(__name__)
 

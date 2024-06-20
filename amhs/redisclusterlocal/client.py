@@ -44,7 +44,7 @@ from .utils import (
 from redis import Redis
 from redis.client import list_or_args, parse_info
 from redis.connection import Connection, SSLConnection
-from redis._compat import iteritems, nativestr, long
+from redisloca._compat import iteritems, nativestr, long
 from redis.exceptions import (
     BusyLoadingError,
     ConnectionError,
@@ -1389,4 +1389,4 @@ class RedisCluster(Redis):
         return ''.join(random.choice(chars) for _ in range(size))
 
 
-from redislocal.pipeline import ClusterPipeline
+from redisclusterlocal.pipeline import ClusterPipeline
