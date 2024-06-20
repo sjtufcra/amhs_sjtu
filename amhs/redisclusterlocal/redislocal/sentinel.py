@@ -5,7 +5,7 @@ from redis.client import Redis
 from redis.connection import ConnectionPool, Connection
 from redis.exceptions import (ConnectionError, ResponseError, ReadOnlyError,
                               TimeoutError)
-from redis._compat import iteritems, nativestr, xrange
+from redisloca._compat import iteritems, nativestr, xrange
 
 
 class MasterNotFoundError(ConnectionError):

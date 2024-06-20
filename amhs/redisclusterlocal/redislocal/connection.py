@@ -9,7 +9,7 @@ import socket
 import threading
 import warnings
 
-from redis._compat import (xrange, imap, unicode, long,
+from redisloca._compat import (xrange, imap, unicode, long,
                            nativestr, basestring, iteritems,
                            LifoQueue, Empty, Full, urlparse, parse_qs,
                            recv, recv_into, unquote, BlockingIOError,
