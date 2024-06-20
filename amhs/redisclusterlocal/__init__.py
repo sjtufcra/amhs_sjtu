@@ -4,7 +4,7 @@
 import logging
 
 # rediscluster imports
-from client import RedisCluster
+from .client import RedisCluster
 from connection import (
     ClusterBlockingConnectionPool,
     ClusterConnection,
