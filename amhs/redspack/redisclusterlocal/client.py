@@ -1389,4 +1389,4 @@ class RedisCluster(Redis):
         return ''.join(random.choice(chars) for _ in range(size))
 
 
-from redisclusterlocal.pipeline import ClusterPipeline
+from .pipeline import ClusterPipeline
