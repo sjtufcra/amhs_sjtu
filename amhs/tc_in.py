@@ -286,7 +286,7 @@ def get_redis_position(p, key):
         # end = time.time() - t0
         # print(f'all_time:{end}')
         return point
-    except ValueError as e:
+    except Exception as e:
         log.error(f'error:{e},key:{key}')
         return None
 
