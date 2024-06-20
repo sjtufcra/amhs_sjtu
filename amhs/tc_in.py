@@ -278,13 +278,13 @@ def get_start(car, p, tay):
 
 def get_redis_position(p, key):
     try:
-        t0 = time.time()
+        # t0 = time.time()
         redis = p.db_redis.get_redis()
         jsonData = redis.get(key)
-        value = json.load(jsonData).get('mapId')
+        value = json.loads(jsonData).get('mapId')
         point = value.split('_')[1]
-        end = time.time() - t0
-        print(f'all_time:{end}')
+        # end = time.time() - t0
+        # print(f'all_time:{end}')
         return point
     except ValueError as e:
         log.error(f'error:{e},key:{key}')
