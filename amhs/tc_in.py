@@ -425,7 +425,7 @@ def path_search_new(p, start, entrance, f_path, bayA, out, order):
         path = nx.shortest_path(p.map_info, start, end)
         # path.append(p.stations_name.get(end))
         log.warning(f'path_search_new error:{e},continue this task')
-    path.append(p.stations_name.get(end))
+    path.append(p.stations_name.get(order.start_location))
     return path
 
 
