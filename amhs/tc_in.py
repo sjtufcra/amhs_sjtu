@@ -907,10 +907,6 @@ class RedisConnectionPool:
 
     async def initialize_redis(self):
         self.reds = rds.from_url(f'redis://{self.host}:{self.port}', decode_responses=True)
-
-    async def initialize_redis(self):
-        self.reds = rds.from_url(f'redis://{self.host}:{self.port}', decode_responses=True)
-        # self.redislocal = db_redis.Redis(host=self.host, port=self.port, db=0)
         pool = db_redis.ClusterConnectionPool(host=self.host, port=self.port)
         self.redis = db_redis.RedisCluster(connection_pool=pool)
 
