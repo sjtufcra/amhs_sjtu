@@ -4,13 +4,13 @@
 import logging
 
 # rediscluster imports
-from redisclusterlocal.client import RedisCluster
-from redisclusterlocal.connection import (
+from .client import RedisCluster
+from .connection import (
     ClusterBlockingConnectionPool,
     ClusterConnection,
     ClusterConnectionPool,
 )
-from redisclusterlocal.exceptions import (
+from .exceptions import (
     RedisClusterException,
     RedisClusterError,
     ClusterDownException,
@@ -22,7 +22,7 @@ from redisclusterlocal.exceptions import (
     MovedError,
     MasterDownError,
 )
-from redisclusterlocal.pipeline import ClusterPipeline
+from .pipeline import ClusterPipeline
 
 
 def int_or_str(value):
