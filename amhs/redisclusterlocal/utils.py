@@ -5,7 +5,7 @@ from socket import gethostbyaddr
 from .exceptions import RedisClusterException
 
 # 3rd party imports
-from .redisloca._compat import basestring, nativestr
+from .redislocal._compat import basestring, nativestr
 
 
 def bool_ok(response, *args, **kwargs):

@@ -1,13 +1,13 @@
-from redis.client import Redis, StrictRedis
-from redis.connection import (
+from .client import Redis, StrictRedis
+from .connection import (
     BlockingConnectionPool,
     ConnectionPool,
     Connection,
     SSLConnection,
     UnixDomainSocketConnection
 )
-from redis.utils import from_url
-from redis.exceptions import (
+from .utils import from_url
+from .exceptions import (
     AuthenticationError,
     AuthenticationWrongNumberOfArgsError,
     BusyLoadingError,

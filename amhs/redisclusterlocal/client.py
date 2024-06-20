@@ -41,11 +41,11 @@ from .utils import (
 )
 
 # 3rd party imports
-from redis import Redis
-from redis.client import list_or_args, parse_info
-from redis.connection import Connection, SSLConnection
-from redisloca._compat import iteritems, nativestr, long
-from redis.exceptions import (
+from .redislocal import Redis
+from .redislocal.client import list_or_args, parse_info
+from .redislocal.connection import Connection, SSLConnection
+from .redislocal._compat import iteritems, nativestr, long
+from .redislocal.exceptions import (
     BusyLoadingError,
     ConnectionError,
     RedisError,
@@ -54,7 +54,7 @@ from redis.exceptions import (
 )
 
 # Not complete, but covers the major ones
-# https://redis.io/commands
+# https://.redislocal.io/commands
 READ_COMMANDS = frozenset([
     "BITCOUNT",
     "BITPOS",
@@ -621,7 +621,7 @@ class RedisCluster(Redis):
                     self.parse_response(connection, "ASKING", **kwargs)
                     asking = False
                 if is_read_replica:
-                    # Ask read replica to accept reads (see https://redis.io/commands/readonly)
+                    # Ask read replica to accept reads (see https://.redislocal.io/commands/readonly)
                     # TODO: do we need to handle errors from this response?
                     connection.send_command('READONLY')
                     self.parse_response(connection, 'READONLY', **kwargs)
@@ -1006,7 +1006,7 @@ class RedisCluster(Redis):
 
         Cluster impl:
             Itterate all keys and send GET for each key.
-            This will go alot slower than a normal mget call in Redis.
+            This will go alot slower than a normal mget call in .redislocal.
 
             Operation is no longer atomic.
         """
@@ -1105,7 +1105,7 @@ class RedisCluster(Redis):
 
         Cluster impl:
             Iterate all keys and send DELETE for each key.
-            This will go a lot slower than a normal delete call in Redis.
+            This will go a lot slower than a normal delete call in .redislocal.
 
             Operation is no longer atomic.
         """

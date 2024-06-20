@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .redisloca.exceptions import (
+from .redislocal.exceptions import (
     ResponseError, RedisError,
 )
 

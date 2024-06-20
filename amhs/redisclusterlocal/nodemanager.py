@@ -11,9 +11,9 @@ from .crc import crc16
 from .exceptions import RedisClusterException, RedisClusterConfigError
 
 # 3rd party imports
-from .redisloca import Redis
-from .redisloca.connection import Encoder
-from .redisloca import ConnectionError, TimeoutError, ResponseError
+from .redislocal import Redis
+from .redislocal.connection import Encoder
+from .redislocal import ConnectionError, TimeoutError, ResponseError
 
 log = logging.getLogger(__name__)
 

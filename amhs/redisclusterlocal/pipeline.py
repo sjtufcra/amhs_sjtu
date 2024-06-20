@@ -11,9 +11,9 @@ from .exceptions import (
 from .utils import dict_merge
 
 # 3rd party imports
-from .redisloca import Redis
-from .redisloca.exceptions import ConnectionError, RedisError, TimeoutError
-from .redisloca._compat import imap, unicode
+from .redislocal import Redis
+from .redislocal.exceptions import ConnectionError, RedisError, TimeoutError
+from .redislocal._compat import imap, unicode
 
 
 ERRORS_ALLOW_RETRY = (ConnectionError, TimeoutError, MovedError, AskError, TryAgainError)

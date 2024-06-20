@@ -1,5 +1,10 @@
 import redisclusterlocal as rds
-
-pool = rds.ClusterConnectionPool(host=p.rds_connection, port=p.rds_port)
+import json
+pool = rds.ClusterConnectionPool(host='10.34.58.42', port=6379)
 connection = rds.RedisCluster(connection_pool=pool)
-v = connection.mget(keys=connection.keys(pattern=p.rds_search_pattern))
+print(connection)
+# 
+v = connection.get('Car:location:128.168.11.142_10114')
+print(v)
+da = json.load(v)
+print(da)

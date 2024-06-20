@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # 3rd party imports
-from .redisloca.client import PubSub
+from .redislocal.client import PubSub
 
 
 class ClusterPubSub(PubSub):
