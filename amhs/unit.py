@@ -34,5 +34,5 @@ config = read_yaml_config(config_file_path)
 mode = check_config(config)
 Tc = Amhs(mode)
 # logpath
-log.add(mode['log'])
+# log.add(mode['log'])
 Tc.start()
