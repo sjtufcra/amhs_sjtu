@@ -11,7 +11,7 @@ httpServer:
     # default is amhs
     database: 'amhs'
 
-    # redis linking
+    # redislocal linking
     rds_connection: '10.34.58.42'
     rds_port: 6379
     rds_search_pattern: "Car:monitor:*"
@@ -56,7 +56,7 @@ localServer:
         database: 'amhs'
         table_names: ['ohtc_map','ohtc_position','transfer_table']
 
-    # redis linking
+    # redislocal linking
     rds_connection: '10.34.58.42'
     rds_port: 6379
     rds_search_pattern: "Car:monitor:*"

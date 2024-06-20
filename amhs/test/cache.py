@@ -4,7 +4,7 @@ from aiocache import Cache
 from aiocache.serializers import JsonSerializer
 
 
-redis = rds.from_url('redis://10.34.58.42:6379',decode_responses=True)
+redis = rds.from_url('redislocal://10.34.58.42:6379',decode_responses=True)
 cache = Cache(Cache.MEMORY,serializer=JsonSerializer())
 
 async def cache_redis():
