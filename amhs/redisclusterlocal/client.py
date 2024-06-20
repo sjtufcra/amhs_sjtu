@@ -1006,7 +1006,7 @@ class RedisCluster(Redis):
 
         Cluster impl:
             Itterate all keys and send GET for each key.
-            This will go alot slower than a normal mget call in .redislocal.
+            This will go alot slower than a normal mget call in Redis.
 
             Operation is no longer atomic.
         """
@@ -1105,7 +1105,7 @@ class RedisCluster(Redis):
 
         Cluster impl:
             Iterate all keys and send DELETE for each key.
-            This will go a lot slower than a normal delete call in .redislocal.
+            This will go a lot slower than a normal delete call in Redis.
 
             Operation is no longer atomic.
         """

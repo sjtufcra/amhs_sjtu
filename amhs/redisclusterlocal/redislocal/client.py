@@ -9,10 +9,10 @@ import re
 import hashlib
 from ._compat import (basestring, imap, iteritems, iterkeys,
                            itervalues, izip, long, nativestr, safe_unicode)
-from redis.connection import (ConnectionPool, UnixDomainSocketConnection,
+from .connection import (ConnectionPool, UnixDomainSocketConnection,
                               SSLConnection)
-from redis.lock import Lock
-from redis.exceptions import (
+from .lock import Lock
+from .exceptions import (
     ConnectionError,
     DataError,
     ExecAbortError,

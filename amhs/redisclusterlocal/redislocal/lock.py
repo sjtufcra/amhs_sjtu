@@ -1,8 +1,8 @@
 import threading
 import time as mod_time
 import uuid
-from redis.exceptions import LockError, LockNotOwnedError
-from redis.utils import dummy
+from .exceptions import LockError, LockNotOwnedError
+from .utils import dummy
 
 
 class Lock(object):
@@ -22,11 +22,11 @@ class Lock(object):
     # ARGV[1] - token
     # return 1 if the lock was released, otherwise 0
     LUA_RELEASE_SCRIPT = """
-        local token = redis.call('get', KEYS[1])
+        local token = call('get', KEYS[1])
         if not token or token ~= ARGV[1] then
             return 0
         end
-        redis.call('del', KEYS[1])
+        call('del', KEYS[1])
         return 1
     """
 
@@ -37,11 +37,11 @@ class Lock(object):
     #           existing ttl or "1" if the existing ttl should be replaced
     # return 1 if the locks time was extended, otherwise 0
     LUA_EXTEND_SCRIPT = """
-        local token = redis.call('get', KEYS[1])
+        local token = call('get', KEYS[1])
         if not token or token ~= ARGV[1] then
             return 0
         end
-        local expiration = redis.call('pttl', KEYS[1])
+        local expiration = call('pttl', KEYS[1])
         if not expiration then
             expiration = 0
         end
@@ -53,7 +53,7 @@ class Lock(object):
         if ARGV[3] == "0" then
             newttl = ARGV[2] + expiration
         end
-        redis.call('pexpire', KEYS[1], newttl)
+        call('pexpire', KEYS[1], newttl)
         return 1
     """
 
@@ -62,11 +62,11 @@ class Lock(object):
     # ARGV[2] - milliseconds
     # return 1 if the locks time was reacquired, otherwise 0
     LUA_REACQUIRE_SCRIPT = """
-        local token = redis.call('get', KEYS[1])
+        local token = call('get', KEYS[1])
         if not token or token ~= ARGV[1] then
             return 0
         end
-        redis.call('pexpire', KEYS[1], ARGV[2])
+        call('pexpire', KEYS[1], ARGV[2])
         return 1
     """
 
@@ -174,7 +174,7 @@ class Lock(object):
         if token is None:
             token = uuid.uuid1().hex.encode()
         else:
-            encoder = self.redis.connection_pool.get_encoder()
+            encoder = self.connection_pool.get_encoder()
             token = encoder.encode(token)
         if blocking is None:
             blocking = self.blocking
@@ -200,7 +200,7 @@ class Lock(object):
             timeout = int(self.timeout * 1000)
         else:
             timeout = None
-        if self.redis.set(self.name, token, nx=True, px=timeout):
+        if self.set(self.name, token, nx=True, px=timeout):
             return True
         return False
 
@@ -208,17 +208,17 @@ class Lock(object):
         """
         Returns True if this key is locked by any process, otherwise False.
         """
-        return self.redis.get(self.name) is not None
+        return self.get(self.name) is not None
 
     def owned(self):
         """
         Returns True if this key is locked by this lock, otherwise False.
         """
-        stored_token = self.redis.get(self.name)
+        stored_token = self.get(self.name)
         # need to always compare bytes to bytes
         # TODO: this can be simplified when the context manager is finished
         if stored_token and not isinstance(stored_token, bytes):
-            encoder = self.redis.connection_pool.get_encoder()
+            encoder = self.connection_pool.get_encoder()
             stored_token = encoder.encode(stored_token)
         return self.local.token is not None and \
             stored_token == self.local.token
