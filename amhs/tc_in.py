@@ -810,7 +810,7 @@ def read_instructions_static(p):
                 sql = f"SELECT VEHICLE FROM TRANSFER_TABLE WHERE COMMANDID='{idx}'"
                 cursor.execute(sql)
                 vid = pd.DataFrame(cursor.fetchall())
-                if vid:
+                if vid.shape[0] > 0:
                     c += 1
             log.info(f"前一轮成功执行的任务数为:{c}")
         sql = "SELECT * FROM TRANSFER_TABLE WHERE VEHICLE='0'"
