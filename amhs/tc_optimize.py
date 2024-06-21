@@ -85,8 +85,9 @@ async def runtime(p):
         p = read_instructions_static(p)
         if p.debug_on:
             p = track_generate_station_new(p)
-        if len(p.taskList) >= 0:
+        if len(p.taskList) > 0:
             await vehicle_load_static(p)
+            log.info(f"本轮读取任务：{p.tasks_load_count}，写入数据库：{p.tasks_finish_count}")
     return None
 
 
