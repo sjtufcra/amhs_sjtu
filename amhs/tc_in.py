@@ -197,7 +197,7 @@ async def vehicle_load_static(p):
         cache = p.db_redis.get_cache()
         v = await cache.get(p.db_redis.cache_key)
         if v is None:
-            log.info(f'无车辆信息')
+            # log.info(f'无车辆信息')
             return None
         log.info(f'cars number:{len(v)}, time:{time.time() - t0}')
         t1 = time.time()
@@ -805,9 +805,10 @@ def read_instructions_static(p):
     with p.db_pool.get_connection() as db_conn:
         cursor = db_conn.cursor()
         if p.debug_on:
-            cursor.execute("SELECT * FROM TRANSFER_TABLE")
+            sql = "SELECT * FROM TRANSFER_TABLE"
         else:
-            cursor.execute("SELECT * FROM TRANSFER_TABLE WHERE STATUS in (0,10) or VEHICLE='0'")
+            sql = "SELECT * FROM TRANSFER_TABLE WHERE VEHICLE='0'"
+        cursor.execute(sql)
         df = pd.DataFrame(cursor.fetchall())
         # log.info(f'task count:{len(df)}')
         db_conn.commit()
@@ -831,7 +832,10 @@ def read_instructions_static(p):
         n += 1
         if n >= p.task_num:
             break
-    log.info(f'本轮任务数:{n}')
+    # added in 240621, to count numbers of being read and finished
+    p.tasks_finish_count = 0
+    p.tasks_load_count = n
+    # log.info(f'本轮任务数:{n}')
     return p
 
 

@@ -14,6 +14,7 @@ async def output_new(p, v):
         cursor = db_conn.cursor()
         try:
             cursor.execute(sql0)
+            p.tasks_finish_count += 1
         except Exception as e:
             log.error(f'messge:sql0 is erro, erro:{e},change sql:{sql0}')
             cursor.execute(sql)

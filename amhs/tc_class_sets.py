@@ -67,6 +67,8 @@ class Dataset:
 
         # added in 240618
         self.algorithm_on = False
+        self.tasks_finish_count = 0
+        self.tasks_load_count = 0
 
     class Control:
         def __init__(self,task_num=10):
