@@ -425,7 +425,7 @@ def path_search_new(p, start, entrance, f_path, bayA, out, order):
         path = nx.shortest_path(p.map_info, start, end)
         # path.append(p.stations_name.get(end))
         log.warning(f'path_search_new error:{e},continue this task')
-    path.append(p.stations_name.get(order.start_location))
+    path.append(p.stations_name.get(end))
     return path
 
 
@@ -533,7 +533,7 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
             # path = copy.deepcopy(p.internal_paths[bay]['path'][start][1][end])
 
             path = internal_path_search(start, end, bay, p)
-            path.append(p.stations_name.get(end_station))
+            path.append(p.stations_name.get(end))
 
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
@@ -545,7 +545,7 @@ async def assign_same_bay(p, bay, i, flag, temp_cars):
             start = flag.split('_')[1]
             end = p.all_stations.get(end_station)
             path = nx.shortest_path(p.map_info, start, end)
-            path.append(p.stations_name.get(end_station))
+            path.append(p.stations_name.get(end))
             order.vehicle_assigned = tmp_id
             order.delivery_route = path
             await output_new(p, order)
