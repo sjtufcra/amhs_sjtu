@@ -804,10 +804,7 @@ def read_instructions_static(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
         cursor = db_conn.cursor()
-        if p.debug_on:
-            sql = "SELECT * FROM TRANSFER_TABLE"
-        else:
-            sql = "SELECT * FROM TRANSFER_TABLE WHERE VEHICLE='0'"
+        sql = "SELECT * FROM TRANSFER_TABLE WHERE VEHICLE='0'"
         cursor.execute(sql)
         df = pd.DataFrame(cursor.fetchall())
         # log.info(f'task count:{len(df)}')
