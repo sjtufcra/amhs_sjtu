@@ -64,6 +64,7 @@ class Dataset:
 
         # added in 240612
         self.block = dict()
+        self.tasks_schedule = []
 
         # added in 240618
         self.algorithm_on = False

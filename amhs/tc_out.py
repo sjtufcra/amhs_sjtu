@@ -7,17 +7,18 @@ async def output_new(p, v):
     sql0 = (f'''UPDATE TRANSFER_TABLE 
             SET VEHICLE = '{v.vehicle_assigned}', POSPATH = '{','.join(v.delivery_route)}'
             WHERE COMMANDID = '{v.id}\'''')
-    s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
-    s1 = "' WHERE COMMANDID = '" + v.id + "'"
-    sql = "UPDATE TRANSFER_TABLE " + s0 + s1
+    # s0 = "SET VEHICLE = '" + v.vehicle_assigned + "', POSPATH = '" + ','.join(v.delivery_route)
+    # s1 = "' WHERE COMMANDID = '" + v.id + "'"
+    # sql = "UPDATE TRANSFER_TABLE " + s0 + s1
     with p.db_pool.get_connection() as db_conn:
         cursor = db_conn.cursor()
         try:
             cursor.execute(sql0)
+            p.tasks_schedule.append(v.id)
             p.tasks_finish_count += 1
         except Exception as e:
             log.error(f'messge:sql0 is erro, erro:{e},change sql:{sql0}')
-            cursor.execute(sql)
+            # cursor.execute(sql)
         db_conn.commit()
         cursor.close()
     return None

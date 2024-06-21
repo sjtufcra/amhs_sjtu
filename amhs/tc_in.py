@@ -804,6 +804,15 @@ def read_instructions_static(p):
     # oracle
     with p.db_pool.get_connection() as db_conn:
         cursor = db_conn.cursor()
+        if p.tasks_schedule:
+            c = 0
+            for idx in p.tasks_schedule:
+                sql = f"SELECT VEHICLE FROM TRANSFER_TABLE WHERE COMMANDID='{idx}'"
+                cursor.execute(sql)
+                vid = pd.DataFrame(cursor.fetchall())
+                if vid:
+                    c += 1
+            log.info(f"前一轮成功执行的任务数为:{c}")
         sql = "SELECT * FROM TRANSFER_TABLE WHERE VEHICLE='0'"
         cursor.execute(sql)
         df = pd.DataFrame(cursor.fetchall())
