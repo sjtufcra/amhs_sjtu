@@ -22,6 +22,7 @@ from contextlib import contextmanager
 
 from tc_out import *
 from algorithm.A_start.graph.srccode import *
+from redspack import redisclusterlocal as db_redis
 
 
 def generating(p):
